@@ -51,4 +51,108 @@ Round 4:
 - The bottom nav bar in the mobile view, is so small, give the icons a bigger size.
 - The new's description is showing the <p> tag, remove it.
 - Removing classes is not working, doesn't delete.
-- 
+
+############################################################
+
+Round 5:
+The website is hosted on Netlify (frontend), and Railway (backend)
+
+- Class deletion still fails, I check the console for errors, and this is the console:
+"
+The resource at “https://manakherschool.netlify.app/_next/static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2” preloaded with link preload was not used within a few seconds. Make sure all attributes of the preload tag are set correctly. sections
+The resource at “https://manakherschool.netlify.app/_next/static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2” preloaded with link preload was not used within a few seconds. Make sure all attributes of the preload tag are set correctly. sections
+XHRDELETE
+https://pocketbase-production-882e.up.railway.app/api/collections/class_sections/records/7vn0c2xll18vdp0
+[HTTP/2 400  577ms]
+
+	
+DELETE
+	https://pocketbase-production-882e.up.railway.app/api/collections/class_sections/records/7vn0c2xll18vdp0
+Status
+400
+VersionHTTP/2
+Transferred640 B (134 B size)
+Referrer Policystrict-origin-when-cross-origin
+Request PriorityHighest
+DNS ResolutionSystem
+
+Uncaught (in promise) ClientResponseError 400: Failed to delete record. Make sure that the record is not part of a required relation reference.
+    NextJS 13
+Caused by: Object { … }
+10i_f8fd9b7lk.js:1:3452
+    G NextJS
+    AsyncFunctionThrow self-hosted:784
+    NextJS 7
+
+"
+- The description of the news fails to update, this is the console message:
+"
+[tiptap warn]: Duplicate extension names found: ['link', 'underline']. This can lead to issues. 0deqr8sut00mz.js:1:217433
+The resource at “https://manakherschool.netlify.app/_next/static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2” preloaded with link preload was not used within a few seconds. Make sure all attributes of the preload tag are set correctly. admin
+The resource at “https://manakherschool.netlify.app/_next/static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2” preloaded with link preload was not used within a few seconds. Make sure all attributes of the preload tag are set correctly. admin
+XHRPATCH
+https://pocketbase-production-882e.up.railway.app/api/collections/announcements/records/222v51qja34g0jb
+[HTTP/2 404  612ms]
+
+	
+PATCH
+	https://pocketbase-production-882e.up.railway.app/api/collections/announcements/records/222v51qja34g0jb
+Status
+404
+VersionHTTP/2
+Transferred579 B (74 B size)
+Referrer Policystrict-origin-when-cross-origin
+Request PriorityHighest
+DNS ResolutionSystem
+
+ClientResponseError 404: The requested resource wasn't found.
+    NextJS 30
+Caused by: Object { … }
+08nd12rqq8q7u.js:1:3462
+    NextJS 25
+
+"
+- The nav bar needs more size increase.
+- The Course delete fails too, and this is the console message:
+"
+XHRDELETE
+https://pocketbase-production-882e.up.railway.app/api/collections/subjects/records/19m919u7t22v6q0
+[HTTP/2 400  636ms]
+
+	
+DELETE
+	https://pocketbase-production-882e.up.railway.app/api/collections/subjects/records/19m919u7t22v6q0
+Status
+400
+VersionHTTP/2
+Transferred640 B (134 B size)
+Referrer Policystrict-origin-when-cross-origin
+Request PriorityHighest
+DNS ResolutionSystem
+
+Uncaught (in promise) ClientResponseError 400: Failed to delete record. Make sure that the record is not part of a required relation reference.
+    NextJS 31
+Caused by: Object { … }
+10i_f8fd9b7lk.js:1:3452
+    A NextJS
+    AsyncFunctionThrow self-hosted:784
+    NextJS 10
+    forEach self-hosted:4457
+    NextJS 5
+    InterpretGeneratorResume self-hosted:1312
+    AsyncFunctionNext self-hosted:780
+    NextJS 7
+    AsyncFunctionNext self-hosted:780
+    (Async: async)
+    F NextJS
+    forEach self-hosted:145
+    NextJS 2
+The resource at “https://manakherschool.netlify.app/_next/static/media/9ff27b8a0a8f3dc0-s.p.170gfl_1xpie6.woff2” preloaded with link preload was not used within a few seconds. Make sure all attributes of the preload tag are set correctly. subjects
+The resource at “https://manakherschool.netlify.app/_next/static/media/d41831e24743a3c1-s.p.02r-fjhi~6g_a.woff2” preloaded with link preload was not used within a few seconds. Make sure all attributes of the preload tag are set correctly. subjects
+"
+
+###################################################
+
+Round 6:
+
+- The alerts and popups in the website are supposed to match and be part of the website's design system.

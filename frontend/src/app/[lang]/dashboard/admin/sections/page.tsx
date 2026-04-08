@@ -89,33 +89,76 @@ export default function SectionsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t.confirmDelete)) return;
+    // Enhanced confirmation for cascade delete
+    const section = sections.find(s => s.id === id);
+    const sectionName = section ? (locale === "ar" ? `${section.grade_ar} — ${section.section_ar}` : `${section.grade_en} — ${section.section_en}`) : "";
+    
+    const warningMsg = locale === "ar" 
+      ? `تحذير: حذف ${sectionName} سيؤدي إلى حذف جميع السجلات المرتبطة به:\n\n• المواد التعليمية\n• الواجبات\n• التسليمات\n• الإعلانات\n• التعيينات\n\nهل أنت متأكد من الحذف؟`
+      : `Warning: Deleting ${sectionName} will also delete all related records:\n\n• Learning materials\n• Homework\n• Submissions\n• Announcements\n• Assignments\n\nAre you sure you want to delete?`;
+    
+    if (!confirm(warningMsg)) return;
+    
     setDeletingId(id);
     try {
+      // First, delete all related records
+      // 1. Delete materials
+      const materials = await pb.collection("materials").getFullList({ filter: `section = "${id}"` });
+      for (const m of materials) {
+        await pb.collection("materials").delete(m.id);
+      }
+      
+      // 2. Delete homework and their submissions
+      const homework = await pb.collection("homework").getFullList({ filter: `section = "${id}"` });
+      for (const hw of homework) {
+        const submissions = await pb.collection("submissions").getFullList({ filter: `homework = "${hw.id}"` });
+        for (const sub of submissions) {
+          await pb.collection("submissions").delete(sub.id);
+        }
+        await pb.collection("homework").delete(hw.id);
+      }
+      
+      // 3. Delete announcements
+      const announcements = await pb.collection("announcements").getFullList({ filter: `section = "${id}"` });
+      for (const ann of announcements) {
+        await pb.collection("announcements").delete(ann.id);
+      }
+      
+      // 4. Delete quizzes and related data
+      const quizzes = await pb.collection("quizzes").getFullList({ filter: `section = "${id}"` });
+      for (const quiz of quizzes) {
+        const attempts = await pb.collection("quiz_attempts").getFullList({ filter: `quiz = "${quiz.id}"` });
+        for (const att of attempts) {
+          await pb.collection("quiz_attempts").delete(att.id);
+        }
+        const questions = await pb.collection("quiz_questions").getFullList({ filter: `quiz = "${quiz.id}"` });
+        for (const q of questions) {
+          await pb.collection("quiz_questions").delete(q.id);
+        }
+        await pb.collection("quizzes").delete(quiz.id);
+      }
+      
+      // 5. Delete exam schedules
+      const exams = await pb.collection("exam_schedules").getFullList({ filter: `section = "${id}"` });
+      for (const exam of exams) {
+        await pb.collection("exam_schedules").delete(exam.id);
+      }
+      
+      // 6. Remove section from users (teachers and students)
+      const usersWithSection = await pb.collection("users").getFullList({ filter: `sections ~ "${id}"` });
+      for (const user of usersWithSection) {
+        const updatedSections = (user.sections as string[]).filter(s => s !== id);
+        await pb.collection("users").update(user.id, { sections: updatedSections });
+      }
+      
+      // Finally, delete the section itself
       await pb.collection("class_sections").delete(id);
       setSections(s => s.filter(x => x.id !== id));
-    } finally {
-      setDeletingId(null);
-    }
-  }
-
-  async function handleDeleteGrade(gradeOrder: number) {
-    const gradeSections = byGrade[gradeOrder];
-    const gradeName = locale === "ar" ? gradeSections[0].grade_ar : gradeSections[0].grade_en;
-    
-    if (!confirm(`${t.confirmDeleteGrade || 'Delete entire grade'} "${gradeName}"? ${t.confirmDeleteGradeWarning || 'This will delete all sections in this grade.'}`)) return;
-    
-    setDeletingId(`grade-${gradeOrder}`);
-    try {
-      // Delete all sections in this grade
-      await Promise.all(
-        gradeSections.map(section => pb.collection("class_sections").delete(section.id))
-      );
-      // Remove from local state
-      setSections(s => s.filter(x => x.grade_order !== gradeOrder));
+      
+      alert(locale === "ar" ? "تم الحذف بنجاح" : "Deleted successfully");
     } catch (error) {
-      console.error("Error deleting grade:", error);
-      alert(t.deleteError || "Failed to delete grade. Some sections may have assigned students or teachers.");
+      console.error("Delete error:", error);
+      alert(locale === "ar" ? "فشل الحذف. يرجى المحاولة مرة أخرى." : "Delete failed. Please try again.");
     } finally {
       setDeletingId(null);
     }
@@ -202,17 +245,8 @@ export default function SectionsPage() {
             const gradeName = locale === "ar" ? g.grade_ar : g.grade_en;
             return (
               <div key={gk} className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden shadow-[var(--shadow-xs)]">
-                <div className="px-4 py-3 bg-[var(--color-role-admin-card)] border-b border-[var(--color-border)] flex items-center justify-between">
+                <div className="px-4 py-3 bg-[var(--color-role-admin-card)] border-b border-[var(--color-border)]">
                   <span className="text-sm font-black text-[var(--color-role-admin-text)]">{gradeName}</span>
-                  <button
-                    onClick={() => handleDeleteGrade(gk)}
-                    disabled={deletingId === `grade-${gk}`}
-                    className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
-                    title={t.deleteGrade || "Delete entire grade"}
-                  >
-                    {deletingId === `grade-${gk}` ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                    {t.deleteGrade || c.delete}
-                  </button>
                 </div>
                 <div className="divide-y divide-[var(--color-border-subtle)]">
                   {gradeItems.map(s => (

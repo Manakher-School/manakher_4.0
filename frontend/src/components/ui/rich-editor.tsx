@@ -93,6 +93,8 @@ export function RichEditor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
+        // Disable link from StarterKit to avoid duplicate with our custom Link extension
+        link: false,
       }),
       Underline,
       Image.configure({ inline: false, allowBase64: false }),

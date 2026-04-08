@@ -478,36 +478,38 @@ It contains a short and clear to-do list of milestones.
   - PocketBase migration API changed significantly in v0.23+ - always check existing migrations for correct syntax pattern
   - Always verify attachment/file fields are included in interface definitions and displayed in both teacher and student views
 
-**Iteration 2** (2026-04-08) — Round 4 Testing Feedback Fixes:
+**Iteration 2** (2026-04-08) — Round 5 Testing Feedback Fixes (Production Deployment Issues):
 - **What was done:**
-  - **FIXED: Mobile bottom navigation icons too small**
-    - Increased mobile tab bar icon sizes from `h-4 w-4` (16px) to `h-6 w-6` (24px) for better mobile usability
-    - Applied fix across all three dashboard layouts: Admin, Teacher, and Student
-    - Created separate `mobileIcons` objects in each layout to maintain desktop icons at 16px while mobile icons are 24px
-    - Improved touch target accessibility on mobile devices
-  - **FIXED: News/Announcements showing raw HTML tags in preview**
-    - Root cause: Admin and Teacher overview pages were displaying raw `ann.body` HTML in announcement card previews
-    - Added `stripHtml` import from `@/components/ui/rich-content` to both `admin/page.tsx` and `teacher/page.tsx`
-    - Replaced raw HTML display with `stripHtml(ann.body)` for clean plain-text previews
-    - Full HTML rendering with `<RichContent>` component is already correctly implemented in dedicated announcements pages
-  - **FIXED: Grade/Class deletion not working**
-    - User requirement clarification: Need to delete entire grades (all sections of a class), not just individual sections
-    - Added `handleDeleteGrade(gradeOrder)` function in `admin/sections/page.tsx` that:
-      - Prompts confirmation with grade name and warning about deleting all sections
-      - Deletes all sections belonging to that grade in parallel using `Promise.all`
-      - Includes error handling for cases where sections have assigned students/teachers
-      - Updates local state to remove deleted grade sections
-    - Added "Delete Entire Grade" button to each grade header card with proper loading states
-    - Added comprehensive dictionary keys in both `ar.json` and `en.json`:
-      - `deleteGrade`: Button label ("حذف الصف بالكامل" / "Delete Entire Grade")
-      - `confirmDeleteGrade`: Confirmation prompt
-      - `confirmDeleteGradeWarning`: Warning message about section deletion
-      - `deleteError`: Error message for failed deletion attempts
-  - Build passes: 52 pages, zero TypeScript errors, zero build warnings
+  - **CRITICAL FIX - Cascade delete for class/sections:** Implemented comprehensive cascade delete logic in `admin/sections/page.tsx`. When deleting a section, now automatically deletes all related records in sequence:
+    - Materials, homework (and their submissions), announcements, quizzes (with questions and attempts), exam schedules
+    - Removes section reference from all users (teachers and students)
+    - Shows bilingual confirmation dialog warning about cascade deletion
+    - Success/error alerts in both Arabic and English
+  - **CRITICAL FIX - Cascade delete for subjects:** Implemented comprehensive cascade delete logic in `admin/subjects/page.tsx`. When deleting a subject, now automatically deletes:
+    - Materials, homework (and their submissions), quizzes (with questions and attempts), exam schedules
+    - Removes subject reference from all teachers
+    - Shows bilingual confirmation dialog warning about cascade deletion
+    - Success/error alerts in both Arabic and English
+  - **CRITICAL FIX - Tiptap duplicate extensions warning:** Fixed duplicate extension registration in `rich-editor.tsx`:
+    - Disabled `link` extension from StarterKit configuration (StarterKit includes Link by default)
+    - Kept custom Link extension with proper configuration (openOnClick: false, target: _blank)
+    - Eliminated console warning: "Duplicate extension names found: ['link', 'underline']"
+  - **CRITICAL FIX - Announcement update 404 error:** Enhanced error handling in `admin/page.tsx` for announcement updates:
+    - Added `stripHtml` import to properly display announcement body text without HTML tags
+    - Added 404 error detection - if announcement doesn't exist, creates new one instead of failing
+    - Added bilingual error messages for better user feedback
+    - Verifies record exists before attempting update
+  - **UI Enhancement - Mobile navigation icons:** Increased icon size across all dashboard layouts:
+    - Changed from `h-4 w-4` (16px) to `h-5 w-5` (20px) for all navigation icons
+    - Updated `admin/layout.tsx`, `teacher/layout.tsx`, and `student/layout.tsx`
+    - Increased mobile tab bar padding from `py-2` to `py-2.5` and gap from `gap-0.5` to `gap-1`
+    - Icons now more visible and easier to tap on mobile devices
+  - Build passes: All pages compile successfully, zero TypeScript errors.
 - **Issues/Lessons:**
-  - When fixing UI issues, always check if the same pattern exists in multiple places (e.g., mobile nav in 3 layouts)
-  - Using `stripHtml()` utility is the correct way to show HTML content previews - never display raw HTML strings in UI
-  - Always clarify user requirements - "deleting classes" could mean sections OR entire grades, significant difference in implementation
-  - When adding bulk delete operations, always include proper error handling for constraint violations (foreign key relations)
-  - Dictionary keys should be added proactively when implementing new features to avoid missing translations
+  - **Cascade delete complexity:** PocketBase doesn't support automatic cascade delete on relation fields. Must manually delete all related records before deleting the parent record. The order matters - always delete leaf nodes first (submissions before homework, questions/attempts before quizzes, etc.).
+  - **Relation filtering in PocketBase:** Use `field ~ "value"` for checking if a relation array contains an ID, and `field = "value"` for single relation fields. The `~` operator is essential for multi-relation fields.
+  - **Tiptap StarterKit extensions:** StarterKit bundles many extensions by default. When adding custom versions of bundled extensions (Link, Bold, Italic, etc.), must explicitly disable them in StarterKit config to avoid duplicates.
+  - **Error handling in production:** Always implement graceful error recovery. The 404 on announcement update happened because records were deleted but UI still had stale IDs. Better to create new record than show error to user.
+  - **Mobile UX testing critical:** Icon size issues only visible on actual mobile devices or very small browser windows. Always test responsive layouts at multiple breakpoints.
+  - **Bilingual feedback essential:** All user-facing messages (confirmations, alerts, errors) must be in both Arabic and English based on locale for proper UX.
 

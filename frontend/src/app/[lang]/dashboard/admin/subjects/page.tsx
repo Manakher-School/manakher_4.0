@@ -74,11 +74,70 @@ export default function SubjectsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t.confirmDelete)) return;
+    // Enhanced confirmation for cascade delete
+    const subject = subjects.find(s => s.id === id);
+    const subjectName = subject ? (locale === "ar" ? subject.name_ar : subject.name_en) : "";
+    
+    const warningMsg = locale === "ar" 
+      ? `تحذير: حذف المقرر "${subjectName}" سيؤدي إلى حذف جميع السجلات المرتبطة به:\n\n• المواد التعليمية\n• الواجبات\n• التسليمات\n• الاختبارات\n• جداول الامتحانات\n\nهل أنت متأكد من الحذف؟`
+      : `Warning: Deleting subject "${subjectName}" will also delete all related records:\n\n• Learning materials\n• Homework\n• Submissions\n• Quizzes\n• Exam schedules\n\nAre you sure you want to delete?`;
+    
+    if (!confirm(warningMsg)) return;
+    
     setDeletingId(id);
     try {
+      // First, delete all related records
+      // 1. Delete materials
+      const materials = await pb.collection("materials").getFullList({ filter: `subject = "${id}"` });
+      for (const m of materials) {
+        await pb.collection("materials").delete(m.id);
+      }
+      
+      // 2. Delete homework and their submissions
+      const homework = await pb.collection("homework").getFullList({ filter: `subject = "${id}"` });
+      for (const hw of homework) {
+        const submissions = await pb.collection("submissions").getFullList({ filter: `homework = "${hw.id}"` });
+        for (const sub of submissions) {
+          await pb.collection("submissions").delete(sub.id);
+        }
+        await pb.collection("homework").delete(hw.id);
+      }
+      
+      // 3. Delete quizzes and related data
+      const quizzes = await pb.collection("quizzes").getFullList({ filter: `subject = "${id}"` });
+      for (const quiz of quizzes) {
+        const attempts = await pb.collection("quiz_attempts").getFullList({ filter: `quiz = "${quiz.id}"` });
+        for (const att of attempts) {
+          await pb.collection("quiz_attempts").delete(att.id);
+        }
+        const questions = await pb.collection("quiz_questions").getFullList({ filter: `quiz = "${quiz.id}"` });
+        for (const q of questions) {
+          await pb.collection("quiz_questions").delete(q.id);
+        }
+        await pb.collection("quizzes").delete(quiz.id);
+      }
+      
+      // 4. Delete exam schedules
+      const exams = await pb.collection("exam_schedules").getFullList({ filter: `subject = "${id}"` });
+      for (const exam of exams) {
+        await pb.collection("exam_schedules").delete(exam.id);
+      }
+      
+      // 5. Remove subject from users (teachers)
+      const usersWithSubject = await pb.collection("users").getFullList({ filter: `subjects ~ "${id}"` });
+      for (const user of usersWithSubject) {
+        const updatedSubjects = (user.subjects as string[]).filter(s => s !== id);
+        await pb.collection("users").update(user.id, { subjects: updatedSubjects });
+      }
+      
+      // Finally, delete the subject itself
       await pb.collection("subjects").delete(id);
       setSubjects(s => s.filter(x => x.id !== id));
+      
+      alert(locale === "ar" ? "تم الحذف بنجاح" : "Deleted successfully");
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert(locale === "ar" ? "فشل الحذف. يرجى المحاولة مرة أخرى." : "Delete failed. Please try again.");
     } finally {
       setDeletingId(null);
     }

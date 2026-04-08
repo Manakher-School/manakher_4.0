@@ -80,7 +80,18 @@ export default function AdminDashboard() {
       };
       
       if (editingAnnouncementId) {
-        await pb.collection("announcements").update(editingAnnouncementId, payload);
+        // Verify the record exists before updating
+        try {
+          await pb.collection("announcements").getOne(editingAnnouncementId);
+          await pb.collection("announcements").update(editingAnnouncementId, payload);
+        } catch (err: any) {
+          if (err?.status === 404) {
+            alert(locale === "ar" ? "الإعلان غير موجود. سيتم إنشاء إعلان جديد." : "Announcement not found. Creating a new one.");
+            await pb.collection("announcements").create(payload);
+          } else {
+            throw err;
+          }
+        }
         setEditingAnnouncementId(null);
       } else {
         await pb.collection("announcements").create(payload);
@@ -97,6 +108,7 @@ export default function AdminDashboard() {
       setAnnouncements(allAnns);
     } catch (e) {
       console.error(e);
+      alert(locale === "ar" ? "فشل الحفظ. يرجى المحاولة مرة أخرى." : "Save failed. Please try again.");
     } finally {
       setSavingAnnouncement(false);
     }
