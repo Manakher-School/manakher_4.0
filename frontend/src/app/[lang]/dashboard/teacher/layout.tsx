@@ -58,10 +58,21 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
 
       {/* ── Mobile tab bar ── */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-20 flex border-t border-[var(--color-border)] bg-[var(--color-surface-card)] px-1 pb-safe">
-        {navItems.map(({ key, href, icon }) => {
+        {navItems.map(({ key, href }) => {
           const isActive = key === "overview"
             ? pathname === href
             : pathname.startsWith(href);
+          
+          // Mobile icons with larger size (h-6 w-6 = 24px)
+          const mobileIcons: Record<NavKey, ReactNode> = {
+            overview: <LayoutGrid className="h-6 w-6" />,
+            sections: <Users className="h-6 w-6" />,
+            materials: <BookOpen className="h-6 w-6" />,
+            homework: <FileText className="h-6 w-6" />,
+            announcements: <Bell className="h-6 w-6" />,
+            quizzes: <ClipboardList className="h-6 w-6" />,
+          };
+          
           return (
             <Link
               key={key}
@@ -73,7 +84,7 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
                   : "text-[var(--color-ink-disabled)] hover:text-[var(--color-ink-secondary)]",
               ].join(" ")}
             >
-              {icon}
+              {mobileIcons[key]}
               <span className="hidden xs:block">{t[key]}</span>
             </Link>
           );

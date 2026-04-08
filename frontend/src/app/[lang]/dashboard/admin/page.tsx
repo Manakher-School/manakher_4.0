@@ -9,6 +9,7 @@ import { Users, Layers, GraduationCap, BookOpen, Bell, Plus, Pencil, Trash2, X }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichEditor } from "@/components/ui/rich-editor";
+import { stripHtml } from "@/components/ui/rich-content";
 import pb from "@/lib/pocketbase";
 
 export default function AdminDashboard() {
@@ -265,7 +266,7 @@ export default function AdminDashboard() {
                       </button>
                     </div>
                   </div>
-                  <p className="mt-2 text-sm text-[var(--color-ink-secondary)] line-clamp-3">{ann.body.length > 100 ? ann.body.substring(0, 100) + "..." : ann.body}</p>
+                  <p className="mt-2 text-sm text-[var(--color-ink-secondary)] line-clamp-3">{stripHtml(ann.body)}</p>
                 </div>
               ))}
             </>

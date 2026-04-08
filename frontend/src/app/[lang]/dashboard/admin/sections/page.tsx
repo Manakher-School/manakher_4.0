@@ -99,6 +99,28 @@ export default function SectionsPage() {
     }
   }
 
+  async function handleDeleteGrade(gradeOrder: number) {
+    const gradeSections = byGrade[gradeOrder];
+    const gradeName = locale === "ar" ? gradeSections[0].grade_ar : gradeSections[0].grade_en;
+    
+    if (!confirm(`${t.confirmDeleteGrade || 'Delete entire grade'} "${gradeName}"? ${t.confirmDeleteGradeWarning || 'This will delete all sections in this grade.'}`)) return;
+    
+    setDeletingId(`grade-${gradeOrder}`);
+    try {
+      // Delete all sections in this grade
+      await Promise.all(
+        gradeSections.map(section => pb.collection("class_sections").delete(section.id))
+      );
+      // Remove from local state
+      setSections(s => s.filter(x => x.grade_order !== gradeOrder));
+    } catch (error) {
+      console.error("Error deleting grade:", error);
+      alert(t.deleteError || "Failed to delete grade. Some sections may have assigned students or teachers.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   const byGrade = sections.reduce<Record<number, ClassSection[]>>((acc, s) => {
     if (!acc[s.grade_order]) acc[s.grade_order] = [];
     acc[s.grade_order].push(s);
@@ -180,8 +202,17 @@ export default function SectionsPage() {
             const gradeName = locale === "ar" ? g.grade_ar : g.grade_en;
             return (
               <div key={gk} className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden shadow-[var(--shadow-xs)]">
-                <div className="px-4 py-3 bg-[var(--color-role-admin-card)] border-b border-[var(--color-border)]">
+                <div className="px-4 py-3 bg-[var(--color-role-admin-card)] border-b border-[var(--color-border)] flex items-center justify-between">
                   <span className="text-sm font-black text-[var(--color-role-admin-text)]">{gradeName}</span>
+                  <button
+                    onClick={() => handleDeleteGrade(gk)}
+                    disabled={deletingId === `grade-${gk}`}
+                    className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
+                    title={t.deleteGrade || "Delete entire grade"}
+                  >
+                    {deletingId === `grade-${gk}` ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                    {t.deleteGrade || c.delete}
+                  </button>
                 </div>
                 <div className="divide-y divide-[var(--color-border-subtle)]">
                   {gradeItems.map(s => (

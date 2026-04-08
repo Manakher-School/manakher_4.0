@@ -43,3 +43,12 @@ Round 3:
 - The alignment of the quiz must be fully RTL!!!!!!!!!!!!!! The answers are not!!!!!!!!!!!!! Fix the WHOLE QUIZ.
 - For the teacher: is there a way to make the alignement of the quiz content go with the language of it (if written in english or in arabic) or maybe based on the subject too...
 - For the admin, the classes page MAY not sure, be updated to navigate the user to a separate page for each class which holds their sections (not decided yet!!!!).
+
+############################################################
+
+Round 4:
+
+- The bottom nav bar in the mobile view, is so small, give the icons a bigger size.
+- The new's description is showing the <p> tag, remove it.
+- Removing classes is not working, doesn't delete.
+- 

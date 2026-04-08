@@ -2,6 +2,8 @@
 
 A comprehensive, bilingual (Arabic and English) educational platform designed to centralize school activities, resources, and communication. Built to serve students from Kindergarten to higher grades, this platform provides a calm, structured, and professional digital environment for the entire school community.
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/04b89d8d-5a50-4649-b974-80e192c0ef60/deploy-status)](https://app.netlify.com/projects/manakherschool/deploys)
+
 ---
 
 ## 🌟 Platform Overview

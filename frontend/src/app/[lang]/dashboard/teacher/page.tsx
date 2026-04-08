@@ -10,6 +10,7 @@ import { BookOpen, Users, FileText, Clock, Bell, Plus, X, Pencil, Trash2 } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichEditor } from "@/components/ui/rich-editor";
+import { stripHtml } from "@/components/ui/rich-content";
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
@@ -291,7 +292,7 @@ export default function TeacherDashboard() {
                       </button>
                     </div>
                   </div>
-                  <p className="mt-2 text-sm text-[var(--color-ink-secondary)] line-clamp-3">{ann.body.length > 100 ? ann.body.substring(0, 100) + "..." : ann.body}</p>
+                  <p className="mt-2 text-sm text-[var(--color-ink-secondary)] line-clamp-3">{stripHtml(ann.body)}</p>
                 </div>
               ))}
             </>

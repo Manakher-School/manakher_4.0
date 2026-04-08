@@ -478,3 +478,36 @@ It contains a short and clear to-do list of milestones.
   - PocketBase migration API changed significantly in v0.23+ - always check existing migrations for correct syntax pattern
   - Always verify attachment/file fields are included in interface definitions and displayed in both teacher and student views
 
+**Iteration 2** (2026-04-08) — Round 4 Testing Feedback Fixes:
+- **What was done:**
+  - **FIXED: Mobile bottom navigation icons too small**
+    - Increased mobile tab bar icon sizes from `h-4 w-4` (16px) to `h-6 w-6` (24px) for better mobile usability
+    - Applied fix across all three dashboard layouts: Admin, Teacher, and Student
+    - Created separate `mobileIcons` objects in each layout to maintain desktop icons at 16px while mobile icons are 24px
+    - Improved touch target accessibility on mobile devices
+  - **FIXED: News/Announcements showing raw HTML tags in preview**
+    - Root cause: Admin and Teacher overview pages were displaying raw `ann.body` HTML in announcement card previews
+    - Added `stripHtml` import from `@/components/ui/rich-content` to both `admin/page.tsx` and `teacher/page.tsx`
+    - Replaced raw HTML display with `stripHtml(ann.body)` for clean plain-text previews
+    - Full HTML rendering with `<RichContent>` component is already correctly implemented in dedicated announcements pages
+  - **FIXED: Grade/Class deletion not working**
+    - User requirement clarification: Need to delete entire grades (all sections of a class), not just individual sections
+    - Added `handleDeleteGrade(gradeOrder)` function in `admin/sections/page.tsx` that:
+      - Prompts confirmation with grade name and warning about deleting all sections
+      - Deletes all sections belonging to that grade in parallel using `Promise.all`
+      - Includes error handling for cases where sections have assigned students/teachers
+      - Updates local state to remove deleted grade sections
+    - Added "Delete Entire Grade" button to each grade header card with proper loading states
+    - Added comprehensive dictionary keys in both `ar.json` and `en.json`:
+      - `deleteGrade`: Button label ("حذف الصف بالكامل" / "Delete Entire Grade")
+      - `confirmDeleteGrade`: Confirmation prompt
+      - `confirmDeleteGradeWarning`: Warning message about section deletion
+      - `deleteError`: Error message for failed deletion attempts
+  - Build passes: 52 pages, zero TypeScript errors, zero build warnings
+- **Issues/Lessons:**
+  - When fixing UI issues, always check if the same pattern exists in multiple places (e.g., mobile nav in 3 layouts)
+  - Using `stripHtml()` utility is the correct way to show HTML content previews - never display raw HTML strings in UI
+  - Always clarify user requirements - "deleting classes" could mean sections OR entire grades, significant difference in implementation
+  - When adding bulk delete operations, always include proper error handling for constraint violations (foreign key relations)
+  - Dictionary keys should be added proactively when implementing new features to avoid missing translations
+
