@@ -513,3 +513,25 @@ It contains a short and clear to-do list of milestones.
   - **Mobile UX testing critical:** Icon size issues only visible on actual mobile devices or very small browser windows. Always test responsive layouts at multiple breakpoints.
   - **Bilingual feedback essential:** All user-facing messages (confirmations, alerts, errors) must be in both Arabic and English based on locale for proper UX.
 
+**Iteration 3** (2026-04-09) — Replace all native alert() and confirm() calls with custom dialog system:
+- **What was done:**
+  - **COMPLETE DIALOG SYSTEM MIGRATION:** Replaced all 34 native `alert()` and `confirm()` calls throughout the entire codebase with the custom `useDialog()` hook from `@/context/dialog-context`.
+  - **Files migrated (22 total):**
+    - **Admin pages (9):** sections, subjects, teachers, students, announcements, exams, moderation, settings, page (main dashboard)
+    - **Teacher pages (5):** materials, homework, announcements, quizzes, page (main dashboard)
+    - **Student pages (2):** assessments, quizzes
+    - **UI components (2):** comments.tsx, rich-editor.tsx
+  - **Key fixes applied:**
+    - Added `const { alert, confirm } = useDialog()` hook initialization to all 22 files
+    - Updated all `alert(msg)` calls to `await alert(msg)` (now returns Promise)
+    - Updated all `if (!confirm(msg))` calls to `if (!(await confirm(msg)))` (now async)
+    - Fixed non-async callback contexts (e.g., setInterval callbacks) by wrapping alert calls in async IIFE: `(async () => { await alert(...); })();`
+    - Updated dependency arrays in useCallback hooks to include `alert`/`confirm` from useDialog
+  - **Build verification:** All 56 pages compile successfully, zero TypeScript errors.
+- **Issues/Lessons:**
+  - **Non-async callback handling:** Callbacks like `setInterval` aren't async, but calling async dialog functions inside them causes "await in non-async function" errors. Solution: wrap in IIFE `(async () => { ... })()`.
+  - **Dependency array management:** Dialog functions must be added to useCallback dependency arrays to satisfy React linting rules, even though they're stable function references.
+  - **Bilingual consistency:** All dialog messages (Arabic + English) are preserved as-is from native calls - no content changes, just the mechanism.
+  - **Promise-based dialogs require await:** Unlike native `confirm()` which returns immediately, the custom dialog returns a Promise. Every call must be awaited or the logic will execute before the user responds.
+
+
