@@ -925,6 +925,98 @@ Completed all remaining testing issues from Rounds 7, 8, and 9 on the production
 **Frontend:** Netlify (https://manakherschool.netlify.app)
 **Backend:** Railway (https://pocketbase-production-882e.up.railway.app)
 
+---
+
+## [INPROGRESS] Milestone 11: UX Architecture Implementation - Full Refactor
+
+### Overview
+Comprehensive refactoring to fix 47 documented UX violations (18 HIGH, 19 MEDIUM, 10 LOW). Current quality score: 58/100 (CRITICAL).
+
+**Implementation Plan:** See `UX_IMPLEMENTATION_PLAN.md` for detailed 5-phase roadmap (40-50 hours total).
+
+### Main Issues to Fix
+1. **State Management Crisis** - Pages with 15-23 useState calls
+   - `admin/users/page.tsx`: 23 states → target 6 states
+   - `admin/settings/page.tsx`: 19 states → target 7 states
+   - `student/assessments/page.tsx`: 18 states → target 6 states
+   - `teacher/quizzes/page.tsx`: 18 states → target 6 states
+   - Plus 5 more pages with 12-15 states each
+
+2. **Accessibility Gaps** - WCAG 2.1 violations
+   - No keyboard navigation on dropdowns
+   - Only 1 aria-label in entire codebase
+   - Missing focus management in modals
+   - Hardcoded directional CSS breaking RTL
+
+3. **Error Handling** - Single error crashes page
+   - No error boundaries
+   - Unhandled promise rejections
+   - No error recovery UI
+
+4. **Testing Infrastructure**
+   - Zero test files
+   - No Jest/React Testing Library setup
+   - No CI/CD testing
+
+5. **Performance Issues**
+   - No code splitting (all 26 pages loaded upfront)
+   - No pagination (loading 300+ students at once)
+   - 139 API calls with no deduplication
+   - Bundle size: 150KB+ (target: <60KB)
+
+### 5-Phase Implementation Plan
+
+#### **Phase 1: State Management Refactoring** (8-10 hours)
+Reduce state complexity using custom hooks already created in previous session:
+- `useCrudState.ts` - CRUD UI state (loading, errors, expanded IDs)
+- `useFormState.ts` - Form data + validation
+- `useFilterState.ts` - Search, filters, pagination
+- `useTabState.ts` - Tab navigation
+
+Priority pages:
+1. `admin/users/page.tsx` (23 → 6 states)
+2. `admin/settings/page.tsx` (19 → 7 states)
+3. `student/assessments/page.tsx` (18 → 6 states)
+4. `teacher/quizzes/page.tsx` (18 → 6 states)
+5. 5 additional heavy pages (12-15 → 6 states each)
+
+#### **Phase 2: Accessibility & Error Handling** (6-8 hours)
+- Create ErrorBoundary component, wrap all pages
+- Add keyboard navigation to dropdowns
+- Add aria-labels to 100+ interactive elements
+- Replace hardcoded directional CSS with logical properties (border-s, ms-*, ps-*, etc.)
+- Fix focus management in modals
+
+#### **Phase 3: Testing Infrastructure** (5-7 hours)
+- Setup Jest + React Testing Library
+- Write tests for all 4 custom hooks
+- Write tests for 6 critical UI components
+- Setup CI/CD to run tests on every commit
+- Target: >70% coverage for hooks, >60% for components
+
+#### **Phase 4: Component Extraction & Design System** (4-6 hours)
+- Extract reusable components: FormDialog, DataTable, FilterBar, InlineForm
+- Create TypeScript design token definitions
+- Setup Storybook for component documentation
+- Reduce code duplication by 35-40%
+
+#### **Phase 5: Performance Optimization** (4-6 hours)
+- Code splitting with dynamic imports (bundle: 150KB → <60KB)
+- Add pagination to all lists >25 items
+- Integrate React Query for API deduplication
+- Optimize images with Next.js Image component
+
+### Next Steps
+1. ✅ Created comprehensive implementation plan: `UX_IMPLEMENTATION_PLAN.md`
+2. ⏳ Ready to start Phase 1 on user approval
+3. Each phase will have detailed iteration logs with commits
+
+### References
+- **Master Plan:** `UX_IMPLEMENTATION_PLAN.md` (27-37 hours total)
+- **Audit Findings:** `UX_ARCHITECTURE_AUDIT.json` (47 violations)
+- **Implementation Guide:** `UX_FIX_IMPLEMENTATION_GUIDE.md` (hook examples)
+- **Custom Hooks:** Already created in `frontend/src/lib/hooks/`
+
 ### Next Steps
 - User to verify all Round 11 fixes are working correctly on production
 - Any remaining issues from subsequent testing rounds will be addressed in new iterations
