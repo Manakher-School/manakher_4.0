@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
-import { getPocketBase } from "@/lib/pocketbase";
+import { useSettings } from "@/context/settings-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Settings as SettingsIcon, Check, Loader2 } from "lucide-react";
@@ -11,95 +11,49 @@ import { Settings as SettingsIcon, Check, Loader2 } from "lucide-react";
 export default function SettingsPage() {
   const { dict, locale } = useLocale();
   const { alert } = useDialog();
+  const { settings, updateSettings, isLoading } = useSettings();
   const t = dict.dashboard.admin.settings;
   const common = dict.common;
 
-  // Settings state
-  const [schoolNameAr, setSchoolNameAr] = useState("مدرسة مناخر الاساسية المؤنثة");
-  const [schoolNameEn, setSchoolNameEn] = useState("Manakher Basic Girls' School");
+  // Local form state
+  const [schoolNameAr, setSchoolNameAr] = useState("");
+  const [schoolNameEn, setSchoolNameEn] = useState("");
   const [enableComments, setEnableComments] = useState(true);
   const [enableReactions, setEnableReactions] = useState(true);
   const [enableQuizzes, setEnableQuizzes] = useState(true);
-  
+
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
 
-  // Load settings from PocketBase on mount
+  // Initialize form with settings when they load
   useEffect(() => {
-    loadSettings();
-  }, []);
-
-  async function loadSettings() {
-    try {
-      const pb = getPocketBase();
-      const records = await pb.collection("platform_settings").getFullList();
-      
-      records.forEach(record => {
-        if (record.key === "school_info" && record.value) {
-          setSchoolNameAr(record.value.schoolNameAr || "مدرسة مناخر الاساسية المؤنثة");
-          setSchoolNameEn(record.value.schoolNameEn || "Manakher Basic Girls' School");
-          setEnableComments(record.value.enableComments !== false);
-          setEnableReactions(record.value.enableReactions !== false);
-          setEnableQuizzes(record.value.enableQuizzes !== false);
-        }
-      });
-    } catch (e) {
-      console.error("Failed to load settings:", e);
-      // Fallback to defaults
-    } finally {
-      setLoading(false);
-    }
-  }
+    setSchoolNameAr(settings.schoolNameAr);
+    setSchoolNameEn(settings.schoolNameEn);
+    setEnableComments(settings.enableComments);
+    setEnableReactions(settings.enableReactions);
+    setEnableQuizzes(settings.enableQuizzes);
+  }, [settings]);
 
   async function saveSettings() {
     setSaving(true);
-    
     try {
-      const pb = getPocketBase();
-      const settingsData = {
+      await updateSettings({
         schoolNameAr,
         schoolNameEn,
         enableComments,
         enableReactions,
         enableQuizzes,
-      };
-
-      // Try to update existing record
-      try {
-        const records = await pb.collection("platform_settings").getFullList({
-          filter: `key = "school_info"`,
-        });
-        
-        if (records.length > 0) {
-          // Update existing
-          await pb.collection("platform_settings").update(records[0].id, {
-            value: settingsData,
-          });
-        } else {
-          // Create new
-          await pb.collection("platform_settings").create({
-            key: "school_info",
-            value: settingsData,
-          });
-        }
-      } catch (e) {
-        // If no records found, create new
-        await pb.collection("platform_settings").create({
-          key: "school_info",
-          value: settingsData,
-        });
-      }
+      });
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-     } catch (e) {
-       console.error("Failed to save settings:", e);
-       await alert("Failed to save settings. Please try again.");
-     } finally {
-       setSaving(false);
-     }
-   }
+    } catch (e) {
+      console.error("Failed to save settings:", e);
+      await alert("Failed to save settings. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -111,7 +65,7 @@ export default function SettingsPage() {
         <p className="text-sm text-[var(--color-ink-secondary)] mt-1">{t.subtitle}</p>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" />
         </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
+import { useSettings } from "@/context/settings-context";
 import { StatCard } from "@/components/ui/stat-card";
 import { getDisplayName } from "@/lib/auth";
 import { Users, Layers, GraduationCap, BookOpen, Bell, Plus, Pencil, Trash2, X } from "lucide-react";
@@ -17,6 +18,7 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
   const { alert, confirm } = useDialog();
+  const { settings } = useSettings();
   const t = dict.dashboard.admin;
   const displayName = user ? getDisplayName(user, locale) : "";
 
@@ -151,7 +153,7 @@ export default function AdminDashboard() {
             {t.title}
           </h2>
           <p className="text-violet-200 text-xs mt-2 font-medium opacity-80">
-            {dict.common.schoolName}
+            {locale === "ar" ? settings.schoolNameAr : settings.schoolNameEn}
           </p>
         </div>
       </div>

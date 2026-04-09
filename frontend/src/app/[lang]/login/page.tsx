@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
+import { useSettings } from "@/context/settings-context";
 import { getRoleDashboardPath } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
   const { dict, locale, switchLocale } = useLocale();
+  const { settings } = useSettings();
   const router = useRouter();
 
   async function handleSubmit(e: FormEvent) {
@@ -158,7 +160,7 @@ export default function LoginPage() {
 
           {/* Footer note */}
           <p className="mt-5 text-center text-xs text-[var(--color-ink-disabled)] font-medium">
-            {dict.common.schoolName}
+            {locale === "ar" ? settings.schoolNameAr : settings.schoolNameEn}
           </p>
         </div>
       </div>

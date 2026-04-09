@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
+import { useSettings } from "@/context/settings-context";
 import { StatCard } from "@/components/ui/stat-card";
 import { getDisplayName } from "@/lib/auth";
 import { getPocketBase } from "@/lib/pocketbase";
@@ -16,6 +17,7 @@ export default function TeacherDashboard() {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
   const { confirm } = useDialog();
+  const { settings } = useSettings();
   const t = dict.dashboard.teacher;
   const displayName = user ? getDisplayName(user, locale) : "";
 
@@ -164,7 +166,7 @@ export default function TeacherDashboard() {
             {t.title}
           </h2>
           <p className="text-teal-100 text-xs mt-2 font-medium opacity-80">
-            {dict.common.schoolName}
+            {locale === "ar" ? settings.schoolNameAr : settings.schoolNameEn}
           </p>
         </div>
       </div>

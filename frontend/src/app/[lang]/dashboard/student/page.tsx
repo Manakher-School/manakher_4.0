@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
+import { useSettings } from "@/context/settings-context";
 import { StatCard } from "@/components/ui/stat-card";
 import { getDisplayName } from "@/lib/auth";
 import { getPocketBase } from "@/lib/pocketbase";
@@ -11,6 +12,7 @@ import { BookOpen, FileText, Send, Bell, ClipboardList } from "lucide-react";
 export default function StudentDashboard() {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
+  const { settings } = useSettings();
   const t = dict.dashboard.student;
   const displayName = user ? getDisplayName(user, locale) : "";
 
@@ -97,7 +99,7 @@ export default function StudentDashboard() {
             {t.title}
           </h2>
           <p className="text-orange-100 text-xs mt-2 font-medium opacity-80">
-            {dict.common.schoolName}
+            {locale === "ar" ? settings.schoolNameAr : settings.schoolNameEn}
           </p>
         </div>
       </div>

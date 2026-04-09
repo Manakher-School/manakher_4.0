@@ -50,6 +50,21 @@ export function DialogProvider({ children }: { children: ReactNode }) {
     okVariant: "primary",
   });
 
+  const handleConfirmOk = useCallback(() => {
+    confirmState.resolve?.(true);
+    setConfirmState((prev) => ({ ...prev, isOpen: false }));
+  }, [confirmState]);
+
+  const handleConfirmCancel = useCallback(() => {
+    confirmState.resolve?.(false);
+    setConfirmState((prev) => ({ ...prev, isOpen: false }));
+  }, [confirmState]);
+
+  const handleAlertClose = useCallback(() => {
+    alertState.onClose?.();
+    setAlertState((prev) => ({ ...prev, isOpen: false }));
+  }, [alertState]);
+
   const alert = useCallback(
     (message: string, options: AlertOptions = {}): Promise<void> => {
       return new Promise((resolve) => {
@@ -58,7 +73,6 @@ export function DialogProvider({ children }: { children: ReactNode }) {
           message,
           title: options.title,
           onClose: () => {
-            setAlertState((prev) => ({ ...prev, isOpen: false }));
             options.onClose?.();
             resolve();
           },
@@ -92,12 +106,12 @@ export function DialogProvider({ children }: { children: ReactNode }) {
       {/* Alert Dialog */}
       <Dialog
         isOpen={alertState.isOpen}
-        onClose={alertState.onClose || (() => {})}
+        onClose={handleAlertClose}
         title={alertState.title || "Alert"}
         actions={[
           {
             label: "OK",
-            onClick: () => alertState.onClose?.(),
+            onClick: handleAlertClose,
             variant: "primary",
           },
         ]}
@@ -110,26 +124,17 @@ export function DialogProvider({ children }: { children: ReactNode }) {
       {/* Confirm Dialog */}
       <Dialog
         isOpen={confirmState.isOpen}
-        onClose={() => {
-          setConfirmState((prev) => ({ ...prev, isOpen: false }));
-          confirmState.resolve?.(false);
-        }}
+        onClose={handleConfirmCancel}
         title={confirmState.title || "Confirm"}
         actions={[
           {
             label: confirmState.cancelLabel,
-            onClick: () => {
-              setConfirmState((prev) => ({ ...prev, isOpen: false }));
-              confirmState.resolve?.(false);
-            },
+            onClick: handleConfirmCancel,
             variant: "ghost",
           },
           {
             label: confirmState.okLabel,
-            onClick: () => {
-              setConfirmState((prev) => ({ ...prev, isOpen: false }));
-              confirmState.resolve?.(true);
-            },
+            onClick: handleConfirmOk,
             variant: confirmState.okVariant,
           },
         ]}

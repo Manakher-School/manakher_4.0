@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
+import { useSettings } from "@/context/settings-context";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { getRoleDashboardPath, getDisplayName } from "@/lib/auth";
@@ -17,6 +18,7 @@ const roleHeaderAccent: Record<string, string> = {
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, isLoading, logout } = useAuth();
   const { dict, locale, switchLocale } = useLocale();
+  const { settings } = useSettings();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -72,7 +74,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 {dict.common.appName}
               </span>
               <span className="hidden sm:block text-[11px] text-[var(--color-ink-secondary)] font-medium truncate">
-                {dict.common.schoolName}
+                {locale === "ar" ? settings.schoolNameAr : settings.schoolNameEn}
               </span>
             </div>
             <Badge variant={role}>{dict.roles[role]}</Badge>
@@ -113,7 +115,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <footer className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-card)] py-3">
         <p className="text-center text-xs text-[var(--color-ink-disabled)] font-medium">
-          {dict.common.schoolName}
+          {locale === "ar" ? settings.schoolNameAr : settings.schoolNameEn}
         </p>
       </footer>
     </div>
