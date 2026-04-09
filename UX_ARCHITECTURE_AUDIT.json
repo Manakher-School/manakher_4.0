@@ -1,0 +1,473 @@
+{
+  "summary": {
+    "totalViolations": 47,
+    "highPriority": 18,
+    "mediumPriority": 19,
+    "lowPriority": 10,
+    "overallScore": "58/100"
+  },
+  "findings": [
+    {
+      "id": "COMP-001",
+      "severity": "HIGH",
+      "category": "Component Architecture",
+      "title": "Extreme State Complexity in Admin Users Page",
+      "description": "admin/users/page.tsx has 23 useState calls across 787 lines of code. This creates a cognitive overload and makes the component difficult to maintain, test, and debug. The page manages two separate tabs (teachers and students) with duplicate state management for each.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx:154-177"],
+      "recommendation": "Refactor using provided custom hooks: useCrudState, useFormState, useFilterState. Create separate hooks for teacher and student state management. Target: reduce to 5-6 useState calls.",
+      "whyItMatters": "High state complexity increases bug risk, makes refactoring difficult, and slows down feature development. Hard to test. Performance suffers from unnecessary re-renders."
+    },
+    {
+      "id": "COMP-002",
+      "severity": "HIGH",
+      "category": "Component Architecture",
+      "title": "Extreme State Complexity in Admin Settings Page",
+      "description": "admin/settings/page.tsx has 19 useState calls across 701 lines, consolidating 3 separate admin features (platform settings, content moderation, system monitoring) into one mega-component. This violates separation of concerns.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/settings/page.tsx:97-120"],
+      "recommendation": "Split into 3 separate pages or create a page wrapper component with lazy-loaded accordion content. Use useSettings() hook for platform settings, create useModeration() and useMonitoring() hooks.",
+      "whyItMatters": "Mega-components are unmaintainable, hard to test, and cause performance issues. Violates single responsibility principle. Makes it difficult to add new admin features."
+    },
+    {
+      "id": "COMP-003",
+      "severity": "HIGH",
+      "category": "Component Architecture",
+      "title": "Duplicated Dropdown Component Logic",
+      "description": "MultiSelect and SingleSelect dropdown components are defined inline in admin/users/page.tsx (lines 52-147) instead of being reusable UI components in /components/ui/. This code duplication violates DRY principle.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx:52-147"],
+      "recommendation": "Extract MultiSelect and SingleSelect to /components/ui/ as reusable components. Add proper TypeScript interfaces. Use across all pages that need multi-select or single-select dropdowns.",
+      "whyItMatters": "Duplication makes maintenance harder. Bug fixes must be applied in multiple places. Increases bundle size. Makes testing inconsistent."
+    },
+    {
+      "id": "ACC-001",
+      "severity": "HIGH",
+      "category": "Accessibility (WCAG 2.1)",
+      "title": "Missing Keyboard Navigation on Dropdown Components",
+      "description": "Custom MultiSelect and SingleSelect dropdown components don't support keyboard navigation (arrow keys, Enter, Escape). Users cannot navigate or interact with these critical form elements using keyboard only.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx:52-147"],
+      "recommendation": "Implement keyboard event handlers: Arrow Up/Down for navigation, Enter to select, Escape to close. Set tabIndex appropriately. Test with screen readers.",
+      "whyItMatters": "WCAG 2.1 Level A violation. Excludes users with motor disabilities. Critical for accessibility compliance. Required by law in many jurisdictions."
+    },
+    {
+      "id": "ACC-002",
+      "severity": "HIGH",
+      "category": "Accessibility (WCAG 2.1)",
+      "title": "Minimal ARIA Attributes in Entire Codebase",
+      "description": "Only 1 aria-label found in entire codebase (dialog close button). Missing: aria-labels on dropdowns, aria-expanded, aria-controls, aria-live regions for dynamic content, role attributes on custom components.",
+      "files": ["/frontend/src/components/ui/dialog.tsx:1"],
+      "recommendation": "Add ARIA attributes to all interactive elements: buttons, forms, dropdowns, modals. Use aria-label for icon-only buttons, aria-expanded for toggles, aria-live for notifications. Run automated accessibility testing.",
+      "whyItMatters": "WCAG 2.1 Level A violation. Screen reader users cannot understand component purpose or state. Makes app unusable for blind/visually impaired users."
+    },
+    {
+      "id": "ACC-003",
+      "severity": "HIGH",
+      "category": "Accessibility (WCAG 2.1)",
+      "title": "No Semantic HTML Structure in Custom Dropdowns",
+      "description": "MultiSelect and SingleSelect use <div>, <button>, and <input> without semantic structure. Should use <select>, <option>, or ARIA combobox pattern. Current implementation breaks native accessibility features.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx:52-97"],
+      "recommendation": "Use native <select> with optgroup for grouped options, or implement ARIA combobox pattern with proper role, aria-expanded, aria-controls attributes.",
+      "whyItMatters": "Screen readers cannot announce available options. Users miss context about what element is for. Violates WCAG 2.1 criterion 4.1.2 (Name, Role, Value)."
+    },
+    {
+      "id": "ACC-004",
+      "severity": "MEDIUM",
+      "category": "Accessibility (WCAG 2.1)",
+      "title": "Missing Form Label Associations",
+      "description": "Input components and form fields don't have proper <label> associations. Input labels are rendered but not connected to inputs via htmlFor attribute.",
+      "files": ["/frontend/src/components/ui/input.tsx", "/frontend/src/app/[lang]/dashboard/admin/users/page.tsx"],
+      "recommendation": "Add htmlFor={id} to all labels, generate unique IDs for form inputs. Test with screen readers to ensure labels are announced.",
+      "whyItMatters": "WCAG 2.1 Level A violation. Screen reader users can't understand what each input is for. Reduces usability for all users."
+    },
+    {
+      "id": "ACC-005",
+      "severity": "MEDIUM",
+      "category": "Accessibility (WCAG 2.1)",
+      "title": "Focus Management Issues in Modals and Forms",
+      "description": "Dialog and form components don't manage focus: no initial focus on open, no focus trap in modals, no focus restoration after close. Users can tab to off-screen elements.",
+      "files": ["/frontend/src/components/ui/dialog.tsx"],
+      "recommendation": "Implement focus trap using useRef and useEffect. Auto-focus first input on dialog open. Restore focus to trigger element on close. Use aria-modal on dialog.",
+      "whyItMatters": "WCAG 2.1 Level A violation. Users with keyboard navigation lose context when focus disappears. Confusing UX even for mouse users."
+    },
+    {
+      "id": "ACC-006",
+      "severity": "MEDIUM",
+      "category": "Accessibility (WCAG 2.1)",
+      "title": "No Color Contrast Validation",
+      "description": "Design system uses text-xs (12px) with secondary ink color (#6b6460) on light background. Contrast ratio may not meet WCAG AA standards (4.5:1 for normal text, 3:1 for large text).",
+      "files": ["/frontend/src/app/globals.css:21", "/frontend/src/app/[lang]/dashboard/teacher/sections/page.tsx"],
+      "recommendation": "Run automated contrast testing with tools like WebAIM Contrast Checker. Ensure all text meets minimum 4.5:1 ratio. Increase font size for secondary text or darken color.",
+      "whyItMatters": "WCAG 2.1 Level AA violation. Users with low vision or color blindness can't read content. Legal liability in many jurisdictions."
+    },
+    {
+      "id": "PERF-001",
+      "severity": "HIGH",
+      "category": "Performance",
+      "title": "No Error Boundaries Implemented",
+      "description": "Codebase has zero error boundaries. If any component throws an error, entire page crashes. No graceful error handling or recovery.",
+      "files": ["All pages in /frontend/src/app/[lang]/dashboard"],
+      "recommendation": "Create error boundary component in /components/ui/. Wrap each role dashboard (admin, teacher, student) with error boundary. Add error UI with recovery options.",
+      "whyItMatters": "Production app crashes from minor component errors. Users lose all unsaved work. Bad UX and reputation damage."
+    },
+    {
+      "id": "PERF-002",
+      "severity": "HIGH",
+      "category": "Performance",
+      "title": "No Lazy Loading or Code Splitting",
+      "description": "No dynamic imports, no React.lazy, no Next.js route-based code splitting. All 27 page components loaded at once. No lazy loading of UI components.",
+      "files": ["All pages in /frontend/src/app/[lang]/dashboard"],
+      "recommendation": "Use React.lazy() for heavy components (RichEditor, Charts). Use Next.js dynamic imports for admin/moderation, admin/monitoring. Implement route-based code splitting.",
+      "whyItMatters": "Initial bundle load is unnecessarily large. Users wait longer for first paint. Performance suffers on slow networks. Core Web Vitals impacted."
+    },
+    {
+      "id": "PERF-003",
+      "severity": "HIGH",
+      "category": "Performance",
+      "title": "No Render Optimization in List Components",
+      "description": "List components that render 100+ items have no useMemo or useCallback optimization. Teachers/students/materials lists re-render on every parent update. 139 getFullList/getList calls without pagination.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx", "/frontend/src/app/[lang]/dashboard/teacher/materials/page.tsx"],
+      "recommendation": "Use useMemo for list filtering/sorting. useCallback for event handlers. Implement pagination for lists >50 items. Add React.memo to list item components.",
+      "whyItMatters": "Unnecessary re-renders cause jank/lag. Users notice slow interactions. Mobile performance severely impacted. Battery drain on devices."
+    },
+    {
+      "id": "PERF-004",
+      "severity": "MEDIUM",
+      "category": "Performance",
+      "title": "Debug Console.error Statements in Production Code",
+      "description": "Multiple console.error statements remain in production code (teacher/sections, materials, homework, quizzes). These should be properly logged or removed.",
+      "files": ["/frontend/src/app/[lang]/dashboard/teacher/sections/page.tsx", "/frontend/src/app/[lang]/dashboard/teacher/materials/page.tsx", "/frontend/src/app/[lang]/dashboard/teacher/quizzes/page.tsx"],
+      "recommendation": "Replace console.error with proper error handling using dialog context or error boundary. Or use environment-based logging for dev-only output.",
+      "whyItMatters": "Errors not properly reported to user. Makes debugging harder. Clutters browser console. Unprofessional appearance."
+    },
+    {
+      "id": "PERF-005",
+      "severity": "MEDIUM",
+      "category": "Performance",
+      "title": "Mega-Component Page Sizes",
+      "description": "Several pages exceed 700+ lines: users (787), settings (701), assessments (781), subjects_exams (699). These should be split into smaller, testable components.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx:787", "/frontend/src/app/[lang]/dashboard/admin/settings/page.tsx:701", "/frontend/src/app/[lang]/dashboard/student/assessments/page.tsx:781"],
+      "recommendation": "Extract sub-components to separate files. Use compound components pattern. Break into smaller, focused components. Target: 200-300 lines per page.",
+      "whyItMatters": "Harder to maintain, harder to test, harder to understand. Performance suffers. Onboarding new developers takes longer."
+    },
+    {
+      "id": "STATE-001",
+      "severity": "HIGH",
+      "category": "State Management",
+      "title": "Prop Drilling Through Multiple Levels",
+      "description": "Multi-level component hierarchies pass props down through many levels instead of using context. Makes refactoring dangerous and prop changes affect many files.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx", "/frontend/src/app/[lang]/dashboard/teacher/quizzes/page.tsx"],
+      "recommendation": "Create domain-specific context providers: TeachersContext, StudentsContext, QuizzesContext. Move local state to context, avoid prop drilling.",
+      "whyItMatters": "Adding new props requires changing intermediate components. Violates separation of concerns. Makes codebase fragile."
+    },
+    {
+      "id": "STATE-002",
+      "severity": "MEDIUM",
+      "category": "State Management",
+      "title": "No State Normalization",
+      "description": "Data structures are nested and denormalized. Teachers have full sections array, materials have expanded teacher objects. Makes updates and queries complex.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx:9-47"],
+      "recommendation": "Normalize data structures: store IDs only, use separate lookup maps. Create selectors to derive needed data. Use libraries like normalizr if needed.",
+      "whyItMatters": "Hard to update nested data. Leads to bugs when updating specific fields. Makes caching and memoization harder."
+    },
+    {
+      "id": "RTL-001",
+      "severity": "MEDIUM",
+      "category": "RTL/LTR Support",
+      "title": "Mixed Use of Logical and Physical CSS Properties",
+      "description": "Some components use logical properties (ms-, ps-, border-s) correctly, but others still use physical properties (border-l, ml-, pl-). Inconsistent RTL support across codebase.",
+      "files": ["/frontend/src/app/globals.css", "/frontend/src/app/[lang]/dashboard/admin/layout.tsx"],
+      "recommendation": "Audit all CSS properties, replace physical (l, r, left, right) with logical (s, e, inline-start, inline-end). Use consistent pattern across codebase.",
+      "whyItMatters": "RTL layouts break in Arabic mode. Creates poor UX for Arabic-speaking users. Undermines Arabic-first design principle."
+    },
+    {
+      "id": "RTL-002",
+      "severity": "MEDIUM",
+      "category": "RTL/LTR Support",
+      "title": "Custom Dropdowns Don't Account for RTL Flow",
+      "description": "MultiSelect and SingleSelect absolute positioning assumes LTR layout. Dropdown may appear off-screen or in wrong position in RTL mode.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx:75-96"],
+      "recommendation": "Use logical positioning properties or calculate position based on current dir. Test in both Arabic and English modes in desktop and mobile.",
+      "whyItMatters": "Dropdowns unusable in RTL mode. Critical UX bug for Arabic users. Violates Arabic-first design principle."
+    },
+    {
+      "id": "DESIGN-001",
+      "severity": "HIGH",
+      "category": "Design System & Styling",
+      "title": "104+ Inline Classname Strings with Hardcoded CSS Variables",
+      "description": "Pages use long inline className strings with CSS variables instead of reusable utility classes or CSS modules. Makes design system hard to maintain and enforce.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx", "/frontend/src/app/[lang]/dashboard/admin/settings/page.tsx"],
+      "recommendation": "Create reusable Tailwind utility classes or extract common patterns into CSS modules. Establish design system guidelines. Create style registry.",
+      "whyItMatters": "Design tokens can't be enforced. Visual inconsistencies emerge. Hard to make global style changes. Clutters code."
+    },
+    {
+      "id": "DESIGN-002",
+      "severity": "MEDIUM",
+      "category": "Design System & Styling",
+      "title": "Inconsistent Spacing Implementation",
+      "description": "Spacing varies: some components use px-3 py-2, others px-4 py-2.5. No consistent pattern for padding/margins. Makes layout unpredictable.",
+      "files": ["Multiple files in /frontend/src/app/[lang]/dashboard"],
+      "recommendation": "Define spacing scale in design system: xs (8px), sm (12px), md (16px), lg (24px), xl (32px). Create utility components that enforce spacing.",
+      "whyItMatters": "Layout feels inconsistent and amateurish. Harder to maintain visual harmony. Makes responsive design harder."
+    },
+    {
+      "id": "DESIGN-003",
+      "severity": "MEDIUM",
+      "category": "Design System & Styling",
+      "title": "No Design Token Documentation or Validation",
+      "description": "Design tokens exist in globals.css but no documentation of intended usage, no TypeScript types, no validation that components follow system.",
+      "files": ["/frontend/src/app/globals.css:3-82"],
+      "recommendation": "Create design-tokens.ts with TypeScript definitions. Document each token's purpose. Create Storybook stories showing correct usage. Add linting rules.",
+      "whyItMatters": "New developers don't know how to use design system. Violations go unnoticed. Makes design system effectively invisible."
+    },
+    {
+      "id": "TYPES-001",
+      "severity": "MEDIUM",
+      "category": "TypeScript & Code Quality",
+      "title": "34 'any' Type Usages Indicating Type Safety Issues",
+      "description": "Multiple 'any' types in components, particularly in settings page for expanded data objects. Reduces type safety and defeats purpose of TypeScript.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/settings/page.tsx:22"],
+      "recommendation": "Define proper interfaces for all data structures. Use strict TypeScript settings. Replace any with specific types. Use discriminated unions for expand data.",
+      "whyItMatters": "Type safety is lost. IDE autocomplete doesn't work. Bugs not caught at compile time. Harder to maintain."
+    },
+    {
+      "id": "TYPES-002",
+      "severity": "LOW",
+      "category": "TypeScript & Code Quality",
+      "title": "Missing Type Exports from Utility Modules",
+      "description": "Types defined in pages are not exported from /lib/ modules. Duplicate type definitions across components. Makes type sharing hard.",
+      "files": ["Multiple page files"],
+      "recommendation": "Create /lib/types.ts with all shared types. Export from barrel index. Import where needed. Use 'as const' for immutable types.",
+      "whyItMatters": "Code duplication. Type inconsistencies. Single source of truth violated."
+    },
+    {
+      "id": "ORG-001",
+      "severity": "MEDIUM",
+      "category": "Code Organization",
+      "title": "Custom Hooks Defined but Not Adopted in All Pages",
+      "description": "Custom hooks exist in /lib/hooks/ (useCrudState, useFormState, useFilterState, useTabState) but many pages still use 10+ individual useState calls instead.",
+      "files": ["/frontend/src/lib/hooks/", "/frontend/src/app/[lang]/dashboard/admin/users/page.tsx"],
+      "recommendation": "Migrate old pages to use custom hooks. Update documentation on when to use each hook. Add hook usage examples to Storybook.",
+      "whyItMatters": "Inconsistent patterns across codebase. New developers don't know about hooks. Code is harder to test and maintain."
+    },
+    {
+      "id": "ORG-002",
+      "severity": "LOW",
+      "category": "Code Organization",
+      "title": "No Barrel Exports for UI Components",
+      "description": "UI components in /components/ui/ don't have barrel export (index.ts). Each import requires full path. Makes refactoring harder.",
+      "files": ["/frontend/src/components/ui/"],
+      "recommendation": "Create index.ts that exports all UI components. Update imports to use @/components/ui. Makes refactoring easier.",
+      "whyItMatters": "Harder to move files. More verbose imports. Inconsistent import patterns."
+    },
+    {
+      "id": "ROUTE-001",
+      "severity": "MEDIUM",
+      "category": "Routing & Navigation",
+      "title": "No Route-Level Error Handling",
+      "description": "No error.tsx or not-found.tsx at route levels. 404 errors and route failures aren't handled gracefully.",
+      "files": ["All route groups"],
+      "recommendation": "Create error.tsx and not-found.tsx in key route segments. Implement Next.js 13+ error handling. Provide recovery options.",
+      "whyItMatters": "Users see blank pages or confusing errors. Bad UX. Makes debugging harder."
+    },
+    {
+      "id": "ROUTE-002",
+      "severity": "LOW",
+      "category": "Routing & Navigation",
+      "title": "No Loading States for Slow Routes",
+      "description": "No loading.tsx components at route levels. Data-heavy pages like admin/settings may take time to load but no feedback to user.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/"],
+      "recommendation": "Create loading.tsx with skeleton screens. Use Suspense boundaries. Implement streaming for large data loads.",
+      "whyItMatters": "Users don't know if page is loading or frozen. Reduces perceived performance."
+    },
+    {
+      "id": "DATA-001",
+      "severity": "HIGH",
+      "category": "Data Fetching Patterns",
+      "title": "All Data Fetching in useEffect Without Cleanup",
+      "description": "139+ getFullList/getList calls in useEffect hooks. No AbortController for request cleanup. Can cause memory leaks and race conditions.",
+      "files": ["All page components"],
+      "recommendation": "Implement proper cleanup in useEffect return. Use AbortController to cancel in-flight requests on unmount. Consider React Query or SWR.",
+      "whyItMatters": "Memory leaks accumulate over time. Race conditions can cause stale data bugs. Users on slow networks experience issues."
+    },
+    {
+      "id": "DATA-002",
+      "severity": "HIGH",
+      "category": "Data Fetching Patterns",
+      "title": "No Caching or Deduplication of API Calls",
+      "description": "Same data fetched multiple times across pages. No caching layer. Users make redundant API calls causing server load and slow UX.",
+      "files": ["All pages with materials, homework, sections"],
+      "recommendation": "Use React Query, SWR, or create custom caching layer. Cache user sections, subjects. Dedup simultaneous requests.",
+      "whyItMatters": "Unnecessary server load. Slower app performance. Poor UX on slow networks. Increased bandwidth costs."
+    },
+    {
+      "id": "DATA-003",
+      "severity": "MEDIUM",
+      "category": "Data Fetching Patterns",
+      "title": "No Pagination for Large Lists",
+      "description": "getFullList calls fetch all records without pagination. Admin pages with 100+ teachers, 300+ students load all at once.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx"],
+      "recommendation": "Implement pagination with page numbers and limit. Add virtual scrolling for lists >1000 items. Show loading states.",
+      "whyItMatters": "Large data loads are slow. Memory usage high. UI becomes sluggish. Bad mobile performance."
+    },
+    {
+      "id": "SEC-001",
+      "severity": "MEDIUM",
+      "category": "Security Considerations",
+      "title": "Direct Data Access Without Validation",
+      "description": "Code assumes PocketBase API rules are enforced. No client-side validation that user has permission to access data.",
+      "files": ["All page components"],
+      "recommendation": "Add client-side permission checks before rendering. Validate user role matches expected data. Handle 403 responses.",
+      "whyItMatters": "If API rules are misconfigured, users see data they shouldn't. Bad UX when permissions fail. Security liability."
+    },
+    {
+      "id": "SEC-002",
+      "severity": "LOW",
+      "category": "Security Considerations",
+      "title": "No Input Sanitization in Forms",
+      "description": "Form inputs go directly into API calls without sanitization. Rich editor uses DOMPurify but other inputs don't.",
+      "files": ["Form components in all pages"],
+      "recommendation": "Sanitize all user inputs. Use validation libraries. Escape HTML in display contexts. Add Content Security Policy headers.",
+      "whyItMatters": "Potential XSS attacks if data is displayed unsanitized. Malicious users could inject scripts."
+    },
+    {
+      "id": "TEST-001",
+      "severity": "HIGH",
+      "category": "Testing Infrastructure",
+      "title": "No Testing Infrastructure or Test Files",
+      "description": "Zero test files found. No Jest config, no React Testing Library setup. No unit, integration, or E2E tests.",
+      "files": ["All source files"],
+      "recommendation": "Set up Jest + React Testing Library. Write unit tests for hooks and components. Add E2E tests with Playwright. Target >70% coverage.",
+      "whyItMatters": "No safety net for refactoring. Bugs found in production. Harder to maintain. Slower development velocity."
+    },
+    {
+      "id": "TEST-002",
+      "severity": "MEDIUM",
+      "category": "Testing Infrastructure",
+      "title": "No Storybook or Component Documentation",
+      "description": "No Storybook setup. UI components not documented or showcased. No design system reference. New developers don't know what components exist.",
+      "files": ["/frontend/src/components/ui/"],
+      "recommendation": "Set up Storybook. Create stories for each UI component. Show variants and states. Add accessibility tests.",
+      "whyItMatters": "Developers don't know what components are available. Lead to duplication. Inconsistent UI usage."
+    },
+    {
+      "id": "ARCH-001",
+      "severity": "MEDIUM",
+      "category": "Architecture & Patterns",
+      "title": "No Separation Between Admin/Teacher/Student Feature Contexts",
+      "description": "No separate contexts for admin, teacher, student feature states. All use same generic contexts. Makes adding role-specific features harder.",
+      "files": ["/frontend/src/context/"],
+      "recommendation": "Create role-specific contexts: AdminContext, TeacherContext, StudentContext. Share common functionality through utility functions.",
+      "whyItMatters": "Harder to add role-specific features. State management becomes complex. Makes codebase less maintainable."
+    },
+    {
+      "id": "ARCH-002",
+      "severity": "MEDIUM",
+      "category": "Architecture & Patterns",
+      "title": "No Query Parameter Handling for Filtering/Sorting",
+      "description": "List pages don't use query parameters for filters, sorting, pagination. Refreshing page loses filter state. Can't share filtered views via URL.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx"],
+      "recommendation": "Sync filters, sort, pagination to URL query params. Use next/router to read params on mount. Implement with useQueryState or similar.",
+      "whyItMatters": "Can't share specific views. Refresh loses state. URL doesn't reflect page content. Bad for bookmarking and sharing."
+    },
+    {
+      "id": "PLAN-001",
+      "severity": "HIGH",
+      "category": "Deviation from UX Plan",
+      "title": "Components.md Plan Not Fully Implemented",
+      "description": "UX plan (components.md) defines best practices and recommendations but many pages still violate them. Pages with 18+ states still exist, custom hooks not adopted universally.",
+      "files": ["/ux_plan/components.md"],
+      "recommendation": "Use components.md as migration guide. Systematically refactor pages to meet recommendations. Add CI/CD linting to enforce state limits.",
+      "whyItMatters": "Planned architecture not realized. Technical debt accumulates. Defeats purpose of planning phase."
+    },
+    {
+      "id": "PLAN-002",
+      "severity": "MEDIUM",
+      "category": "Deviation from UX Plan",
+      "title": "Routing.md Plan Followed But Admin Routes Too Many",
+      "description": "Routing plan defines admin routes but admin has 11+ routes when plan suggested consolidation. Some routes should be nested.",
+      "files": ["/ux_plan/routing.md", "/frontend/src/app/[lang]/dashboard/admin/"],
+      "recommendation": "Consolidate admin routes: create /dashboard/admin/academic (sections+subjects), /dashboard/admin/content (moderation+monitoring+settings), /dashboard/admin/users (teachers+students).",
+      "whyItMatters": "Too many routes make navigation confusing. URL structure doesn't reflect feature relationships."
+    },
+    {
+      "id": "I18N-001",
+      "severity": "LOW",
+      "category": "Internationalization",
+      "title": "Missing Bilingual Date/Time Formatting",
+      "description": "Dates and times displayed using default locale. Not formatted according to Arabic/English preferences. Time zones not considered.",
+      "files": ["All pages with date display"],
+      "recommendation": "Use date-fns or Intl API with locale formatting. Show dates in Arabic format for Arabic locale, English format for English.",
+      "whyItMatters": "Dates confusing to users. 12-hour vs 24-hour format not respected. Minor i18n issue."
+    },
+    {
+      "id": "I18N-002",
+      "severity": "LOW",
+      "category": "Internationalization",
+      "title": "No Pluralization Support",
+      "description": "Stats show 'X materials' without pluralization handling. Arabic needs complex pluralization rules.",
+      "files": ["All overview pages"],
+      "recommendation": "Use i18next or similar for pluralization. Define plural rules for Arabic. Use formatList for multiple items.",
+      "whyItMatters": "Grammatically incorrect in Arabic. Minor i18n issue but affects quality perception."
+    },
+    {
+      "id": "MOBILE-001",
+      "severity": "MEDIUM",
+      "category": "Mobile UX",
+      "title": "No Touch-Optimized Tap Targets",
+      "description": "Touch targets sometimes <44px per WCAG. Custom dropdown buttons are small. Icon buttons may be hard to tap on mobile.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/users/page.tsx:80"],
+      "recommendation": "Ensure all interactive elements are 44px minimum (iOS) or 48px (Android). Add padding around small buttons. Test on actual mobile devices.",
+      "whyItMatters": "Hard to use on mobile. Frustrating UX. Accessibility issue. Reduces mobile engagement."
+    },
+    {
+      "id": "MOBILE-002",
+      "severity": "LOW",
+      "category": "Mobile UX",
+      "title": "No Mobile-Specific Navigation Optimization",
+      "description": "Sidebar navigation good but mobile tab bar has 5 items. Bottom tab bar may have overflow issues on small screens.",
+      "files": ["/frontend/src/app/[lang]/dashboard/admin/layout.tsx"],
+      "recommendation": "Test navigation on various mobile widths. Consider hamburger menu for smaller screens. Use fixed bottom tab only for main items.",
+      "whyItMatters": "Mobile UX could be better. Navigation might be cluttered on small phones."
+    },
+    {
+      "id": "PERF-006",
+      "severity": "MEDIUM",
+      "category": "Performance",
+      "title": "No Image Optimization or Lazy Loading",
+      "description": "Public assets (logo.webp) exist but no Next.js Image component used. No responsive image sizes. No WebP format with fallbacks.",
+      "files": ["/frontend/public/", "All pages using images"],
+      "recommendation": "Use next/image for all images. Set sizes prop for responsive images. Use WebP with fallback. Add loading='lazy' for below-fold images.",
+      "whyItMatters": "Images not optimized for different screen sizes. Mobile bundle too large. Page load slower."
+    },
+    {
+      "id": "PERF-007",
+      "severity": "LOW",
+      "category": "Performance",
+      "title": "No Environment-Based Logging Configuration",
+      "description": "console.error statements visible in all environments. No log level configuration.",
+      "files": ["Multiple page files"],
+      "recommendation": "Create logging utility with environment-based levels. Use dev-only logging. Consider error tracking service.",
+      "whyItMatters": "Production console polluted. Hard to distinguish real errors from dev logs."
+    }
+  ],
+  "suggestions": [
+    "Implement comprehensive error boundaries for production stability",
+    "Adopt custom hooks universally across all pages - start with Priority 1 pages (users, settings)",
+    "Extract MultiSelect/SingleSelect to reusable components with full keyboard and ARIA support",
+    "Create barrel exports for UI components to simplify imports",
+    "Set up Jest + React Testing Library with >70% coverage target",
+    "Implement React Query or SWR for data fetching, caching, and deduplication",
+    "Add Storybook for component documentation and accessibility testing",
+    "Audit and fix all WCAG 2.1 Level A violations (aria labels, keyboard nav, focus management)",
+    "Create design system documentation with TypeScript types for all tokens",
+    "Migrate all pages from 'any' types to strict TypeScript",
+    "Add route-level error.tsx and loading.tsx for graceful error handling",
+    "Implement query parameter syncing for filters and pagination",
+    "Set up automated accessibility testing in CI/CD pipeline",
+    "Consolidate admin routes from 11 to 5-7 logical groupings",
+    "Add AbortController cleanup to all useEffect data fetching",
+    "Implement pagination and virtual scrolling for large lists (>50 items)",
+    "Replace physical CSS properties with logical ones (l→s, r→e) for full RTL support",
+    "Create role-specific context providers (AdminContext, TeacherContext, StudentContext)",
+    "Add Next.js Image optimization for all images",
+    "Set up Playwright E2E tests for critical user journeys (login, create material, submit homework)"
+  ]
+}
