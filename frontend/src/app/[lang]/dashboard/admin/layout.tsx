@@ -22,7 +22,6 @@ interface NavItem {
 interface SettingsSubItem {
   key: SettingsSubKey;
   href: string;
-  label: string;
 }
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -40,9 +39,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   ];
 
   const settingsSubItems: SettingsSubItem[] = [
-    { key: "moderation",  href: `/${locale}/dashboard/admin/moderation`,  label: "Content Moderation" },
-    { key: "monitoring",  href: `/${locale}/dashboard/admin/monitoring`,  label: "System Monitoring" },
-    { key: "settings",    href: `/${locale}/dashboard/admin/settings`,    label: "Platform Settings" },
+    { key: "moderation",  href: `/${locale}/dashboard/admin/moderation` },
+    { key: "monitoring",  href: `/${locale}/dashboard/admin/monitoring` },
+    { key: "settings",    href: `/${locale}/dashboard/admin/settings` },
   ];
 
   return (
@@ -68,24 +67,24 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                   <ChevronDown className={`h-4 w-4 transition-transform ${settingsOpen ? "rotate-180" : ""}`} />
                 </button>
                 {settingsOpen && (
-                  <div className="ml-3 mt-1 flex flex-col gap-1 border-l border-[var(--color-border)] pl-3">
+                  <div className="ms-3 mt-1 flex flex-col gap-1 border-s border-[var(--color-border)] ps-3">
                     {settingsSubItems.map((item) => {
-                      const isActive = pathname.startsWith(item.href);
-                      return (
-                        <Link
-                          key={item.key}
-                          href={item.href}
-                          className={[
-                            "flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-xs font-medium transition-colors",
-                            isActive
-                              ? "bg-[var(--color-role-admin-bg)] text-[var(--color-role-admin-text)]"
-                              : "text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]",
-                          ].join(" ")}
-                        >
-                          {item.label}
-                        </Link>
-                      );
-                    })}
+                       const isActive = pathname.startsWith(item.href);
+                       return (
+                         <Link
+                           key={item.key}
+                           href={item.href}
+                           className={[
+                             "flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-xs font-medium transition-colors",
+                             isActive
+                               ? "bg-[var(--color-role-admin-bg)] text-[var(--color-role-admin-text)]"
+                               : "text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]",
+                           ].join(" ")}
+                         >
+                           {t[item.key]}
+                         </Link>
+                       );
+                     })}
                   </div>
                 )}
               </div>

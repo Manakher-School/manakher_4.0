@@ -66,7 +66,9 @@
              "classes": "الفصول والشعب",
              "subjects_exams": "المواد والامتحانات",
              "users": "المستخدمات",
-             "settings": "الإعدادات"
+             "settings": "الإعدادات",
+             "moderation": "إدارة المحتوى",
+             "monitoring": "مراقبة النظام"
            },
          "sections": {
            "title": "الفصول والشعب",
