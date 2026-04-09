@@ -217,28 +217,36 @@ export default function StudentsPage() {
       // Cascade delete: Remove all student-related records before deleting the user
       
       // 1. Delete submissions (where student = id)
-      const submissions = await pb.collection("submissions").getFullList({ filter: `student = "${id}"` });
-      for (const sub of submissions) {
-        await pb.collection("submissions").delete(sub.id);
-      }
+      try {
+        const submissions = await pb.collection("submissions").getFullList({ filter: `student = "${id}"` });
+        for (const sub of submissions) {
+          try { await pb.collection("submissions").delete(sub.id); } catch (e) { /* silently skip if already deleted */ }
+        }
+      } catch (e) { /* silently skip if collection query fails */ }
       
       // 2. Delete quiz attempts (where student = id)
-      const attempts = await pb.collection("quiz_attempts").getFullList({ filter: `student = "${id}"` });
-      for (const att of attempts) {
-        await pb.collection("quiz_attempts").delete(att.id);
-      }
+      try {
+        const attempts = await pb.collection("quiz_attempts").getFullList({ filter: `student = "${id}"` });
+        for (const att of attempts) {
+          try { await pb.collection("quiz_attempts").delete(att.id); } catch (e) { /* silently skip if already deleted */ }
+        }
+      } catch (e) { /* silently skip if collection query fails */ }
       
       // 3. Delete comments (where author = id)
-      const comments = await pb.collection("comments").getFullList({ filter: `author = "${id}"` });
-      for (const comm of comments) {
-        await pb.collection("comments").delete(comm.id);
-      }
+      try {
+        const comments = await pb.collection("comments").getFullList({ filter: `author = "${id}"` });
+        for (const comm of comments) {
+          try { await pb.collection("comments").delete(comm.id); } catch (e) { /* silently skip if already deleted */ }
+        }
+      } catch (e) { /* silently skip if collection query fails */ }
       
       // 4. Delete reactions (where user = id)
-      const reactions = await pb.collection("reactions").getFullList({ filter: `user = "${id}"` });
-      for (const rxn of reactions) {
-        await pb.collection("reactions").delete(rxn.id);
-      }
+      try {
+        const reactions = await pb.collection("reactions").getFullList({ filter: `user = "${id}"` });
+        for (const rxn of reactions) {
+          try { await pb.collection("reactions").delete(rxn.id); } catch (e) { /* silently skip if already deleted */ }
+        }
+      } catch (e) { /* silently skip if collection query fails */ }
       
       // 5. Finally delete the user
       await pb.collection("users").delete(id);

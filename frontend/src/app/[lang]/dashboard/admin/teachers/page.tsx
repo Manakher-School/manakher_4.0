@@ -195,56 +195,60 @@ export default function TeachersPage() {
       
       // 1. Get all materials, homework, quizzes, exams, announcements created by this teacher
       const [materials, homework, quizzes, exams, announcements] = await Promise.all([
-        pb.collection("materials").getFullList({ filter: `teacher = "${id}"` }),
-        pb.collection("homework").getFullList({ filter: `teacher = "${id}"` }),
-        pb.collection("quizzes").getFullList({ filter: `teacher = "${id}"` }),
-        pb.collection("exam_schedules").getFullList({ filter: `teacher = "${id}"` }),
-        pb.collection("announcements").getFullList({ filter: `teacher = "${id}"` }),
+        pb.collection("materials").getFullList({ filter: `teacher = "${id}"` }).catch(() => []),
+        pb.collection("homework").getFullList({ filter: `teacher = "${id}"` }).catch(() => []),
+        pb.collection("quizzes").getFullList({ filter: `teacher = "${id}"` }).catch(() => []),
+        pb.collection("exam_schedules").getFullList({ filter: `teacher = "${id}"` }).catch(() => []),
+        pb.collection("announcements").getFullList({ filter: `teacher = "${id}"` }).catch(() => []),
       ]);
       
       // 2. Delete submissions for this teacher's homework (leaf node)
       for (const hw of homework) {
-        const submissions = await pb.collection("submissions").getFullList({ filter: `homework = "${hw.id}"` });
-        for (const sub of submissions) {
-          await pb.collection("submissions").delete(sub.id);
-        }
+        try {
+          const submissions = await pb.collection("submissions").getFullList({ filter: `homework = "${hw.id}"` }).catch(() => []);
+          for (const sub of submissions) {
+            try { await pb.collection("submissions").delete(sub.id); } catch (e) { /* silently skip */ }
+          }
+        } catch (e) { /* silently skip */ }
       }
       
       // 3. Delete homework records
       for (const hw of homework) {
-        await pb.collection("homework").delete(hw.id);
+        try { await pb.collection("homework").delete(hw.id); } catch (e) { /* silently skip */ }
       }
       
       // 4. Delete quiz attempts and questions for this teacher's quizzes
       for (const quiz of quizzes) {
-        const questions = await pb.collection("quiz_questions").getFullList({ filter: `quiz = "${quiz.id}"` });
-        for (const q of questions) {
-          await pb.collection("quiz_questions").delete(q.id);
-        }
-        const attempts = await pb.collection("quiz_attempts").getFullList({ filter: `quiz = "${quiz.id}"` });
-        for (const att of attempts) {
-          await pb.collection("quiz_attempts").delete(att.id);
-        }
+        try {
+          const questions = await pb.collection("quiz_questions").getFullList({ filter: `quiz = "${quiz.id}"` }).catch(() => []);
+          for (const q of questions) {
+            try { await pb.collection("quiz_questions").delete(q.id); } catch (e) { /* silently skip */ }
+          }
+          const attempts = await pb.collection("quiz_attempts").getFullList({ filter: `quiz = "${quiz.id}"` }).catch(() => []);
+          for (const att of attempts) {
+            try { await pb.collection("quiz_attempts").delete(att.id); } catch (e) { /* silently skip */ }
+          }
+        } catch (e) { /* silently skip */ }
       }
       
       // 5. Delete quizzes
       for (const quiz of quizzes) {
-        await pb.collection("quizzes").delete(quiz.id);
+        try { await pb.collection("quizzes").delete(quiz.id); } catch (e) { /* silently skip */ }
       }
       
       // 6. Delete materials
       for (const mat of materials) {
-        await pb.collection("materials").delete(mat.id);
+        try { await pb.collection("materials").delete(mat.id); } catch (e) { /* silently skip */ }
       }
       
       // 7. Delete exam schedules
       for (const exam of exams) {
-        await pb.collection("exam_schedules").delete(exam.id);
+        try { await pb.collection("exam_schedules").delete(exam.id); } catch (e) { /* silently skip */ }
       }
       
       // 8. Delete announcements
       for (const ann of announcements) {
-        await pb.collection("announcements").delete(ann.id);
+        try { await pb.collection("announcements").delete(ann.id); } catch (e) { /* silently skip */ }
       }
       
       // 9. Finally delete the teacher user
