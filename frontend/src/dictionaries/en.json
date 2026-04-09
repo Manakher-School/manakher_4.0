@@ -61,17 +61,13 @@
            "teachers": "Teachers",
            "students": "Students"
          },
-          "nav": {
-            "overview": "Overview",
-            "sections": "Classes & Sections",
-            "subjects": "Subjects",
-            "teachers": "Teachers",
-            "students": "Students",
-            "exams": "Exam Schedule",
-            "moderation": "Content Moderation",
-            "monitoring": "System Monitoring",
-            "settings": "Settings"
-          },
+           "nav": {
+             "overview": "Overview",
+             "classes": "Classes & Sections",
+             "subjects_exams": "Subjects & Exams",
+             "users": "Users",
+             "settings": "Settings"
+           },
          "sections": {
            "title": "Classes & Sections",
            "add": "Add Section",

@@ -61,17 +61,13 @@
            "teachers": "المعلمات",
            "students": "الطالبات"
          },
-          "nav": {
-            "overview": "نظرة عامة",
-            "sections": "الفصول والشعب",
-            "subjects": "المواد الدراسية",
-            "teachers": "المعلمات",
-            "students": "الطالبات",
-            "exams": "جدول الامتحانات",
-            "moderation": "إدارة المحتوى",
-            "monitoring": "مراقبة النظام",
-            "settings": "الإعدادات"
-          },
+           "nav": {
+             "overview": "نظرة عامة",
+             "classes": "الفصول والشعب",
+             "subjects_exams": "المواد والامتحانات",
+             "users": "المستخدمات",
+             "settings": "الإعدادات"
+           },
          "sections": {
            "title": "الفصول والشعب",
            "add": "إضافة فصل",
