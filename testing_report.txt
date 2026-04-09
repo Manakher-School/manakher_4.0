@@ -186,7 +186,15 @@ Round 9:
 - transform the new settings to a single page with collabsed accourdions for each page {Content Moderation, System Monitoring, settings}.
 - The info card: the ones showing the name, role, and school of the user in the overview page... Make the font color white, no need for black.
 
+###################################################
 
+Round 10:
+I don't know how stupid you can fucking get but I get it, you discustingly stupid!!!!!
+
+- What I want to do is: to change the settngs made in round 8 to a different settings page that: contains these there {Content Moderation, System Monitoring, Settings} as accordions.
+- Don't forget the language.
+
+###################################################
 
 
 

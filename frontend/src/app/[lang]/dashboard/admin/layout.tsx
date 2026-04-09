@@ -4,100 +4,43 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLocale } from "@/context/locale-context";
 import {
-  LayoutGrid, Layers, BookOpen, Users, MoreVertical, ChevronDown
+  LayoutGrid, Layers, BookOpen, Users, Settings
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { useState } from "react";
 
 type NavKey = "overview" | "classes" | "subjects_exams" | "users" | "settings";
-type SettingsSubKey = "moderation" | "monitoring" | "settings";
 
 interface NavItem {
   key: NavKey;
-  href?: string;
-  icon: ReactNode;
-  isDropdown?: boolean;
-}
-
-interface SettingsSubItem {
-  key: SettingsSubKey;
   href: string;
+  icon: ReactNode;
 }
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { dict, locale } = useLocale();
   const pathname = usePathname();
   const t = dict.dashboard.admin.nav;
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const navItems: NavItem[] = [
     { key: "overview",       href: `/${locale}/dashboard/admin`,             icon: <LayoutGrid className="h-6 w-6" /> },
     { key: "classes",        href: `/${locale}/dashboard/admin/sections`,    icon: <Layers className="h-6 w-6" /> },
     { key: "subjects_exams", href: `/${locale}/dashboard/admin/subjects`,    icon: <BookOpen className="h-6 w-6" /> },
     { key: "users",          href: `/${locale}/dashboard/admin/teachers`,    icon: <Users className="h-6 w-6" /> },
-    { key: "settings",                                                        icon: <MoreVertical className="h-6 w-6" />, isDropdown: true },
-  ];
-
-  const settingsSubItems: SettingsSubItem[] = [
-    { key: "moderation",  href: `/${locale}/dashboard/admin/moderation` },
-    { key: "monitoring",  href: `/${locale}/dashboard/admin/monitoring` },
-    { key: "settings",    href: `/${locale}/dashboard/admin/settings` },
+    { key: "settings",       href: `/${locale}/dashboard/admin/settings`,    icon: <Settings className="h-6 w-6" /> },
   ];
 
   return (
     <div className="flex gap-6">
       {/* ── Sidebar ── */}
       <aside className="hidden lg:flex w-56 shrink-0 flex-col gap-1 pt-1">
-        {navItems.map(({ key, href, icon, isDropdown }) => {
-          if (isDropdown) {
-            const isSettingsActive = settingsSubItems.some(item => pathname.startsWith(item.href));
-            return (
-              <div key={key}>
-                <button
-                  onClick={() => setSettingsOpen(!settingsOpen)}
-                  className={[
-                    "w-full flex items-center gap-3 rounded-[var(--radius-lg)] px-3 py-2.5 text-sm font-semibold transition-colors text-left",
-                    isSettingsActive
-                      ? "bg-[var(--color-role-admin-bg)] text-[var(--color-role-admin-text)]"
-                      : "text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]",
-                  ].join(" ")}
-                >
-                  <span className={isSettingsActive ? "text-[var(--color-role-admin-bold)]" : ""}>{icon}</span>
-                  <span className="flex-1">{t[key]}</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${settingsOpen ? "rotate-180" : ""}`} />
-                </button>
-                {settingsOpen && (
-                  <div className="ms-3 mt-1 flex flex-col gap-1 border-s border-[var(--color-border)] ps-3">
-                    {settingsSubItems.map((item) => {
-                       const isActive = pathname.startsWith(item.href);
-                       return (
-                         <Link
-                           key={item.key}
-                           href={item.href}
-                           className={[
-                             "flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-xs font-medium transition-colors",
-                             isActive
-                               ? "bg-[var(--color-role-admin-bg)] text-[var(--color-role-admin-text)]"
-                               : "text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]",
-                           ].join(" ")}
-                         >
-                           {t[item.key]}
-                         </Link>
-                       );
-                     })}
-                  </div>
-                )}
-              </div>
-            );
-          }
-
+        {navItems.map(({ key, href, icon }) => {
           const isActive = key === "overview"
             ? pathname === href
-            : pathname.startsWith(href!);
+            : pathname.startsWith(href);
           return (
             <Link
               key={key}
-              href={href!}
+              href={href}
               className={[
                 "flex items-center gap-3 rounded-[var(--radius-lg)] px-3 py-2.5 text-sm font-semibold transition-colors",
                 isActive
@@ -114,14 +57,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* ── Mobile tab bar ── */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-20 flex border-t border-[var(--color-border)] bg-[var(--color-surface-card)] px-1 pb-safe">
-        {navItems.slice(0, 4).map(({ key, href, icon }) => {
+        {navItems.map(({ key, href, icon }) => {
           const isActive = key === "overview"
             ? pathname === href
-            : pathname.startsWith(href!);
+            : pathname.startsWith(href);
           return (
             <Link
               key={key}
-              href={href!}
+              href={href}
               className={[
                 "flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-semibold transition-colors",
                 isActive
@@ -134,18 +77,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </Link>
           );
         })}
-        <button
-          onClick={() => setSettingsOpen(!settingsOpen)}
-          className={[
-            "flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-semibold transition-colors",
-            settingsOpen
-              ? "text-[var(--color-role-admin-bold)]"
-              : "text-[var(--color-ink-disabled)] hover:text-[var(--color-ink-secondary)]",
-          ].join(" ")}
-        >
-          {navItems[4].icon}
-          <span className="hidden xs:block">{t.settings}</span>
-        </button>
       </div>
 
       {/* ── Content ── */}
