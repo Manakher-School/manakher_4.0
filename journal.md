@@ -745,6 +745,53 @@ It contains a short and clear to-do list of milestones.
 
 ---
 
+## GENDER TERMINOLOGY POLICY
+
+**Important Note:** The school has female-only staffing, but students are both males and females.
+
+### Terminology Guidelines:
+- **Teachers/Headteacher/Staff:** Use female-specific terms (e.g., "teacher" in English, "معلمة" in Arabic) since all staff are female
+- **Students:** Use gender-neutral terms (e.g., "student" not "schoolgirl", "طالب/ة" or neutral form in Arabic) to include both male and female students
+- **General references:** When referring to students, use gender-neutral pronouns and language
+- **Role badges:** Keep staff roles female-specific, student roles neutral
+
+### Implementation:
+All user-facing text in dictionaries and components has been audited and updated to comply with this policy:
+- Dictionary entries use gender-neutral terms for student-related content
+- Component labels, section titles, and descriptions reflect appropriate gender terminology
+- This applies to both English and Arabic versions
+
+**Iteration 7** (2026-04-09) — Gender Terminology Audit & Updates:
+- **What was done:**
+  - **AUDIT FINDINGS:** Discovered the website was predominantly using female-gendered terms throughout, which was inappropriate since students are both male and female
+  - **Arabic Dictionary (ar.json) changes:**
+    - Role badge: "طالبة" (schoolgirl) → "طالب/ة" (student, gender-neutral)
+    - Admin students section: "الطالبات" → "الطلاب" (students, gender-neutral)
+    - Teacher dashboard stats: "طالباتي" → "طلابي" (my students, gender-neutral)
+    - Teacher sections title: "فصولي وطالباتي" → "فصولي وطلابي" (my sections and students)
+    - Teacher search: "ابحثي عن طالبة" → "ابحثي عن طالب/ة" (search for student, gender-neutral)
+    - Teacher quiz results: "الطالبة" → "الطالب/ة" (student, gender-neutral)
+    - Student dashboard: "لوحة الطالبة" → "لوحة الطالب/ة" (student dashboard, gender-neutral)
+    - Student homework: Removed feminine-only pronouns, changed to gender-neutral
+    - Student quizzes: Changed confirmSubmit and instructions to gender-neutral
+    - Monitoring stats: "الطالبات" → "الطلاب" (students, gender-neutral)
+    - Admin stats: "الطالبات" → "الطلاب" (students, gender-neutral)
+  - **English Dictionary (en.json) changes:**
+    - School name: "Manakher Basic Girls' School" → "Manakher Basic School" (already student-neutral in other sections)
+    - Login title: Updated to use neutral school name
+  - **Settings Context (settings-context.tsx) changes:**
+    - Default schoolNameAr: "مدرسة مناخر الاساسية المؤنثة" → "مدرسة مناخر الاساسية" (removed feminine marker "المؤنثة")
+    - Default schoolNameEn: "Manakher Basic Girls' School" → "Manakher Basic School"
+  - Build verification: All 52 pages compile successfully, zero TypeScript errors
+- **Issues/Lessons:**
+  - **Gender inclusivity matters:** Defaulting to female-only language excludes male students from seeing themselves represented
+  - **Arabic gender markers:** Arabic uses gendered forms extensively - need to use dual-form notation (e.g., "طالب/ة") or gender-neutral constructions where appropriate
+  - **School identity:** Removing "Girls'" from the school name doesn't diminish the fact that staff are female - it simply makes the platform welcoming to all students
+  - **Consistency across languages:** Updates needed in both Arabic and English to maintain coherent policy
+  - **Default values matter:** Settings context default values are seen by all users initially, so they must reflect inclusive terminology
+
+---
+
 ## SESSION SUMMARY: Rounds 7, 8, and 9 Completion (2026-04-09)
 
 ### Overview
