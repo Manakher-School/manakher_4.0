@@ -325,7 +325,7 @@ export default function SettingsPage() {
           onClick={() => toggleAccordion("moderation")}
           className="w-full px-6 py-4 flex items-center gap-3 hover:bg-[var(--color-surface-hover)] transition-colors"
         >
-          <AccordionButton label="Content Moderation" isOpen={accordions.moderation} icon={<Shield className="h-4 w-4" />} />
+          <AccordionButton label={tMod.title} isOpen={accordions.moderation} icon={<Shield className="h-4 w-4" />} />
         </button>
 
         {accordions.moderation && (
@@ -348,9 +348,9 @@ export default function SettingsPage() {
                           : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
                       }`}
                     >
-                      {tab === "materials" && "Materials"}
-                      {tab === "announcements" && "Announcements"}
-                      {tab === "comments" && "Comments"}
+                      {tab === "materials" && tMod.tabMaterials}
+                      {tab === "announcements" && tMod.tabAnnouncements}
+                      {tab === "comments" && tMod.tabComments}
                     </button>
                   ))}
                 </div>
@@ -403,7 +403,7 @@ export default function SettingsPage() {
                               <div className="flex items-center gap-2">
                                 <h4 className="font-semibold text-sm text-[var(--color-ink)] truncate">{ann.title}</h4>
                                 <Badge variant={ann.scope === "global" ? "default" : "accent"}>
-                                  {ann.scope === "global" ? "Global" : "Section"}
+                                  {ann.scope === "global" ? dict.dashboard.admin.announcements?.scopeGlobal || "Global" : dict.dashboard.admin.announcements?.scopeSection || "Section"}
                                 </Badge>
                               </div>
                               <p className="text-xs text-[var(--color-ink-secondary)] mt-1">
@@ -475,7 +475,7 @@ export default function SettingsPage() {
           onClick={() => toggleAccordion("monitoring")}
           className="w-full px-6 py-4 flex items-center gap-3 hover:bg-[var(--color-surface-hover)] transition-colors"
         >
-          <AccordionButton label="System Monitoring" isOpen={accordions.monitoring} icon={<Activity className="h-4 w-4" />} />
+          <AccordionButton label={tMon.title} isOpen={accordions.monitoring} icon={<Activity className="h-4 w-4" />} />
         </button>
 
         {accordions.monitoring && (
@@ -606,7 +606,7 @@ export default function SettingsPage() {
           onClick={() => toggleAccordion("settings")}
           className="w-full px-6 py-4 flex items-center gap-3 hover:bg-[var(--color-surface-hover)] transition-colors"
         >
-          <AccordionButton label="Platform Settings" isOpen={accordions.settings} icon={<SettingsIcon className="h-4 w-4" />} />
+          <AccordionButton label={t.title} isOpen={accordions.settings} icon={<SettingsIcon className="h-4 w-4" />} />
         </button>
 
         {accordions.settings && (
