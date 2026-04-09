@@ -92,13 +92,13 @@ export default function StudentDashboard() {
         <div className="absolute rounded-full opacity-[0.07]" style={{ width: 140, height: 140, background: "#fff", bottom: -40, insetInlineStart: 40 }} />
 
         <div className="relative z-10">
-          <p className="text-orange-200 text-sm font-semibold mb-1">
+          <p className="text-white text-sm font-semibold mb-1">
             {dict.dashboard.greeting} {displayName}
           </p>
           <h2 className="text-white text-2xl font-black" style={{ letterSpacing: "-0.5px" }}>
             {t.title}
           </h2>
-          <p className="text-orange-100 text-xs mt-2 font-medium opacity-80">
+          <p className="text-white text-xs mt-2 font-medium opacity-90">
             {locale === "ar" ? settings.schoolNameAr : settings.schoolNameEn}
           </p>
         </div>

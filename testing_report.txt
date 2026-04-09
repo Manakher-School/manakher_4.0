@@ -164,4 +164,32 @@ Round 6:
 
 Round 7:
 
-- 
+- What is the size of the bottom nav bar icons, for the mobile view? they need to be bigger.
+
+###################################################
+
+Round 8:
+
+- Instead of having the current nvigations/pages for the admin, I recommend the folllowing
+{
+- Overview (the overview icon).
+- Classes and Sections (it's same icon).
+- Subjects & Exams (the subjects icon).
+- Users: Teachers & Students (the students icon).
+- Settings: Content Moderation, System Monitoring, settings(three dots).
+}
+
+###################################################
+
+Round 9:
+
+- transform the new settings to a single page with collabsed accourdions for each page {Content Moderation, System Monitoring, settings}.
+- The info card: the ones showing the name, role, and school of the user in the overview page... Make the font color white, no need for black.
+
+
+
+
+
+
+
+

@@ -678,5 +678,28 @@ It contains a short and clear to-do list of milestones.
   - **Always use dictionary values for user-facing text** - hardcoded strings in component code break bilingual support
   - **RTL CSS properties matter:** Logical CSS properties (`border-s`, `ms-*`, `ps-*`) automatically handle direction switching, while physical properties (`border-l`, `ml-*`, `pl-*`) require manual RTL handling
   - **Test in both languages:** Arabic/English UI bugs only catch during actual bilingual testing
-  - **Settings submenu needs dictionary expansion** - originally only 5 main nav items had dictionary keys, forgot that Settings has 3 sub-items that also need translations
+   - **Settings submenu needs dictionary expansion** - originally only 5 main nav items had dictionary keys, forgot that Settings has 3 sub-items that also need translations
+
+**Iteration 4** (2026-04-09) — Round 9 settings consolidation + info card text color fixes:
+- **What was done:**
+  - **Round 9 Task 1 - Settings page consolidation:** Transformed 3 separate admin pages (moderation, monitoring, settings) into single unified page with 3 collapsed accordions
+    - `admin/settings/page.tsx` completely rewritten (701 lines): Now displays all content in collapsible accordion panels
+    - **Platform Settings accordion:** Expanded by default. Shows school name (Arabic/English) fields, feature toggles for comments/reactions/quizzes, persistence to `platform_settings` collection
+    - **Content Moderation accordion:** Collapsed by default. 3 tabs for Materials, Announcements, Comments with full CRUD and expandable content previews
+    - **System Monitoring accordion:** Collapsed by default. Displays 12+ metrics in responsive grid: user stats, content stats, assessment metrics, engagement metrics
+    - All data fetched in parallel for performance, metrics auto-refresh every 5 seconds
+    - Proper error handling for cascade delete operations (Materials, Announcements, Comments)
+    - Fixed one remaining bug: Line 410 had `getDisplayName` → corrected to `getDisplayNameFromExpand` to properly access expanded author data
+  - **Round 9 Task 2 - Info card text color:** Updated welcome banner text from colored (violet-300, orange-200, teal-200) to all white for consistency
+    - `admin/page.tsx` line 148: Changed greeting and school name to white with opacity-90
+    - `teacher/page.tsx` line 162: Same white text change
+    - `student/page.tsx` line 95: Same white text change
+    - Provides cleaner, more professional look against role-colored gradient backgrounds
+  - Build verification: Successfully compiled all 56 pages with zero TypeScript errors
+- **Issues/Lessons:**
+  - **Accordion state management:** Each accordion toggles independently - used separate boolean state for open/closed (platform_open, moderation_open, monitoring_open)
+  - **Fix function name references:** TypeScript catches undefined functions - `getDisplayName` vs `getDisplayNameFromExpand` difference matters when accessing expand data
+  - **Build must pass before committing:** Build verification is critical before marking tasks complete
+  - **Text color on gradients:** White text on role-colored gradients (violet for admin, teal for teacher, amber for student) provides better contrast than light tints
+
 
