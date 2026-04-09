@@ -602,6 +602,59 @@ It contains a short and clear to-do list of milestones.
 
 ### [INPROGRESS] Milestone 10: Final Verification & Production Readiness
 - End-to-end user journey testing (Admin, Teacher, Student)
-- Verify all Round 6 testing issues are fixed
+- Verify all Round 6, 7, 8 testing issues are fixed
 - Final deployment verification
+
+#### Iteration Log
+
+**Iteration 1** (2026-04-09) — Round 7 mobile navigation icon size fixes:
+- **What was done:**
+  - **Round 7 Issue:** Mobile navigation bar icons were too small, making them hard to tap on mobile devices
+  - **Fixed mobile nav icons across all layouts:**
+    - Updated `admin/layout.tsx`: Changed icon sizes from `h-5 w-5` (20px) to `h-6 w-6` (24px), padding from `py-2.5` to `py-3` for mobile tab bar
+    - Updated `teacher/layout.tsx`: Same icon size increase (h-5 w-5 → h-6 w-6) and padding (py-2.5 → py-3)
+    - Updated `student/layout.tsx`: Same icon size increase (h-5 w-5 → h-6 w-6) and padding (py-2.5 → py-3)
+  - **All three dashboard layouts** now have consistent, larger mobile navigation icons (24px) for better accessibility and tap-ability on mobile devices
+  - Build passes: 56 pages, zero TypeScript errors
+  - Committed: "fix: increase mobile nav bar icon sizes (h-5 w-5 → h-6 w-6) and padding (py-2.5 → py-3) across admin, teacher, and student layouts"
+- **Issues/Lessons:**
+  - Mobile tap targets should be at least 24px (Tailwind's h-6 w-6) for accessibility
+  - Icon size changes should be applied consistently across ALL dashboard role layouts to maintain visual consistency
+  - Increased padding (py-3 vs py-2.5) also helps with touch targets
+
+**Iteration 2** (2026-04-09) — Round 8 admin navigation redesign:
+- **What was done:**
+  - **Round 8 Issue:** Admin navigation had 9 items which was cluttered and confusing. User requested reorganization into 5 main categories.
+  - **New admin navigation structure (5 items):**
+    1. **Overview** - Main dashboard (LayoutGrid icon)
+    2. **Classes and Sections** - Manages grades and sections (Layers icon) - routes to `/dashboard/admin/sections`
+    3. **Subjects & Exams** - Manages subjects and exam schedules (BookOpen icon) - routes to `/dashboard/admin/subjects`
+    4. **Users** - Manages teachers and students (Users icon) - routes to `/dashboard/admin/teachers`
+    5. **Settings** - Dropdown menu with: Content Moderation, System Monitoring, Platform Settings (MoreVertical icon)
+  - **Updated `admin/layout.tsx`:**
+    - Reduced NavKey type from 9 items to 5 items
+    - Added isDropdown and SettingsSubItem interfaces for dropdown functionality
+    - Implemented Settings dropdown with ChevronDown icon that rotates on open
+    - Settings submenu shows 3 sub-items with proper indentation (left border + padding)
+    - Active state detection for both main items and dropdown sub-items
+    - Mobile tab bar shows first 4 nav items as links + Settings as a dropdown button
+    - Desktop sidebar shows full dropdown with visual hierarchy
+  - **Updated dictionaries:**
+    - Arabic: Changed nav keys from 9 to 5 (overview, classes, subjects_exams, users, settings)
+    - English: Same translation updates for consistency
+    - Old keys (sections, subjects, teachers, students, exams, moderation, monitoring) removed from nav
+  - **Maintained backward compatibility:**
+    - All existing pages keep their current routes (no URL changes)
+    - `/dashboard/admin/sections` still works for Classes & Sections
+    - `/dashboard/admin/subjects` still works for Subjects & Exams
+    - `/dashboard/admin/teachers` still works for Users (shows both teachers and students)
+    - `/dashboard/admin/moderation`, `/monitoring`, `/settings` accessible via Settings submenu
+  - Build passes: 56 pages, zero TypeScript errors
+  - Committed: "feat: Redesign admin navigation to 5-item structure with settings submenu"
+- **Issues/Lessons:**
+  - Dropdown state must be managed separately - can't just use pathname checking for multi-level navigation
+  - Mobile constraints require rethinking dropdown patterns - used button instead of link for mobile Settings
+  - Settings submenu links should have subtle styling (smaller text, left border) to indicate they're sub-items, not top-level
+  - ChevronDown icon rotation provides good visual feedback for dropdown open/closed state
+  - Sidebar width might need adjustment based on longest menu item text - current 56px width works for simplified labels
 
