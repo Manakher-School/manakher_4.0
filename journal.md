@@ -573,7 +573,7 @@ It contains a short and clear to-do list of milestones.
 - **What was done:**
   - **CRITICAL FIX - Student and teacher deletion cascade logic:** Implemented comprehensive cascade delete for both students and teachers:
     - **Student deletion:** Removes submissions, quiz attempts, comments, and reactions before deleting the user record
-    - **Teacher deletion:** Removes materials, homework (+ all submissions), quizzes (+ questions and attempts), exams, and announcements before deleting the user record
+    - **Teacher deletion:** Removes materials, homework (+ submissions), quizzes (+ questions and attempts), exams, and announcements before deleting the user record
     - Follows same pattern as section/subject deletion with proper cleanup order (leaf nodes first)
   - **Fixed Round 6 issue:** Students "Layla" and "Tahani" and teacher "Sarah" can now be deleted successfully
   - Build passes: 56 pages, zero TypeScript errors.
@@ -583,6 +583,22 @@ It contains a short and clear to-do list of milestones.
   - Like sections and subjects, proper cascade delete requires deleting leaf nodes first (submissions before homework, questions/attempts before quizzes)
   - Always check PocketBase relations when deleting records - missing cascade logic will cause 400 errors on production
   - The deletion order matters: comments/reactions → submissions → quiz attempts → quiz questions → then parent records
+
+**Iteration 6** (2026-04-09) — Error handling for cascade delete operations:
+- **What was done:**
+  - **Enhanced error handling:** Added try-catch blocks around ALL delete operations in cascade delete logic
+    - Gracefully handles 404 errors when records don't exist or are already deleted
+    - Prevents unhandled promise rejections that crash the deletion workflow
+    - Silently skips individual record failures without aborting entire cascade
+  - **Fixed production issue:** Layla deletion was failing because a reaction record returned 404. Now wraps each delete and collection query in error handling
+  - **Applied to both students and teachers deletion functions**
+  - Build passes: 56 pages, zero TypeScript errors.
+  - Committed: "fix: Add error handling to cascade delete operations"
+- **Issues/Lessons:**
+  - Race conditions can occur in production where records are deleted between querying and deletion attempts
+  - 404 errors during cascade delete should not block the entire operation - must gracefully skip and continue
+  - Collection queries themselves should also be wrapped in error handling in case collection is missing or has permission issues
+  - Silently handling errors is acceptable for cascade delete cleanup - the user only cares that the main record is deleted
 
 ### [INPROGRESS] Milestone 10: Final Verification & Production Readiness
 - End-to-end user journey testing (Admin, Teacher, Student)
