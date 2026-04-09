@@ -21,8 +21,8 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 const DEFAULT_SETTINGS: PlatformSettings = {
-  schoolNameAr: "مدرسة مناخر الاساسية المؤنثة",
-  schoolNameEn: "Manakher Basic Girls' School",
+  schoolNameAr: "مدرسة مناخر الاساسية",
+  schoolNameEn: "Manakher Basic School",
   enableComments: true,
   enableReactions: true,
   enableQuizzes: true,
