@@ -532,6 +532,44 @@ It contains a short and clear to-do list of milestones.
   - **Non-async callback handling:** Callbacks like `setInterval` aren't async, but calling async dialog functions inside them causes "await in non-async function" errors. Solution: wrap in IIFE `(async () => { ... })()`.
   - **Dependency array management:** Dialog functions must be added to useCallback dependency arrays to satisfy React linting rules, even though they're stable function references.
   - **Bilingual consistency:** All dialog messages (Arabic + English) are preserved as-is from native calls - no content changes, just the mechanism.
-  - **Promise-based dialogs require await:** Unlike native `confirm()` which returns immediately, the custom dialog returns a Promise. Every call must be awaited or the logic will execute before the user responds.
+   - **Promise-based dialogs require await:** Unlike native `confirm()` which returns immediately, the custom dialog returns a Promise. Every call must be awaited or the logic will execute before the user responds.
+
+**Iteration 4** (2026-04-09) — Round 6 testing fixes: Design system alerts + Settings persistence:
+- **What was done:**
+  - **CRITICAL FIX - Design system alerts and popups:** Replaced all native browser `alert()` and `confirm()` dialogs with custom Dialog component that matches the website's design system:
+    - Created `src/components/ui/dialog.tsx` - Reusable Dialog component with customizable title, content, actions, and size (sm/md/lg)
+    - Created `src/context/dialog-context.tsx` - DialogProvider + useDialog() hook for app-wide state management
+    - Fixed dialog state management to properly capture and resolve Promise callbacks
+    - Implemented Escape key dismissal and body scroll prevention
+    - Added to root layout inside DialogProvider wrapper
+  - **CRITICAL FIX - Settings persistence not effective:** Created global settings context to sync platform settings across all pages:
+    - Created `src/context/settings-context.tsx` - SettingsProvider + useSettings() hook for app-wide settings management
+    - Settings stored in PocketBase `platform_settings` collection with `school_info` key
+    - Loads settings on app startup and updates across all pages in real-time
+    - Implemented optimistic update (local state first, then persist to DB)
+    - Auto-reverts local state on save errors
+  - **Updated all school name references to use settings context:**
+    - Updated `dashboard/layout.tsx` header and footer to read `settings.schoolNameAr`/`settings.schoolNameEn`
+    - Updated `login/page.tsx` footer to use settings
+    - Updated `dashboard/admin/page.tsx` welcome banner to use settings
+    - Updated `dashboard/teacher/page.tsx` welcome banner to use settings
+    - Updated `dashboard/student/page.tsx` welcome banner to use settings
+  - **Enhanced settings page (`admin/settings/page.tsx`):**
+    - Now uses `useSettings()` hook to initialize form from context
+    - Calls `updateSettings()` to persist changes to PocketBase
+    - Local state updates immediately for optimistic UX
+    - Success message shows "Saved" confirmation
+  - **Fixed Promise resolution in dialog context:**
+    - Created `handleConfirmOk()`, `handleConfirmCancel()`, `handleAlertClose()` callbacks to properly capture resolve functions
+    - Callbacks now in useCallback with correct dependency arrays
+    - Ensures Promise resolves before state update completes
+  - Build passes: 56 pages, zero TypeScript errors.
+- **Issues/Lessons:**
+  - **Native browser alerts limitation:** Browser `alert()` and `confirm()` cannot be styled or integrated with design system. Custom Dialog component provides full control over appearance and behavior.
+  - **Settings context implementation:** Using context for global settings allows all pages to reactively update when admin changes settings. This is much better than hardcoded dictionary values.
+  - **Optimistic updates improve UX:** Updating local state immediately before persisting to DB provides instant feedback, making the app feel faster.
+  - **PocketBase settings structure:** Store settings with `key: "school_info"` field and `value: {...}` object for nested data. Filter by key when querying.
+  - **School name changes need to be dynamic:** Students/teachers see different school names than what admins set because dictionary was static. Using context ensures everyone sees the same settings.
+
 
 
