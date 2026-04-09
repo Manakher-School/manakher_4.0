@@ -6,6 +6,7 @@ import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
 import { getTextDirection } from "@/lib/text-direction";
+import { useFormState, useCrudState, useTabState } from "@/lib/hooks";
 import { ClipboardList, Clock, CheckCircle, Lock, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -134,28 +135,33 @@ export default function StudentAssessmentsPage() {
   const tExams = t.exams;
   const tAssessments = t.assessments;
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<"quizzes" | "exams">("quizzes");
+  // ─── Tab State ──────────────────────────────────────────────────────
+  const tabState = useTabState("quizzes", {});
 
-  // Quiz list state
+  // ─── Quiz List CRUD State (loading quizzes and attempts) ──────────
+  const quizListCrudState = useCrudState();
+
+  // ─── Exam List CRUD State (loading exams) ──────────────────────────
+  const examListCrudState = useCrudState();
+
+  // ─── Quiz Taking CRUD State (loading questions, submitting) ─────────
+  const quizTakingCrudState = useCrudState();
+
+  // ─── Quiz Form State (current question, answers) ───────────────────
+  const quizFormState = useFormState({
+    currentQuestion: 0,
+    answers: {} as Record<string, number>,
+  });
+
+  // ─── Data Collections (Keep as useState) ──────────────────────────
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [loadingQuizzes, setLoadingQuizzes] = useState(true);
   const [attemptMap, setAttemptMap] = useState<Record<string, Attempt | null>>({});
-  const [loadingAttempts, setLoadingAttempts] = useState(false);
-
-  // Exam schedule state
   const [exams, setExams] = useState<ExamSchedule[]>([]);
-  const [loadingExams, setLoadingExams] = useState(true);
-
-  // Active quiz-taking state
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [loadingQuestions, setLoadingQuestions] = useState(false);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [currentQ, setCurrentQ] = useState(0);
   const [quizEndTime, setQuizEndTime] = useState<Date | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [completedAttempt, setCompletedAttempt] = useState<Attempt | null>(null);
+  const [, setTick] = useState(0);
 
   const subjectName = (s: Subject | { name_ar: string; name_en: string }) => (locale === "ar" ? s.name_ar : s.name_en);
 
@@ -167,11 +173,12 @@ export default function StudentAssessmentsPage() {
     const sections: string[] = (user as any).sections ?? [];
 
     if (sections.length === 0) {
-      setLoadingQuizzes(false);
+      quizListCrudState.setIsLoading(false);
       return;
     }
 
     try {
+      quizListCrudState.setIsLoading(true);
       const sectionFilter = sections.map((id) => `section = "${id}"`).join(" || ");
       const qzs = await pb.collection("quizzes").getFullList<Quiz>({
         filter: sectionFilter,
@@ -181,7 +188,6 @@ export default function StudentAssessmentsPage() {
       setQuizzes(qzs);
 
       if (qzs.length > 0) {
-        setLoadingAttempts(true);
         const quizFilter = qzs.map((q) => `quiz = "${q.id}"`).join(" || ");
         const ats = await pb.collection("quiz_attempts").getFullList<Attempt>({
           filter: `student = "${user.id}" && (${quizFilter})`,
@@ -190,14 +196,13 @@ export default function StudentAssessmentsPage() {
         qzs.forEach((q) => { map[q.id] = null; });
         ats.forEach((a) => { map[a.quiz] = a; });
         setAttemptMap(map);
-        setLoadingAttempts(false);
       }
     } catch (e) {
       console.error(e);
     } finally {
-      setLoadingQuizzes(false);
+      quizListCrudState.setIsLoading(false);
     }
-  }, [user]);
+  }, [user, quizListCrudState]);
 
   // ── Load exams ───────────────────────────────────────────────────────────────
 
@@ -208,11 +213,12 @@ export default function StudentAssessmentsPage() {
 
     if (sections.length === 0) {
       setExams([]);
-      setLoadingExams(false);
+      examListCrudState.setIsLoading(false);
       return;
     }
 
     try {
+      examListCrudState.setIsLoading(true);
       const sectionFilter = sections.map((id) => `section = "${id}"`).join(" || ");
       
       const items = await pb.collection("exam_schedules").getFullList<ExamSchedule>({
@@ -224,9 +230,9 @@ export default function StudentAssessmentsPage() {
     } catch (e) {
       console.error(e);
     } finally {
-      setLoadingExams(false);
+      examListCrudState.setIsLoading(false);
     }
-  }, [user]);
+  }, [user, examListCrudState]);
 
   useEffect(() => {
     loadQuizzes();
@@ -249,16 +255,15 @@ export default function StudentAssessmentsPage() {
             await alert(locale === "ar" 
               ? "انتهى وقت الاختبار! سيتم إرسال إجاباتك تلقائياً." 
               : "Quiz time is up! Your answers will be submitted automatically.");
-            submitQuiz(answers);
+            submitQuiz(quizFormState.state.data.answers);
           })();
        }
     }, 5000);
     
     return () => clearInterval(interval);
-  }, [activeQuiz, completedAttempt, answers, locale]);
+  }, [activeQuiz, completedAttempt, quizFormState, locale]);
 
   // ── Auto-refresh quiz status every 30 seconds (to update badges) ───────────
-  const [, setTick] = useState(0);
   useEffect(() => {
     // Only run when viewing the quiz list (not taking a quiz)
     if (activeQuiz) return;
@@ -294,10 +299,9 @@ export default function StudentAssessmentsPage() {
       return;
     }
     
-    setLoadingQuestions(true);
+    quizTakingCrudState.setIsLoading(true);
     setActiveQuiz(quiz);
-    setAnswers({});
-    setCurrentQ(0);
+    quizFormState.setData({ currentQuestion: 0, answers: {} });
     setCompletedAttempt(null);
 
     const pb = getPocketBase();
@@ -316,16 +320,16 @@ export default function StudentAssessmentsPage() {
       console.error(e);
       setActiveQuiz(null);
     } finally {
-      setLoadingQuestions(false);
+      quizTakingCrudState.setIsLoading(false);
     }
   }
 
   // ── Submit quiz ──────────────────────────────────────────────────────────────
 
   async function submitQuiz(forceAnswers?: Record<string, number>) {
-    if (!activeQuiz || !user || submitting) return;
-    const finalAnswers = forceAnswers ?? answers;
-    setSubmitting(true);
+    if (!activeQuiz || !user || quizTakingCrudState.state.isLoading) return;
+    const finalAnswers = forceAnswers ?? quizFormState.state.data.answers;
+    quizTakingCrudState.setIsLoading(true);
 
     let score = 0;
     questions.forEach((q) => {
@@ -350,12 +354,12 @@ export default function StudentAssessmentsPage() {
     } catch (e) {
       console.error(e);
     } finally {
-      setSubmitting(false);
+      quizTakingCrudState.setIsLoading(false);
     }
   }
 
   function handleTimerExpire() {
-    submitQuiz(answers);
+    submitQuiz(quizFormState.state.data.answers);
   }
 
   function handleSubmitClick() {
@@ -428,7 +432,7 @@ export default function StudentAssessmentsPage() {
       );
     }
 
-    if (loadingQuestions) {
+    if (quizTakingCrudState.state.isLoading) {
       return (
         <div className="flex items-center justify-center py-20">
           <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-student-bold)] border-t-transparent animate-spin" />
@@ -436,7 +440,7 @@ export default function StudentAssessmentsPage() {
       );
     }
 
-    const q = questions[currentQ];
+    const q = questions[quizFormState.state.data.currentQuestion];
     const totalQ = questions.length;
 
     return (
@@ -446,7 +450,7 @@ export default function StudentAssessmentsPage() {
             <div>
               <h2 className="font-black text-[var(--color-ink)] text-lg">{activeQuiz.title}</h2>
               <p className="text-sm text-[var(--color-ink-secondary)] font-semibold mt-0.5">
-                {tQuizzes.question} {currentQ + 1} {tQuizzes.of} {totalQ}
+                {tQuizzes.question} {quizFormState.state.data.currentQuestion + 1} {tQuizzes.of} {totalQ}
               </p>
             </div>
             <div className="text-end shrink-0">
@@ -462,7 +466,7 @@ export default function StudentAssessmentsPage() {
           <div className="mt-3 h-1.5 rounded-full bg-[var(--color-surface-sunken)] overflow-hidden">
             <div
               className="h-full rounded-full bg-[var(--color-role-student-bold)] transition-all"
-              style={{ width: `${((currentQ + 1) / totalQ) * 100}%` }}
+              style={{ width: `${((quizFormState.state.data.currentQuestion + 1) / totalQ) * 100}%` }}
             />
           </div>
         </div>
@@ -477,11 +481,11 @@ export default function StudentAssessmentsPage() {
             </p>
             <div className="space-y-2">
               {q.options.map((opt, oi) => {
-                const selected = answers[q.id] === oi;
+                const selected = quizFormState.state.data.answers[q.id] === oi;
                 return (
                   <button
                     key={oi}
-                    onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: oi }))}
+                    onClick={() => quizFormState.setFieldValue("answers", { ...quizFormState.state.data.answers, [q.id]: oi })}
                     className={[
                       "w-full flex items-center gap-2 px-4 py-3 rounded-[var(--radius-lg)] border transition-all text-sm font-semibold",
                       selected
@@ -502,21 +506,21 @@ export default function StudentAssessmentsPage() {
         <div className="flex items-center justify-between gap-3">
           <Button
             variant="ghost"
-            onClick={() => setCurrentQ((c) => Math.max(0, c - 1))}
-            disabled={currentQ === 0}
+            onClick={() => quizFormState.setFieldValue("currentQuestion", Math.max(0, quizFormState.state.data.currentQuestion - 1))}
+            disabled={quizFormState.state.data.currentQuestion === 0}
           >
             {locale === "ar" ? "السابق" : "Previous"}
           </Button>
           <span className="text-xs text-[var(--color-ink-secondary)] font-semibold">
-            {Object.keys(answers).length} / {totalQ} {locale === "ar" ? "تم الإجابة" : "answered"}
+            {Object.keys(quizFormState.state.data.answers).length} / {totalQ} {locale === "ar" ? "تم الإجابة" : "answered"}
           </span>
-          {currentQ < totalQ - 1 ? (
-            <Button variant="primary" onClick={() => setCurrentQ((c) => c + 1)}>
+          {quizFormState.state.data.currentQuestion < totalQ - 1 ? (
+            <Button variant="primary" onClick={() => quizFormState.setFieldValue("currentQuestion", quizFormState.state.data.currentQuestion + 1)}>
               {locale === "ar" ? "التالي" : "Next"}
             </Button>
           ) : (
-            <Button variant="primary" onClick={handleSubmitClick} disabled={submitting}>
-              {submitting ? tQuizzes.submitting : tQuizzes.submit}
+            <Button variant="primary" onClick={handleSubmitClick} disabled={quizTakingCrudState.state.isLoading}>
+              {quizTakingCrudState.state.isLoading ? tQuizzes.submitting : tQuizzes.submit}
             </Button>
           )}
         </div>
@@ -535,27 +539,27 @@ export default function StudentAssessmentsPage() {
       {/* Tab buttons */}
       <div className="flex gap-2 border-b border-[var(--color-border)] pb-0">
         <button
-          onClick={() => setActiveTab("quizzes")}
+          onClick={() => tabState.setActiveTab("quizzes")}
           className={[
             "px-4 py-2.5 text-sm font-bold rounded-t-lg transition-colors relative",
-            activeTab === "quizzes"
+            tabState.state.activeTab === "quizzes"
               ? "text-[var(--color-role-student-bold)] bg-[var(--color-surface-card)] border border-b-0 border-[var(--color-border)]"
               : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]",
           ].join(" ")}
-          style={activeTab === "quizzes" ? { marginBottom: "-1px" } : {}}
+          style={tabState.state.activeTab === "quizzes" ? { marginBottom: "-1px" } : {}}
         >
           <ClipboardList className="inline-block h-4 w-4 me-2" />
           {tAssessments.tabQuizzes}
         </button>
         <button
-          onClick={() => setActiveTab("exams")}
+          onClick={() => tabState.setActiveTab("exams")}
           className={[
             "px-4 py-2.5 text-sm font-bold rounded-t-lg transition-colors relative",
-            activeTab === "exams"
+            tabState.state.activeTab === "exams"
               ? "text-[var(--color-role-student-bold)] bg-[var(--color-surface-card)] border border-b-0 border-[var(--color-border)]"
               : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]",
           ].join(" ")}
-          style={activeTab === "exams" ? { marginBottom: "-1px" } : {}}
+          style={tabState.state.activeTab === "exams" ? { marginBottom: "-1px" } : {}}
         >
           <Calendar className="inline-block h-4 w-4 me-2" />
           {tAssessments.tabExams}
@@ -563,9 +567,9 @@ export default function StudentAssessmentsPage() {
       </div>
 
       {/* Quizzes Tab */}
-      {activeTab === "quizzes" && (
+      {tabState.state.activeTab === "quizzes" && (
         <>
-          {loadingQuizzes || loadingAttempts ? (
+          {quizListCrudState.state.isLoading ? (
             <div className="flex items-center justify-center py-20">
               <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-student-bold)] border-t-transparent animate-spin" />
             </div>
@@ -672,9 +676,9 @@ export default function StudentAssessmentsPage() {
       )}
 
       {/* Exams Tab */}
-      {activeTab === "exams" && (
+      {tabState.state.activeTab === "exams" && (
         <>
-          {loadingExams ? (
+          {examListCrudState.state.isLoading ? (
             <div className="flex items-center justify-center py-20">
               <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-student-bold)] border-t-transparent animate-spin" />
             </div>
