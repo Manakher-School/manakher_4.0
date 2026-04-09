@@ -714,7 +714,34 @@ It contains a short and clear to-do list of milestones.
 - **Issues/Lessons:**
   - **Always verify requirements:** "Transform into single page with accordions" means REPLACE, not ADD
   - **Page consolidation requires deletion:** When combining multiple pages into one, the old pages must be removed to avoid duplication
-  - **Build page count decreases on deletion:** Each deleted page removes 2 pages (ar + en versions) from the build
+   - **Build page count decreases on deletion:** Each deleted page removes 2 pages (ar + en versions) from the build
+
+### [INPROGRESS] Milestone 10: Final Verification & Production Readiness (continued)
+
+**Iteration 6** (2026-04-09) — Round 10: Convert Settings dropdown to direct nav link:
+- **What was done:**
+  - **Round 10 Issue:** Settings was a dropdown menu in the admin navigation. User wanted it converted to a direct link (5th navigation item).
+  - **Updated `admin/layout.tsx`:**
+    - Removed `MoreVertical` icon import, added `Settings` icon (gear icon)
+    - Removed `isDropdown` property from NavItem interface - all items now have direct `href`
+    - Removed `SettingsSubItem` interface and `settingsSubItems` array (no more submenu)
+    - Removed `useState` hook for `settingsOpen` state
+    - Simplified navigation rendering - removed dropdown logic, all items now render as direct links
+    - Settings link points to `/${locale}/dashboard/admin/settings` (the consolidated settings page with accordions)
+    - Desktop sidebar: All 5 items displayed as direct links with icons
+    - Mobile tab bar: All 5 items displayed as direct links with icons (improved from previous 4 links + dropdown button)
+  - **Navigation Structure (New - 5 direct items):**
+    1. **Overview** - Main dashboard (LayoutGrid icon)
+    2. **Classes and Sections** - Manages grades and sections (Layers icon)
+    3. **Subjects & Exams** - Manages subjects and exam schedules (BookOpen icon)
+    4. **Users** - Manages teachers and students (Users icon)
+    5. **Settings** - Platform settings, moderation, monitoring (Settings/gear icon) ← Direct link now
+  - **Language support:** Settings link properly uses `locale` variable for bilingual routing
+  - Build verification: All 52 pages compile successfully, zero TypeScript errors
+- **Issues/Lessons:**
+  - **Dropdown to direct link conversion:** Simplified navigation code by removing state management and dropdown rendering logic
+  - **Mobile improvement:** All 5 nav items now visible as direct links on mobile (was 4 links + dropdown before)
+  - **Navigation consistency:** All 5 items now follow the same pattern - icon + label, direct link, simple active state detection
 
 ---
 
