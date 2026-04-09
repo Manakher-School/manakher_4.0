@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import { StatCard } from "@/components/ui/stat-card";
 import { getDisplayName } from "@/lib/auth";
 import { Users, Layers, GraduationCap, BookOpen, Bell, Plus, Pencil, Trash2, X } from "lucide-react";
@@ -15,6 +16,7 @@ import pb from "@/lib/pocketbase";
 export default function AdminDashboard() {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
+  const { alert, confirm } = useDialog();
   const t = dict.dashboard.admin;
   const displayName = user ? getDisplayName(user, locale) : "";
 
@@ -79,36 +81,36 @@ export default function AdminDashboard() {
         section: "",
       };
       
-      if (editingAnnouncementId) {
-        // Verify the record exists before updating
-        try {
-          await pb.collection("announcements").getOne(editingAnnouncementId);
-          await pb.collection("announcements").update(editingAnnouncementId, payload);
-        } catch (err: any) {
-          if (err?.status === 404) {
-            alert(locale === "ar" ? "الإعلان غير موجود. سيتم إنشاء إعلان جديد." : "Announcement not found. Creating a new one.");
-            await pb.collection("announcements").create(payload);
-          } else {
-            throw err;
-          }
-        }
-        setEditingAnnouncementId(null);
-      } else {
-        await pb.collection("announcements").create(payload);
-      }
-      
-      setAnnouncementForm({title: "", body: ""});
-      setShowAnnouncementForm(false);
-      
-      // Reload announcements
-      const allAnns = await pb.collection("announcements").getFullList<{id: string; title: string; body: string; created: string}>({
-        sort: "-created",
-        expand: "author"
-      });
-      setAnnouncements(allAnns);
-    } catch (e) {
-      console.error(e);
-      alert(locale === "ar" ? "فشل الحفظ. يرجى المحاولة مرة أخرى." : "Save failed. Please try again.");
+       if (editingAnnouncementId) {
+         // Verify the record exists before updating
+         try {
+           await pb.collection("announcements").getOne(editingAnnouncementId);
+           await pb.collection("announcements").update(editingAnnouncementId, payload);
+         } catch (err: any) {
+           if (err?.status === 404) {
+             await alert(locale === "ar" ? "الإعلان غير موجود. سيتم إنشاء إعلان جديد." : "Announcement not found. Creating a new one.");
+             await pb.collection("announcements").create(payload);
+           } else {
+             throw err;
+           }
+         }
+         setEditingAnnouncementId(null);
+       } else {
+         await pb.collection("announcements").create(payload);
+       }
+       
+       setAnnouncementForm({title: "", body: ""});
+       setShowAnnouncementForm(false);
+       
+       // Reload announcements
+       const allAnns = await pb.collection("announcements").getFullList<{id: string; title: string; body: string; created: string}>({
+         sort: "-created",
+         expand: "author"
+       });
+       setAnnouncements(allAnns);
+     } catch (e) {
+       console.error(e);
+       await alert(locale === "ar" ? "فشل الحفظ. يرجى المحاولة مرة أخرى." : "Save failed. Please try again.");
     } finally {
       setSavingAnnouncement(false);
     }
@@ -121,7 +123,7 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteAnnouncement = async (id: string) => {
-    if (!confirm(dict.dashboard.admin.announcements.confirmDelete)) return;
+    if (!(await confirm(dict.dashboard.admin.announcements.confirmDelete))) return;
     await pb.collection("announcements").delete(id);
     
     // Reload announcements

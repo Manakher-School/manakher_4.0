@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import pb from "@/lib/pocketbase";
 import { Layers, Plus, Trash2, Pencil, Loader2, X } from "lucide-react";
 
@@ -18,6 +19,7 @@ const EMPTY_FORM = { grade_ar: "", grade_en: "", grade_order: "", section_ar: ""
 
 export default function SectionsPage() {
   const { dict, locale } = useLocale();
+  const { alert, confirm } = useDialog();
   const t = dict.dashboard.admin.sections;
   const c = dict.common;
 
@@ -97,7 +99,7 @@ export default function SectionsPage() {
       ? `تحذير: حذف ${sectionName} سيؤدي إلى حذف جميع السجلات المرتبطة به:\n\n• المواد التعليمية\n• الواجبات\n• التسليمات\n• الإعلانات\n• التعيينات\n\nهل أنت متأكد من الحذف؟`
       : `Warning: Deleting ${sectionName} will also delete all related records:\n\n• Learning materials\n• Homework\n• Submissions\n• Announcements\n• Assignments\n\nAre you sure you want to delete?`;
     
-    if (!confirm(warningMsg)) return;
+    if (!(await confirm(warningMsg))) return;
     
     setDeletingId(id);
     try {
@@ -155,10 +157,10 @@ export default function SectionsPage() {
       await pb.collection("class_sections").delete(id);
       setSections(s => s.filter(x => x.id !== id));
       
-      alert(locale === "ar" ? "تم الحذف بنجاح" : "Deleted successfully");
+      await alert(locale === "ar" ? "تم الحذف بنجاح" : "Deleted successfully");
     } catch (error) {
       console.error("Delete error:", error);
-      alert(locale === "ar" ? "فشل الحذف. يرجى المحاولة مرة أخرى." : "Delete failed. Please try again.");
+      await alert(locale === "ar" ? "فشل الحذف. يرجى المحاولة مرة أخرى." : "Delete failed. Please try again.");
     } finally {
       setDeletingId(null);
     }

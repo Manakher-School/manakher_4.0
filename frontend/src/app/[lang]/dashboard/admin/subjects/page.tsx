@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import pb from "@/lib/pocketbase";
 import { BookOpen, Plus, Trash2, Pencil, Loader2, X } from "lucide-react";
 
@@ -16,6 +17,7 @@ const EMPTY_FORM = { name_ar: "", name_en: "", code: "" };
 
 export default function SubjectsPage() {
   const { dict, locale } = useLocale();
+  const { alert, confirm } = useDialog();
   const t = dict.dashboard.admin.subjects;
   const c = dict.common;
 
@@ -82,7 +84,7 @@ export default function SubjectsPage() {
       ? `تحذير: حذف المقرر "${subjectName}" سيؤدي إلى حذف جميع السجلات المرتبطة به:\n\n• المواد التعليمية\n• الواجبات\n• التسليمات\n• الاختبارات\n• جداول الامتحانات\n\nهل أنت متأكد من الحذف؟`
       : `Warning: Deleting subject "${subjectName}" will also delete all related records:\n\n• Learning materials\n• Homework\n• Submissions\n• Quizzes\n• Exam schedules\n\nAre you sure you want to delete?`;
     
-    if (!confirm(warningMsg)) return;
+    if (!(await confirm(warningMsg))) return;
     
     setDeletingId(id);
     try {
@@ -130,14 +132,14 @@ export default function SubjectsPage() {
         await pb.collection("users").update(user.id, { subjects: updatedSubjects });
       }
       
-      // Finally, delete the subject itself
-      await pb.collection("subjects").delete(id);
-      setSubjects(s => s.filter(x => x.id !== id));
-      
-      alert(locale === "ar" ? "تم الحذف بنجاح" : "Deleted successfully");
-    } catch (error) {
-      console.error("Delete error:", error);
-      alert(locale === "ar" ? "فشل الحذف. يرجى المحاولة مرة أخرى." : "Delete failed. Please try again.");
+       // Finally, delete the subject itself
+       await pb.collection("subjects").delete(id);
+       setSubjects(s => s.filter(x => x.id !== id));
+       
+       await alert(locale === "ar" ? "تم الحذف بنجاح" : "Deleted successfully");
+     } catch (error) {
+       console.error("Delete error:", error);
+       await alert(locale === "ar" ? "فشل الحذف. يرجى المحاولة مرة أخرى." : "Delete failed. Please try again.");
     } finally {
       setDeletingId(null);
     }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { Settings as SettingsIcon, Check, Loader2 } from "lucide-react";
 
 export default function SettingsPage() {
   const { dict, locale } = useLocale();
+  const { alert } = useDialog();
   const t = dict.dashboard.admin.settings;
   const common = dict.common;
 
@@ -91,13 +93,13 @@ export default function SettingsPage() {
 
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (e) {
-      console.error("Failed to save settings:", e);
-      alert("Failed to save settings. Please try again.");
-    } finally {
-      setSaving(false);
-    }
-  }
+     } catch (e) {
+       console.error("Failed to save settings:", e);
+       await alert("Failed to save settings. Please try again.");
+     } finally {
+       setSaving(false);
+     }
+   }
 
   return (
     <div className="max-w-3xl space-y-6">

@@ -156,3 +156,6 @@ The resource at “https://manakherschool.netlify.app/_next/static/media/d41831e
 Round 6:
 
 - The alerts and popups in the website are supposed to match and be part of the website's design system.
+- The teacher Sarah failed to delete.
+- The students Layla and Tahani failed to delete
+- The general settings, if I change the name it's not effective at all... The website name never changes.

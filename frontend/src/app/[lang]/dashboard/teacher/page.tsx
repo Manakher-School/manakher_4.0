@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import { StatCard } from "@/components/ui/stat-card";
 import { getDisplayName } from "@/lib/auth";
 import { getPocketBase } from "@/lib/pocketbase";
@@ -14,6 +15,7 @@ import { RichEditor } from "@/components/ui/rich-editor";
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
+  const { confirm } = useDialog();
   const t = dict.dashboard.teacher;
   const displayName = user ? getDisplayName(user, locale) : "";
 
@@ -125,7 +127,7 @@ export default function TeacherDashboard() {
   };
 
    const handleDeleteAnnouncement = async (id: string) => {
-     if (!confirm(dict.dashboard.teacher.announcements.confirmDelete)) return;
+     if (!(await confirm(dict.dashboard.teacher.announcements.confirmDelete))) return;
      if (!user) return;
      const pb = getPocketBase();
      await pb.collection("announcements").delete(id);

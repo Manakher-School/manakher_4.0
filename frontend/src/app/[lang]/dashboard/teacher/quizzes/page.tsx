@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
 import {
   ClipboardList, Plus, Pencil, Trash2, X, ChevronDown, ChevronUp,
@@ -87,6 +88,7 @@ const EMPTY_QUESTION = {
 export default function TeacherQuizzesPage() {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
+  const { confirm } = useDialog();
   const t = dict.dashboard.teacher.quizzes;
   const common = dict.common;
 
@@ -183,12 +185,12 @@ export default function TeacherQuizzesPage() {
     if (!user || !quizForm.title || !quizForm.section || !quizForm.subject || !quizForm.time_limit) return;
     
     // If creating a new quiz, warn that questions are required
-    if (!editingQuizId) {
-      const confirmMsg = locale === "ar" 
-        ? "تذكري: يجب إضافة سؤال واحد على الأقل بعد حفظ الاختبار. هل تريدين المتابعة؟"
-        : "Remember: You must add at least one question after saving the quiz. Continue?";
-      if (!confirm(confirmMsg)) return;
-    }
+     if (!editingQuizId) {
+       const confirmMsg = locale === "ar" 
+         ? "تذكري: يجب إضافة سؤال واحد على الأقل بعد حفظ الاختبار. هل تريدين المتابعة؟"
+         : "Remember: You must add at least one question after saving the quiz. Continue?";
+       if (!(await confirm(confirmMsg))) return;
+     }
     
     setSavingQuiz(true);
     const pb = getPocketBase();
@@ -222,7 +224,7 @@ export default function TeacherQuizzesPage() {
   }
 
   async function deleteQuiz(id: string) {
-    if (!confirm(t.confirmDelete)) return;
+    if (!(await confirm(t.confirmDelete))) return;
     const pb = getPocketBase();
     await pb.collection("quizzes").delete(id);
     await load();
@@ -295,7 +297,7 @@ export default function TeacherQuizzesPage() {
   }
 
   async function deleteQuestion(id: string) {
-    if (!confirm(t.deleteQuestion + "?")) return;
+    if (!(await confirm(t.deleteQuestion + "?"))) return;
     const pb = getPocketBase();
     await pb.collection("quiz_questions").delete(id);
     if (expandedQuiz) {

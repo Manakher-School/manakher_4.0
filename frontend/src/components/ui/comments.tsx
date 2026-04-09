@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
 import { Button } from "./button";
 import { Trash2 } from "lucide-react";
@@ -30,6 +31,7 @@ interface CommentsProps {
 export function Comments({ targetType, targetId }: CommentsProps) {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
+  const { confirm } = useDialog();
   const t = dict.common.comments;
   
   const [comments, setComments] = useState<Comment[]>([]);
@@ -83,7 +85,7 @@ export function Comments({ targetType, targetId }: CommentsProps) {
   };
 
   const handleDelete = async (commentId: string) => {
-    if (!confirm(t.confirmDelete)) return;
+    if (!(await confirm(t.confirmDelete))) return;
     
     try {
       await pb.collection("comments").delete(commentId);

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
 import { getTextDirection } from "@/lib/text-direction";
 import { ClipboardList, Clock, CheckCircle, Lock } from "lucide-react";
@@ -112,6 +113,7 @@ function Countdown({
 export default function StudentQuizzesPage() {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
+  const { alert, confirm } = useDialog();
   const t = dict.dashboard.student.quizzes;
 
   // Quiz list state
@@ -186,13 +188,15 @@ export default function StudentQuizzesPage() {
     // Check every 5 seconds if quiz has closed
     const interval = setInterval(() => {
       const now = new Date();
-      if (now > closes && !completedAttempt) {
-        clearInterval(interval);
-        alert(locale === "ar" 
-          ? "انتهى وقت الاختبار! سيتم إرسال إجاباتك تلقائياً." 
-          : "Quiz time is up! Your answers will be submitted automatically.");
-        submitQuiz(answers);
-      }
+       if (now > closes && !completedAttempt) {
+          clearInterval(interval);
+          (async () => {
+            await alert(locale === "ar" 
+              ? "انتهى وقت الاختبار! سيتم إرسال إجاباتك تلقائياً." 
+              : "Quiz time is up! Your answers will be submitted automatically.");
+            submitQuiz(answers);
+          })();
+       }
     }, 5000);
     
     return () => clearInterval(interval);
@@ -219,17 +223,17 @@ export default function StudentQuizzesPage() {
     const opens = quiz.opens_at ? new Date(quiz.opens_at) : null;
     const closes = quiz.closes_at ? new Date(quiz.closes_at) : null;
     
-    if (opens && now < opens) {
-      alert(locale === "ar" 
-        ? "هذا الاختبار لم يفتح بعد. يرجى الانتظار حتى وقت الفتح." 
-        : "This quiz is not open yet. Please wait until the opening time.");
-      return;
-    }
-    
-    if (closes && now > closes) {
-      alert(locale === "ar" 
-        ? "انتهى وقت هذا الاختبار. لم يعد بإمكانك المشاركة." 
-        : "This quiz has closed. You can no longer participate.");
+     if (opens && now < opens) {
+       await alert(locale === "ar" 
+         ? "هذا الاختبار لم يفتح بعد. يرجى الانتظار حتى وقت الفتح." 
+         : "This quiz is not open yet. Please wait until the opening time.");
+       return;
+     }
+     
+     if (closes && now > closes) {
+       await alert(locale === "ar" 
+         ? "انتهى وقت هذا الاختبار. لم يعد بإمكانك المشاركة." 
+         : "This quiz has closed. You can no longer participate.");
       // Refresh the quiz list to update status badges
       load();
       return;
@@ -301,8 +305,10 @@ export default function StudentQuizzesPage() {
   }
 
   function handleSubmitClick() {
-    if (!confirm(t.confirmSubmit)) return;
-    submitQuiz();
+    (async () => {
+      if (!(await confirm(t.confirmSubmit))) return;
+      submitQuiz();
+    })();
   }
 
   // ── Quiz-taking view ─────────────────────────────────────────────────────────

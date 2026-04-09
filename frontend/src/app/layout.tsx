@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import { AuthProvider } from "@/context/auth-context";
+import { DialogProvider } from "@/context/dialog-context";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -23,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={cairo.variable} suppressHydrationWarning>
       <body className="min-h-full bg-surface text-ink antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <DialogProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </DialogProvider>
       </body>
     </html>
   );

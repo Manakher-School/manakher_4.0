@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
 import { Calendar, Clock, Plus, Trash2, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ interface FormData {
 export default function AdminExamsPage() {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
+  const { confirm } = useDialog();
   const t = dict.dashboard.admin.exams;
   const common = dict.common;
 
@@ -163,7 +165,7 @@ export default function AdminExamsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t.confirmDelete)) return;
+    if (!(await confirm(t.confirmDelete))) return;
     try {
       await pb.collection("exam_schedules").delete(id);
       await load();

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
 import { BookOpen, Plus, Pencil, Trash2, X, Link2, Paperclip, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ const EMPTY_FORM = { title: "", body: "", link_url: "", section: "", subject: ""
 export default function TeacherMaterialsPage() {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
+  const { confirm } = useDialog();
   const t = dict.dashboard.teacher.materials;
   const common = dict.common;
 
@@ -158,7 +160,7 @@ async function handleSave() {
 }
 
   async function handleDelete(id: string) {
-    if (!confirm(t.confirmDelete)) return;
+    if (!(await confirm(t.confirmDelete))) return;
     const pb = getPocketBase();
     await pb.collection("materials").delete(id);
     await load();

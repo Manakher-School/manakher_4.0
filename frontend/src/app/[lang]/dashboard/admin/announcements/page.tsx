@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
 import { Bell, Plus, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ const EMPTY_FORM = { title: "", body: "", scope: "global" as Announcement["scope
 export default function AdminAnnouncementsPage() {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
+  const { confirm } = useDialog();
   const t = dict.dashboard.admin.announcements;
   const common = dict.common;
 
@@ -116,7 +118,7 @@ export default function AdminAnnouncementsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t.confirmDelete)) return;
+    if (!(await confirm(t.confirmDelete))) return;
     const pb = getPocketBase();
     await pb.collection("announcements").delete(id);
     await load();

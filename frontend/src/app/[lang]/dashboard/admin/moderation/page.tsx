@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
 import { getDisplayName } from "@/lib/auth";
 import {
@@ -60,6 +61,7 @@ interface Comment {
 
 export default function ModerationPage() {
   const { dict, locale } = useLocale();
+  const { confirm } = useDialog();
   const t = dict.dashboard.admin.moderation;
   const common = dict.common;
 
@@ -130,7 +132,7 @@ export default function ModerationPage() {
   }
 
   async function deleteMaterial(id: string) {
-    if (!confirm(t.confirmDelete)) return;
+    if (!(await confirm(t.confirmDelete))) return;
     const pb = getPocketBase();
     try {
       await pb.collection("materials").delete(id);
@@ -141,7 +143,7 @@ export default function ModerationPage() {
   }
 
   async function deleteAnnouncement(id: string) {
-    if (!confirm(t.confirmDelete)) return;
+    if (!(await confirm(t.confirmDelete))) return;
     const pb = getPocketBase();
     try {
       await pb.collection("announcements").delete(id);
@@ -152,7 +154,7 @@ export default function ModerationPage() {
   }
 
   async function deleteComment(id: string) {
-    if (!confirm(t.confirmDelete)) return;
+    if (!(await confirm(t.confirmDelete))) return;
     const pb = getPocketBase();
     try {
       await pb.collection("comments").delete(id);

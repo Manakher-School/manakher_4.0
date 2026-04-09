@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import pb from "@/lib/pocketbase";
 import { Users, Plus, Trash2, Pencil, Loader2, X, ChevronDown, ChevronUp, Search } from "lucide-react";
 
@@ -87,6 +88,7 @@ function SectionPicker({
 // ── Main page ───────────────────────────────────────────────────────────────
 export default function StudentsPage() {
   const { dict, locale } = useLocale();
+  const { confirm } = useDialog();
   const t = dict.dashboard.admin.students;
   const ts = dict.dashboard.teacher.sections; // reuse search copy
   const c = dict.common;
@@ -209,7 +211,7 @@ export default function StudentsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t.confirmDelete)) return;
+    if (!(await confirm(t.confirmDelete))) return;
     setDeletingId(id);
     try {
       await pb.collection("users").delete(id);

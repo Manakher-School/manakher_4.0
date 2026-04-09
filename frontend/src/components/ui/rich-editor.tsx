@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef } from "react";
+import { useDialog } from "@/context/dialog-context";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -87,6 +88,7 @@ export function RichEditor({
   dir = "rtl",
   minHeight = 200,
 }: RichEditorProps) {
+  const { alert } = useDialog();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
@@ -152,10 +154,10 @@ export function RichEditor({
         const url = pb.files.getURL(record, record.file as string);
         editor.chain().focus().setImage({ src: url }).run();
       } catch {
-        alert("فشل رفع الصورة. حاول مجدداً.\nFailed to upload image.");
+        await alert("فشل رفع الصورة. حاول مجدداً.\nFailed to upload image.");
       }
     },
-    [editor]
+    [editor, alert]
   );
 
   if (!editor) return null;

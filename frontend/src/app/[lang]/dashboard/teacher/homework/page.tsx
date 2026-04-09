@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
+import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
 import { getDisplayName } from "@/lib/auth";
 import { FileText, Plus, Pencil, Trash2, X, ChevronDown, ChevronUp } from "lucide-react";
@@ -62,6 +63,7 @@ const EMPTY_FORM = {
 export default function TeacherHomeworkPage() {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
+  const { confirm } = useDialog();
   const t = dict.dashboard.teacher.homework;
   const common = dict.common;
 
@@ -212,7 +214,7 @@ export default function TeacherHomeworkPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t.confirmDelete)) return;
+    if (!(await confirm(t.confirmDelete))) return;
     const pb = getPocketBase();
     await pb.collection("homework").delete(id);
     await load();
