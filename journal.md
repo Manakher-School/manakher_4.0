@@ -700,7 +700,21 @@ It contains a short and clear to-do list of milestones.
   - **Accordion state management:** Each accordion toggles independently - used separate boolean state for open/closed (platform_open, moderation_open, monitoring_open)
   - **Fix function name references:** TypeScript catches undefined functions - `getDisplayName` vs `getDisplayNameFromExpand` difference matters when accessing expand data
   - **Build must pass before committing:** Build verification is critical before marking tasks complete
-   - **Text color on gradients:** White text on role-colored gradients (violet for admin, teal for teacher, amber for student) provides better contrast than light tints
+  - **Text color on gradients:** White text on role-colored gradients (violet for admin, teal for teacher, amber for student) provides better contrast than light tints
+
+**Iteration 5** (2026-04-09) — CRITICAL FIX: Remove duplicate moderation and monitoring pages:
+- **What was done:**
+  - **CRITICAL BUG FOUND:** Previous iteration incorrectly KEPT the old separate pages (`moderation/page.tsx`, `monitoring/page.tsx`) alongside the new consolidated settings page
+  - This created duplication - user asked to REPLACE the 3 pages with 1 consolidated page, not add a new one
+  - **Fixed by deleting:**
+    - `frontend/src/app/[lang]/dashboard/admin/moderation/page.tsx` (435 lines)
+    - `frontend/src/app/[lang]/dashboard/admin/monitoring/page.tsx` (187 lines)
+  - All content from these pages is now consolidated in the single `/dashboard/admin/settings/page.tsx` with accordions
+  - Build verification: Successfully compiled all 52 pages with zero TypeScript errors (down from 56)
+- **Issues/Lessons:**
+  - **Always verify requirements:** "Transform into single page with accordions" means REPLACE, not ADD
+  - **Page consolidation requires deletion:** When combining multiple pages into one, the old pages must be removed to avoid duplication
+  - **Build page count decreases on deletion:** Each deleted page removes 2 pages (ar + en versions) from the build
 
 ---
 
@@ -783,17 +797,25 @@ Completed all remaining testing issues from Rounds 7, 8, and 9 on the production
   - `student/page.tsx` line 95 (amber gradient background)
 - Provides cleaner, more professional appearance
 
+**Fix 3: Remove Duplicate Pages** (CRITICAL)
+- **BUG:** Old moderation and monitoring pages were kept alongside new consolidated page
+- **Solution:** Deleted old separate pages:
+  - `frontend/src/app/[lang]/dashboard/admin/moderation/page.tsx`
+  - `frontend/src/app/[lang]/dashboard/admin/monitoring/page.tsx`
+- All functionality now consolidated in single `/dashboard/admin/settings/page.tsx`
+
 **Bug Fixed During Implementation:**
 - Line 410 in settings page had `getDisplayName()` instead of `getDisplayNameFromExpand()`
 - Fixed to properly access expanded author data from comments
 
 **Build Verification:**
-- All 56 pages compiled successfully
+- 52 pages compiled successfully (down from 56 after deleting 2 pages)
 - Zero TypeScript errors
 - All changes tested locally before commit
 
-**Commit:**
+**Commits:**
 - `65a2dc9` - "Round 9: Consolidate settings pages into unified accordion layout + change welcome banner text to white"
+- `09ff20b` - "fix: Remove duplicate moderation and monitoring pages - consolidated into settings page"
 
 ### Testing Status
 - ✅ Round 7: FIXED (mobile nav icons)
@@ -801,7 +823,8 @@ Completed all remaining testing issues from Rounds 7, 8, and 9 on the production
 - ✅ Round 9: FIXED (settings consolidation + welcome banner text)
 
 ### Build Status
-**Final:** 56 pages compiled successfully, zero TypeScript errors
+**Final:** 52 pages compiled successfully, zero TypeScript errors
+(Down from 56 after removing duplicate moderation and monitoring pages)
 
 ### Production Deployment
 **Frontend:** Netlify (https://manakherschool.netlify.app)
