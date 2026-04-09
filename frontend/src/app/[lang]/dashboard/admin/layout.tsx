@@ -22,11 +22,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const t = dict.dashboard.admin.nav;
 
   const navItems: NavItem[] = [
-    { key: "overview",       href: `/${locale}/dashboard/admin`,             icon: <LayoutGrid className="h-6 w-6" /> },
-    { key: "classes",        href: `/${locale}/dashboard/admin/sections`,    icon: <Layers className="h-6 w-6" /> },
-    { key: "subjects_exams", href: `/${locale}/dashboard/admin/subjects`,    icon: <BookOpen className="h-6 w-6" /> },
-    { key: "users",          href: `/${locale}/dashboard/admin/teachers`,    icon: <Users className="h-6 w-6" /> },
-    { key: "settings",       href: `/${locale}/dashboard/admin/settings`,    icon: <Settings className="h-6 w-6" /> },
+    { key: "overview",       href: `/${locale}/dashboard/admin`,                    icon: <LayoutGrid className="h-6 w-6" /> },
+    { key: "classes",        href: `/${locale}/dashboard/admin/sections`,           icon: <Layers className="h-6 w-6" /> },
+    { key: "subjects_exams", href: `/${locale}/dashboard/admin/subjects_exams`,    icon: <BookOpen className="h-6 w-6" /> },
+    { key: "users",          href: `/${locale}/dashboard/admin/users`,              icon: <Users className="h-6 w-6" /> },
+    { key: "settings",       href: `/${locale}/dashboard/admin/settings`,           icon: <Settings className="h-6 w-6" /> },
   ];
 
   return (
