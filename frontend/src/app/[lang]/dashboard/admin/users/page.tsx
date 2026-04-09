@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
 import pb from "@/lib/pocketbase";
-import { GraduationCap, Plus, Trash2, Pencil, Loader2, X, ChevronDown, Search } from "lucide-react";
+import { Plus, Trash2, Pencil, Loader2, X, ChevronDown, Search } from "lucide-react";
+import { useCrudState, useFormState, useFilterState, useTabState } from "@/lib/hooks";
 
 interface Teacher {
   id: string;
@@ -151,36 +152,31 @@ export default function UsersPage() {
   const { confirm, alert } = useDialog();
   const c = dict.common;
 
-  const [tab, setTab] = useState<"teachers" | "students">("teachers");
+  // Tab state
+  const { state: tabState, setActiveTab } = useTabState("teachers");
+  const tab = tabState.activeTab as "teachers" | "students";
 
-  // Teachers state
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [teacherSections, setTeacherSections] = useState<ClassSection[]>([]);
-  const [teacherSubjects, setTeacherSubjects] = useState<Subject[]>([]);
-  const [teacherLoading, setTeacherLoading] = useState(true);
-  const [teacherShowForm, setTeacherShowForm] = useState(false);
-  const [teacherEditingId, setTeacherEditingId] = useState<string | null>(null);
-  const [teacherSaving, setTeacherSaving] = useState(false);
-  const [teacherDeletingId, setTeacherDeletingId] = useState<string | null>(null);
-  const [teacherSearchQuery, setTeacherSearchQuery] = useState("");
-  const [teacherForm, setTeacherForm] = useState(EMPTY_TEACHER_FORM);
+  // Teachers CRUD state
+  const teachersCrud = useCrudState();
+  const teachersForm = useFormState(EMPTY_TEACHER_FORM);
+  const teachersFilter = useFilterState({ searchTerm: "", page: 1, perPage: 999 });
 
-  // Students state
-  const [students, setStudents] = useState<Student[]>([]);
-  const [studentSections, setStudentSections] = useState<ClassSection[]>([]);
-  const [studentLoading, setStudentLoading] = useState(true);
-  const [studentShowForm, setStudentShowForm] = useState(false);
-  const [studentEditingId, setStudentEditingId] = useState<string | null>(null);
-  const [studentSaving, setStudentSaving] = useState(false);
-  const [studentDeletingId, setStudentDeletingId] = useState<string | null>(null);
-  const [studentSearchQuery, setStudentSearchQuery] = useState("");
-  const [studentForm, setStudentForm] = useState(EMPTY_STUDENT_FORM);
+  // Teachers data state
+  const [teachersData, setTeachersData] = useState<{ items: Teacher[]; sections: ClassSection[]; subjects: Subject[] }>({ items: [], sections: [], subjects: [] });
+
+  // Students CRUD state
+  const studentsCrud = useCrudState();
+  const studentsForm = useFormState(EMPTY_STUDENT_FORM);
+  const studentsFilter = useFilterState({ searchTerm: "", page: 1, perPage: 999 });
+
+  // Students data state
+  const [studentsData, setStudentsData] = useState<{ items: Student[]; sections: ClassSection[] }>({ items: [], sections: [] });
 
   const t_teachers = dict.dashboard.admin.teachers;
   const t_students = dict.dashboard.admin.students;
 
   async function loadTeachers() {
-    setTeacherLoading(true);
+    teachersCrud.setIsLoading(true);
     try {
       const [teachersRes, sectionsRes, subjectsRes] = await Promise.all([
         pb.collection("users").getFullList<Teacher>({
@@ -191,16 +187,16 @@ export default function UsersPage() {
         pb.collection("class_sections").getFullList<ClassSection>({ sort: "grade_order,section_ar" }),
         pb.collection("subjects").getFullList<Subject>({ sort: "name_ar" }),
       ]);
-      setTeachers(teachersRes);
-      setTeacherSections(sectionsRes);
-      setTeacherSubjects(subjectsRes);
+      setTeachersData({ items: teachersRes, sections: sectionsRes, subjects: subjectsRes });
+    } catch (err) {
+      teachersCrud.setError("Failed to load teachers");
     } finally {
-      setTeacherLoading(false);
+      teachersCrud.setIsLoading(false);
     }
   }
 
   async function loadStudents() {
-    setStudentLoading(true);
+    studentsCrud.setIsLoading(true);
     try {
       const [studentsRes, sectionsRes] = await Promise.all([
         pb.collection("users").getFullList<Student>({
@@ -210,10 +206,11 @@ export default function UsersPage() {
         }),
         pb.collection("class_sections").getFullList<ClassSection>({ sort: "grade_order,section_ar" }),
       ]);
-      setStudents(studentsRes);
-      setStudentSections(sectionsRes);
+      setStudentsData({ items: studentsRes, sections: sectionsRes });
+    } catch (err) {
+      studentsCrud.setError("Failed to load students");
     } finally {
-      setStudentLoading(false);
+      studentsCrud.setIsLoading(false);
     }
   }
 
@@ -224,14 +221,14 @@ export default function UsersPage() {
 
   // Teachers functions
   function openCreateTeacher() {
-    setTeacherEditingId(null);
-    setTeacherForm(EMPTY_TEACHER_FORM);
-    setTeacherShowForm(true);
+    teachersCrud.setEditingId(null);
+    teachersForm.reset();
+    teachersCrud.setShowCreate(true);
   }
 
   function openEditTeacher(teacher: Teacher) {
-    setTeacherEditingId(teacher.id);
-    setTeacherForm({
+    teachersCrud.setEditingId(teacher.id);
+    teachersForm.setData({
       name_ar: teacher.name_ar,
       name_en: teacher.name_en,
       email: teacher.email,
@@ -239,55 +236,57 @@ export default function UsersPage() {
       sections: teacher.sections ?? [],
       subjects: teacher.subjects ?? [],
     });
-    setTeacherShowForm(true);
+    teachersCrud.setShowCreate(true);
   }
 
   function closeTeacherForm() {
-    setTeacherShowForm(false);
-    setTeacherEditingId(null);
-    setTeacherForm(EMPTY_TEACHER_FORM);
+    teachersCrud.setShowCreate(false);
+    teachersCrud.setEditingId(null);
+    teachersForm.reset();
   }
 
   async function handleTeacherSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setTeacherSaving(true);
+    teachersCrud.setIsLoading(true);
     try {
-      if (teacherEditingId) {
+      if (teachersCrud.state.editingId) {
         const data: Record<string, unknown> = {
-          name_ar: teacherForm.name_ar,
-          name_en: teacherForm.name_en,
-          email: teacherForm.email,
-          sections: teacherForm.sections,
-          subjects: teacherForm.subjects,
+          name_ar: teachersForm.state.data.name_ar,
+          name_en: teachersForm.state.data.name_en,
+          email: teachersForm.state.data.email,
+          sections: teachersForm.state.data.sections,
+          subjects: teachersForm.state.data.subjects,
         };
-        if (teacherForm.password) {
-          data.password = teacherForm.password;
-          data.passwordConfirm = teacherForm.password;
+        if (teachersForm.state.data.password) {
+          data.password = teachersForm.state.data.password;
+          data.passwordConfirm = teachersForm.state.data.password;
         }
-        await pb.collection("users").update(teacherEditingId, data);
+        await pb.collection("users").update(teachersCrud.state.editingId, data);
       } else {
         await pb.collection("users").create({
-          name_ar: teacherForm.name_ar,
-          name_en: teacherForm.name_en,
-          email: teacherForm.email,
-          password: teacherForm.password,
-          passwordConfirm: teacherForm.password,
+          name_ar: teachersForm.state.data.name_ar,
+          name_en: teachersForm.state.data.name_en,
+          email: teachersForm.state.data.email,
+          password: teachersForm.state.data.password,
+          passwordConfirm: teachersForm.state.data.password,
           role: "teacher",
-          sections: teacherForm.sections,
-          subjects: teacherForm.subjects,
+          sections: teachersForm.state.data.sections,
+          subjects: teachersForm.state.data.subjects,
           emailVisibility: true,
         });
       }
       closeTeacherForm();
       await loadTeachers();
+    } catch (err) {
+      teachersCrud.setError(`Failed to save teacher: ${err}`);
     } finally {
-      setTeacherSaving(false);
+      teachersCrud.setIsLoading(false);
     }
   }
 
   async function handleTeacherDelete(id: string) {
     if (!(await confirm(t_teachers.confirmDelete))) return;
-    setTeacherDeletingId(id);
+    teachersCrud.setEditingId(id);
     try {
       // Cascade delete: Remove all teacher-related records
       const [materials, homework, quizzes, exams, announcements] = await Promise.all([
@@ -326,74 +325,78 @@ export default function UsersPage() {
       // Delete teacher record
       await pb.collection("users").delete(id);
       await loadTeachers();
+    } catch (err) {
+      teachersCrud.setError(`Failed to delete teacher: ${err}`);
     } finally {
-      setTeacherDeletingId(null);
+      teachersCrud.setEditingId(null);
     }
   }
 
   // Students functions
   function openCreateStudent() {
-    setStudentEditingId(null);
-    setStudentForm(EMPTY_STUDENT_FORM);
-    setStudentShowForm(true);
+    studentsCrud.setEditingId(null);
+    studentsForm.reset();
+    studentsCrud.setShowCreate(true);
   }
 
   function openEditStudent(student: Student) {
-    setStudentEditingId(student.id);
-    setStudentForm({
+    studentsCrud.setEditingId(student.id);
+    studentsForm.setData({
       name_ar: student.name_ar,
       name_en: student.name_en,
       email: student.email,
       password: "",
       sections: student.sections ?? [],
     });
-    setStudentShowForm(true);
+    studentsCrud.setShowCreate(true);
   }
 
   function closeStudentForm() {
-    setStudentShowForm(false);
-    setStudentEditingId(null);
-    setStudentForm(EMPTY_STUDENT_FORM);
+    studentsCrud.setShowCreate(false);
+    studentsCrud.setEditingId(null);
+    studentsForm.reset();
   }
 
   async function handleStudentSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setStudentSaving(true);
+    studentsCrud.setIsLoading(true);
     try {
-      if (studentEditingId) {
+      if (studentsCrud.state.editingId) {
         const data: Record<string, unknown> = {
-          name_ar: studentForm.name_ar,
-          name_en: studentForm.name_en,
-          email: studentForm.email,
-          sections: studentForm.sections,
+          name_ar: studentsForm.state.data.name_ar,
+          name_en: studentsForm.state.data.name_en,
+          email: studentsForm.state.data.email,
+          sections: studentsForm.state.data.sections,
         };
-        if (studentForm.password) {
-          data.password = studentForm.password;
-          data.passwordConfirm = studentForm.password;
+        if (studentsForm.state.data.password) {
+          data.password = studentsForm.state.data.password;
+          data.passwordConfirm = studentsForm.state.data.password;
         }
-        await pb.collection("users").update(studentEditingId, data);
+        await pb.collection("users").update(studentsCrud.state.editingId, data);
       } else {
         await pb.collection("users").create({
-          name_ar: studentForm.name_ar,
-          name_en: studentForm.name_en,
-          email: studentForm.email,
-          password: studentForm.password,
-          passwordConfirm: studentForm.password,
+          name_ar: studentsForm.state.data.name_ar,
+          name_en: studentsForm.state.data.name_en,
+          email: studentsForm.state.data.email,
+          password: studentsForm.state.data.password,
+          passwordConfirm: studentsForm.state.data.password,
           role: "student",
-          sections: studentForm.sections,
+          sections: studentsForm.state.data.sections,
           emailVisibility: true,
         });
       }
       closeStudentForm();
       await loadStudents();
+    } catch (err) {
+      studentsCrud.setError(`Failed to save student: ${err}`);
     } finally {
-      setStudentSaving(false);
+      studentsCrud.setIsLoading(false);
     }
   }
 
   async function handleStudentDelete(id: string) {
     if (!(await confirm(t_students.confirmDelete))) return;
-    setStudentDeletingId(id);
+    studentsCrud.setEditingId(id);
     try {
       // Cascade delete for student
       const [submissions, attempts, comments, reactions] = await Promise.all([
@@ -410,17 +413,19 @@ export default function UsersPage() {
 
       await pb.collection("users").delete(id);
       await loadStudents();
+    } catch (err) {
+      studentsCrud.setError(`Failed to delete student: ${err}`);
     } finally {
-      setStudentDeletingId(null);
+      studentsCrud.setEditingId(null);
     }
   }
 
-  const filteredTeachers = teachers.filter(t =>
-    `${t.name_ar} ${t.name_en} ${t.email}`.toLowerCase().includes(teacherSearchQuery.toLowerCase())
+  const filteredTeachers = teachersData.items.filter(t =>
+    `${t.name_ar} ${t.name_en} ${t.email}`.toLowerCase().includes(teachersFilter.state.searchTerm.toLowerCase())
   );
 
-  const filteredStudents = students.filter(s =>
-    `${s.name_ar} ${s.name_en} ${s.email}`.toLowerCase().includes(studentSearchQuery.toLowerCase())
+  const filteredStudents = studentsData.items.filter(s =>
+    `${s.name_ar} ${s.name_en} ${s.email}`.toLowerCase().includes(studentsFilter.state.searchTerm.toLowerCase())
   );
 
   return (
@@ -428,7 +433,7 @@ export default function UsersPage() {
       {/* Tabs */}
       <div className="mb-6 flex gap-2 border-b border-[var(--color-border)]">
         <button
-          onClick={() => setTab("teachers")}
+          onClick={() => setActiveTab("teachers")}
           className={`px-4 py-2 font-semibold transition-colors ${
             tab === "teachers"
               ? "border-b-2 border-[var(--color-accent)] text-[var(--color-accent)]"
@@ -438,7 +443,7 @@ export default function UsersPage() {
           {t_teachers.title}
         </button>
         <button
-          onClick={() => setTab("students")}
+          onClick={() => setActiveTab("students")}
           className={`px-4 py-2 font-semibold transition-colors ${
             tab === "students"
               ? "border-b-2 border-[var(--color-accent)] text-[var(--color-accent)]"
@@ -458,8 +463,8 @@ export default function UsersPage() {
               <input
                 type="text"
                 placeholder={c.search}
-                value={teacherSearchQuery}
-                onChange={e => setTeacherSearchQuery(e.target.value)}
+                value={teachersFilter.state.searchTerm}
+                onChange={e => teachersFilter.setSearchTerm(e.target.value)}
                 className="w-full ps-10 pr-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
               />
             </div>
@@ -472,7 +477,7 @@ export default function UsersPage() {
             </button>
           </div>
 
-          {teacherLoading ? (
+          {teachersCrud.state.isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" />
             </div>
@@ -507,11 +512,11 @@ export default function UsersPage() {
                       </button>
                       <button
                         onClick={() => handleTeacherDelete(teacher.id)}
-                        disabled={teacherDeletingId === teacher.id}
+                        disabled={teachersCrud.state.editingId === teacher.id}
                         className="rounded bg-red-500 p-2 text-white transition-opacity hover:opacity-80 disabled:opacity-50"
                         title={c.delete}
                       >
-                        {teacherDeletingId === teacher.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        {teachersCrud.state.editingId === teacher.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
@@ -521,11 +526,11 @@ export default function UsersPage() {
           )}
 
           {/* Teacher Form Modal */}
-          {teacherShowForm && (
+          {teachersCrud.state.showCreate && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
               <div className="w-full max-w-md rounded-[var(--radius-lg)] bg-[var(--color-surface-card)] p-6 shadow-[var(--shadow-md)]">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">{teacherEditingId ? t_teachers.editTitle : t_teachers.add}</h2>
+                  <h2 className="text-lg font-semibold">{teachersCrud.state.editingId ? t_teachers.editTitle : t_teachers.add}</h2>
                   <button onClick={closeTeacherForm} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]">
                     <X className="h-5 w-5" />
                   </button>
@@ -535,8 +540,8 @@ export default function UsersPage() {
                     <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_teachers.nameAr}</label>
                     <input
                       type="text"
-                      value={teacherForm.name_ar}
-                      onChange={e => setTeacherForm({ ...teacherForm, name_ar: e.target.value })}
+                      value={teachersForm.state.data.name_ar}
+                      onChange={e => teachersForm.setFieldValue("name_ar", e.target.value)}
                       placeholder={t_teachers.phNameAr}
                       required
                       className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
@@ -546,8 +551,8 @@ export default function UsersPage() {
                     <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_teachers.nameEn}</label>
                     <input
                       type="text"
-                      value={teacherForm.name_en}
-                      onChange={e => setTeacherForm({ ...teacherForm, name_en: e.target.value })}
+                      value={teachersForm.state.data.name_en}
+                      onChange={e => teachersForm.setFieldValue("name_en", e.target.value)}
                       placeholder={t_teachers.phNameEn}
                       required
                       className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
@@ -557,8 +562,8 @@ export default function UsersPage() {
                     <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_teachers.email}</label>
                     <input
                       type="email"
-                      value={teacherForm.email}
-                      onChange={e => setTeacherForm({ ...teacherForm, email: e.target.value })}
+                      value={teachersForm.state.data.email}
+                      onChange={e => teachersForm.setFieldValue("email", e.target.value)}
                       placeholder={t_teachers.phEmail}
                       required
                       className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
@@ -566,36 +571,36 @@ export default function UsersPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">
-                      {teacherEditingId ? t_teachers.newPassword : t_teachers.password}
+                      {teachersCrud.state.editingId ? t_teachers.newPassword : t_teachers.password}
                     </label>
                     <input
                       type="password"
-                      value={teacherForm.password}
-                      onChange={e => setTeacherForm({ ...teacherForm, password: e.target.value })}
+                      value={teachersForm.state.data.password}
+                      onChange={e => teachersForm.setFieldValue("password", e.target.value)}
                       placeholder={t_teachers.phPassword}
-                      required={!teacherEditingId}
+                      required={!teachersCrud.state.editingId}
                       className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                     />
                   </div>
                   <MultiSelect
                     label={t_teachers.assignedSections}
-                    options={teacherSections.map(s => ({ id: s.id, label: `${s.grade_en} ${s.section_en}` }))}
-                    selected={teacherForm.sections}
+                    options={teachersData.sections.map(s => ({ id: s.id, label: `${s.grade_en} ${s.section_en}` }))}
+                    selected={teachersForm.state.data.sections}
                     getLabel={id => {
-                      const s = teacherSections.find(x => x.id === id);
+                      const s = teachersData.sections.find(x => x.id === id);
                       return s ? `${s.grade_en} ${s.section_en}` : id;
                     }}
-                    onChange={sections => setTeacherForm({ ...teacherForm, sections })}
+                    onChange={sections => teachersForm.setFieldValue("sections", sections)}
                   />
                   <MultiSelect
                     label={t_teachers.assignedSubjects}
-                    options={teacherSubjects.map(s => ({ id: s.id, label: s.name_en }))}
-                    selected={teacherForm.subjects}
+                    options={teachersData.subjects.map(s => ({ id: s.id, label: s.name_en }))}
+                    selected={teachersForm.state.data.subjects}
                     getLabel={id => {
-                      const s = teacherSubjects.find(x => x.id === id);
+                      const s = teachersData.subjects.find(x => x.id === id);
                       return s ? s.name_en : id;
                     }}
-                    onChange={subjects => setTeacherForm({ ...teacherForm, subjects })}
+                    onChange={subjects => teachersForm.setFieldValue("subjects", subjects)}
                   />
                   <div className="flex gap-2 pt-4">
                     <button
@@ -607,10 +612,10 @@ export default function UsersPage() {
                     </button>
                     <button
                       type="submit"
-                      disabled={teacherSaving}
+                      disabled={teachersCrud.state.isLoading}
                       className="flex-1 flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
                     >
-                      {teacherSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {teachersCrud.state.isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                       {c.save}
                     </button>
                   </div>
@@ -630,8 +635,8 @@ export default function UsersPage() {
               <input
                 type="text"
                 placeholder={c.search}
-                value={studentSearchQuery}
-                onChange={e => setStudentSearchQuery(e.target.value)}
+                value={studentsFilter.state.searchTerm}
+                onChange={e => studentsFilter.setSearchTerm(e.target.value)}
                 className="w-full ps-10 pr-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
               />
             </div>
@@ -644,7 +649,7 @@ export default function UsersPage() {
             </button>
           </div>
 
-          {studentLoading ? (
+          {studentsCrud.state.isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" />
             </div>
@@ -679,11 +684,11 @@ export default function UsersPage() {
                       </button>
                       <button
                         onClick={() => handleStudentDelete(student.id)}
-                        disabled={studentDeletingId === student.id}
+                        disabled={studentsCrud.state.editingId === student.id}
                         className="rounded bg-red-500 p-2 text-white transition-opacity hover:opacity-80 disabled:opacity-50"
                         title={c.delete}
                       >
-                        {studentDeletingId === student.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        {studentsCrud.state.editingId === student.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
@@ -693,11 +698,11 @@ export default function UsersPage() {
           )}
 
           {/* Student Form Modal */}
-          {studentShowForm && (
+          {studentsCrud.state.showCreate && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
               <div className="w-full max-w-md rounded-[var(--radius-lg)] bg-[var(--color-surface-card)] p-6 shadow-[var(--shadow-md)]">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">{studentEditingId ? t_students.editTitle : t_students.add}</h2>
+                  <h2 className="text-lg font-semibold">{studentsCrud.state.editingId ? t_students.editTitle : t_students.add}</h2>
                   <button onClick={closeStudentForm} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]">
                     <X className="h-5 w-5" />
                   </button>
@@ -707,8 +712,8 @@ export default function UsersPage() {
                     <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_students.nameAr}</label>
                     <input
                       type="text"
-                      value={studentForm.name_ar}
-                      onChange={e => setStudentForm({ ...studentForm, name_ar: e.target.value })}
+                      value={studentsForm.state.data.name_ar}
+                      onChange={e => studentsForm.setFieldValue("name_ar", e.target.value)}
                       placeholder={t_students.phNameAr}
                       required
                       className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
@@ -718,8 +723,8 @@ export default function UsersPage() {
                     <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_students.nameEn}</label>
                     <input
                       type="text"
-                      value={studentForm.name_en}
-                      onChange={e => setStudentForm({ ...studentForm, name_en: e.target.value })}
+                      value={studentsForm.state.data.name_en}
+                      onChange={e => studentsForm.setFieldValue("name_en", e.target.value)}
                       placeholder={t_students.phNameEn}
                       required
                       className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
@@ -729,8 +734,8 @@ export default function UsersPage() {
                     <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_students.email}</label>
                     <input
                       type="email"
-                      value={studentForm.email}
-                      onChange={e => setStudentForm({ ...studentForm, email: e.target.value })}
+                      value={studentsForm.state.data.email}
+                      onChange={e => studentsForm.setFieldValue("email", e.target.value)}
                       placeholder={t_students.phEmail}
                       required
                       className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
@@ -738,26 +743,26 @@ export default function UsersPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">
-                      {studentEditingId ? t_students.newPassword : t_students.password}
+                      {studentsCrud.state.editingId ? t_students.newPassword : t_students.password}
                     </label>
                     <input
                       type="password"
-                      value={studentForm.password}
-                      onChange={e => setStudentForm({ ...studentForm, password: e.target.value })}
+                      value={studentsForm.state.data.password}
+                      onChange={e => studentsForm.setFieldValue("password", e.target.value)}
                       placeholder={t_students.phPassword}
-                      required={!studentEditingId}
+                      required={!studentsCrud.state.editingId}
                       className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                     />
                   </div>
                   <SingleSelect
                     label={t_students.assignedSection}
-                    options={studentSections.map(s => ({ id: s.id, label: `${s.grade_en} ${s.section_en}` }))}
-                    selected={studentForm.sections[0] || ""}
+                    options={studentsData.sections.map(s => ({ id: s.id, label: `${s.grade_en} ${s.section_en}` }))}
+                    selected={studentsForm.state.data.sections[0] || ""}
                     getLabel={id => {
-                      const s = studentSections.find(x => x.id === id);
+                      const s = studentsData.sections.find(x => x.id === id);
                       return s ? `${s.grade_en} ${s.section_en}` : id;
                     }}
-                    onChange={section => setStudentForm({ ...studentForm, sections: [section] })}
+                    onChange={section => studentsForm.setFieldValue("sections", [section])}
                   />
                   <div className="flex gap-2 pt-4">
                     <button
@@ -769,10 +774,10 @@ export default function UsersPage() {
                     </button>
                     <button
                       type="submit"
-                      disabled={studentSaving}
+                      disabled={studentsCrud.state.isLoading}
                       className="flex-1 flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
                     >
-                      {studentSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {studentsCrud.state.isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                       {c.save}
                     </button>
                   </div>
