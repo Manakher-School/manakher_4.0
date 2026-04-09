@@ -900,12 +900,33 @@ Completed all remaining testing issues from Rounds 7, 8, and 9 on the production
 **Final:** 52 pages compiled successfully, zero TypeScript errors
 (Down from 56 after removing duplicate moderation and monitoring pages)
 
+### [INPROGRESS] Round 11 - Fix Testing Issues
+
+#### Iteration Log
+
+**Iteration 1** (2026-04-09) — Round 11 Testing Fixes:
+- **What was done:**
+  - **Issue 1 - Users page missing student add functionality:** Created new combined `/dashboard/admin/users/page.tsx` page that consolidates both teacher and student management in a single interface with tab switching. Teachers tab includes section and subject multi-select assignment; students tab includes single section assignment. Both tabs have search, add, edit, delete functionality with proper cascade delete logic for related records.
+  - **Issue 2 - Subjects & Exams page missing exam add functionality:** Created new combined `/dashboard/admin/subjects_exams/page.tsx` page with tab interface for managing both subjects and exam schedules in one place. Subjects tab includes CRUD operations with cascade delete for all related materials, homework, submissions, quizzes, and exam schedules. Exams tab includes full exam schedule management with subject/section/date/time/type selection.
+  - **Issue 3 - Settings page not fully bilingual:** Audited settings page and replaced all hardcoded English strings with dictionary references: "Content Moderation" → `tMod.title`, "System Monitoring" → `tMon.title`, "Platform Settings" → `t.title`, "Materials/Announcements/Comments" tabs → `tMod.tabMaterials/tabAnnouncements/tabComments`, "Global/Section" scope badges → `dict.dashboard.admin.announcements?.scopeGlobal/scopeSection`
+  - **Updated navigation:** Changed admin layout nav link from `/dashboard/admin/teachers` to `/dashboard/admin/users` and from `/dashboard/admin/subjects` to `/dashboard/admin/subjects_exams` to point to the new combined pages
+  - **Build verification:** All changes compile successfully - 56 pages total (54 before + 2 new combined pages), zero TypeScript errors
+- **Commits made:**
+  1. `feat: Create combined Users management page with Teachers/Students tabs` (792 insertions)
+  2. `feat: Create combined Subjects & Exams management page with tab interface` (699 insertions)
+  3. `fix: Make settings page fully bilingual by using dictionary for all UI text` (7 changes)
+- **Issues/Lessons:**
+  - The combined pages maintain all existing functionality from the separate pages while providing a unified interface
+  - Cascade delete logic is complex but essential - when deleting a subject, must delete materials, homework (and their submissions), quizzes (and questions/attempts), exam schedules, and remove subject references from teachers
+  - Dictionary keys for all UI text were already defined in previous iterations - just needed to be wired into this page's code
+  - All scope badges and tab labels now properly translate based on locale
+
 ### Production Deployment
 **Frontend:** Netlify (https://manakherschool.netlify.app)
 **Backend:** Railway (https://pocketbase-production-882e.up.railway.app)
 
 ### Next Steps
-- User to verify all fixes are working correctly on production
+- User to verify all Round 11 fixes are working correctly on production
 - Any remaining issues from subsequent testing rounds will be addressed in new iterations
 
 
