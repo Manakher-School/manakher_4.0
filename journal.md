@@ -651,10 +651,32 @@ It contains a short and clear to-do list of milestones.
     - `/dashboard/admin/moderation`, `/monitoring`, `/settings` accessible via Settings submenu
   - Build passes: 56 pages, zero TypeScript errors
   - Committed: "feat: Redesign admin navigation to 5-item structure with settings submenu"
+  - **Issues/Lessons:**
+    - Dropdown state must be managed separately - can't just use pathname checking for multi-level navigation
+    - Mobile constraints require rethinking dropdown patterns - used button instead of link for mobile Settings
+    - Settings submenu links should have subtle styling (smaller text, left border) to indicate they're sub-items, not top-level
+    - ChevronDown icon rotation provides good visual feedback for dropdown open/closed state
+    - Sidebar width might need adjustment based on longest menu item text - current 56px width works for simplified labels
+
+**Iteration 3** (2026-04-09) — Fix Arabic language support in admin navigation:
+- **What was done:**
+  - **CRITICAL BUG:** Settings submenu labels were hardcoded in English ("Content Moderation", "System Monitoring", "Platform Settings") instead of using dictionary translations
+  - **RTL/LTR bug:** Submenu used `border-l` (hard-coded left) and `ml-3/pl-3` (hard-coded left margins/padding) which breaks in RTL mode
+  - **Fixed language support:**
+    - Added `moderation` and `monitoring` keys to admin.nav dictionary in both ar.json and en.json
+    - Removed hardcoded `label` property from SettingsSubItem interface
+    - Updated submenu rendering to use `t[item.key]` dictionary lookup instead of hardcoded strings
+    - Now displays correct Arabic/English labels based on user's locale
+  - **Fixed RTL layout:**
+    - Changed `border-l` → `border-s` (logical border-inline-start for RTL/LTR)
+    - Changed `ml-3` → `ms-3` (logical margin-inline-start)
+    - Changed `pl-3` → `ps-3` (logical padding-inline-start)
+    - Submenu now displays correctly in both RTL (Arabic) and LTR (English) directions
+  - Build passes: 56 pages, zero TypeScript errors
+  - Committed: "fix: Add proper Arabic language support to admin navigation"
 - **Issues/Lessons:**
-  - Dropdown state must be managed separately - can't just use pathname checking for multi-level navigation
-  - Mobile constraints require rethinking dropdown patterns - used button instead of link for mobile Settings
-  - Settings submenu links should have subtle styling (smaller text, left border) to indicate they're sub-items, not top-level
-  - ChevronDown icon rotation provides good visual feedback for dropdown open/closed state
-  - Sidebar width might need adjustment based on longest menu item text - current 56px width works for simplified labels
+  - **Always use dictionary values for user-facing text** - hardcoded strings in component code break bilingual support
+  - **RTL CSS properties matter:** Logical CSS properties (`border-s`, `ms-*`, `ps-*`) automatically handle direction switching, while physical properties (`border-l`, `ml-*`, `pl-*`) require manual RTL handling
+  - **Test in both languages:** Arabic/English UI bugs only catch during actual bilingual testing
+  - **Settings submenu needs dictionary expansion** - originally only 5 main nav items had dictionary keys, forgot that Settings has 3 sub-items that also need translations
 
