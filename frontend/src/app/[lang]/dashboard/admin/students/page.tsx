@@ -5,6 +5,7 @@ import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
 import pb from "@/lib/pocketbase";
 import { Users, Plus, Trash2, Pencil, Loader2, X, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { FormErrorAlert, useFormError } from "@/components/ui/form-alerts";
 
 interface Student {
   id: string;
@@ -101,6 +102,7 @@ export default function StudentsPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const { error: formError, setError: setFormError, clearError: clearFormError } = useFormError();
 
   // Search state
   const [globalQuery, setGlobalQuery] = useState("");
@@ -177,16 +179,18 @@ export default function StudentsPage() {
   }
 
   // ── Form helpers ────────────────────────────────────────────────────────
-  function openCreate() { setEditingId(null); setForm(EMPTY_FORM); setShowForm(true); }
+  function openCreate() { setEditingId(null); setForm(EMPTY_FORM); clearFormError(); setShowForm(true); }
   function openEdit(student: Student) {
     setEditingId(student.id);
     setForm({ name_ar: student.name_ar, name_en: student.name_en, email: student.email, password: "", section: student.sections?.[0] ?? "" });
+    clearFormError();
     setShowForm(true);
   }
-  function closeForm() { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); }
+  function closeForm() { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); clearFormError(); }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    clearFormError();
     setSaving(true);
     try {
       if (editingId) {
@@ -205,6 +209,9 @@ export default function StudentsPage() {
       }
       closeForm();
       await load();
+    } catch (err: any) {
+      const errorMessage = err?.message || "Failed to save student. Please try again.";
+      setFormError(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -395,6 +402,11 @@ export default function StudentsPage() {
             <h3 className="font-bold text-[var(--color-ink)]">{editingId ? t.editTitle : t.add}</h3>
             <button onClick={closeForm} className="text-[var(--color-ink-placeholder)] hover:text-[var(--color-ink)]"><X className="h-4 w-4" /></button>
           </div>
+          {formError && (
+            <div className="mb-4">
+              <FormErrorAlert error={formError} onDismiss={clearFormError} />
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.nameAr}</label>

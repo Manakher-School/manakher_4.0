@@ -6,6 +6,7 @@ import { useDialog } from "@/context/dialog-context";
 import { useSettings } from "@/context/settings-context";
 import { getPocketBase } from "@/lib/pocketbase";
 import { getDisplayName as getDisplayNameFromAuth } from "@/lib/auth";
+import { useFormState, useCrudState, useTabState } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -93,44 +94,46 @@ export default function SettingsPage() {
   const tMon = dict.dashboard.admin.monitoring;
   const common = dict.common;
 
-  // ─── Platform Settings State ────────────────────────────────────────
-  const [schoolNameAr, setSchoolNameAr] = useState("");
-  const [schoolNameEn, setSchoolNameEn] = useState("");
-  const [enableComments, setEnableComments] = useState(true);
-  const [enableReactions, setEnableReactions] = useState(true);
-  const [enableQuizzes, setEnableQuizzes] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  // ─── Form State (Settings form: 5 fields) ───────────────────────
+  const formState = useFormState({
+    schoolNameAr: "",
+    schoolNameEn: "",
+    enableComments: true,
+    enableReactions: true,
+    enableQuizzes: true,
+  });
 
-  // ─── Moderation State ───────────────────────────────────────────────
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [expandedMaterial, setExpandedMaterial] = useState<string | null>(null);
-  const [expandedAnnouncement, setExpandedAnnouncement] = useState<string | null>(null);
-  const [moderationTab, setModerationTab] = useState<"materials" | "announcements" | "comments">("materials");
-  const [moderationLoading, setModerationLoading] = useState(true);
-  const [moderationDeleting, setModerationDeleting] = useState<string | null>(null);
+  // ─── CRUD State (Settings save & moderation loading) ──────────────
+  const settingsCrudState = useCrudState();
+  const moderationCrudState = useCrudState();
+  const monitoringCrudState = useCrudState();
 
-  // ─── Monitoring State ───────────────────────────────────────────────
-  const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
-  const [monitoringLoading, setMonitoringLoading] = useState(true);
+  // ─── Tab State (Moderation tab) ──────────────────────────────────
+  const moderationTabState = useTabState("materials", {});
 
-  // ─── Accordion State ────────────────────────────────────────────────
+  // ─── Accordion State (Simple boolean states for open/close) ───────
   const [accordions, setAccordions] = useState({
     moderation: false,
     monitoring: false,
     settings: true, // Settings open by default
   });
 
-  // ─── Initialize Settings ────────────────────────────────────────────
+  // ─── Data Collections (Keep as useState) ──────────────────────
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
+
+  // ─── Initialize Settings ────────────────────────────────────────
   useEffect(() => {
-    setSchoolNameAr(settings.schoolNameAr);
-    setSchoolNameEn(settings.schoolNameEn);
-    setEnableComments(settings.enableComments);
-    setEnableReactions(settings.enableReactions);
-    setEnableQuizzes(settings.enableQuizzes);
-  }, [settings]);
+    formState.setData({
+      schoolNameAr: settings.schoolNameAr,
+      schoolNameEn: settings.schoolNameEn,
+      enableComments: settings.enableComments,
+      enableReactions: settings.enableReactions,
+      enableQuizzes: settings.enableQuizzes,
+    });
+  }, [settings, formState]);
 
   // ─── Load Moderation Data ───────────────────────────────────────────
   useEffect(() => {
@@ -142,7 +145,7 @@ export default function SettingsPage() {
   async function loadModerationData() {
     const pb = getPocketBase();
     try {
-      setModerationLoading(true);
+      moderationCrudState.setIsLoading(true);
       const [matList, annList, comList] = await Promise.all([
         pb.collection("materials").getFullList<Material>(),
         pb.collection("announcements").getFullList<Announcement>(),
@@ -155,14 +158,14 @@ export default function SettingsPage() {
       console.error("Failed to load moderation data:", e);
       await alert("Failed to load content");
     } finally {
-      setModerationLoading(false);
+      moderationCrudState.setIsLoading(false);
     }
   }
 
   async function deleteMaterial(id: string) {
     const pb = getPocketBase();
     if (!(await confirm(tMod.confirmDeleteMaterial))) return;
-    setModerationDeleting(id);
+    moderationCrudState.setEditingId(id);
     try {
       await pb.collection("materials").delete(id);
       setMaterials(materials.filter(m => m.id !== id));
@@ -171,14 +174,14 @@ export default function SettingsPage() {
       console.error("Failed to delete:", e);
       await alert(tMod.deleteError);
     } finally {
-      setModerationDeleting(null);
+      moderationCrudState.setEditingId(null);
     }
   }
 
   async function deleteAnnouncement(id: string) {
     const pb = getPocketBase();
     if (!(await confirm(tMod.confirmDeleteAnnouncement))) return;
-    setModerationDeleting(id);
+    moderationCrudState.setEditingId(id);
     try {
       await pb.collection("announcements").delete(id);
       setAnnouncements(announcements.filter(a => a.id !== id));
@@ -187,14 +190,14 @@ export default function SettingsPage() {
       console.error("Failed to delete:", e);
       await alert(tMod.deleteError);
     } finally {
-      setModerationDeleting(null);
+      moderationCrudState.setEditingId(null);
     }
   }
 
   async function deleteComment(id: string) {
     const pb = getPocketBase();
     if (!(await confirm(tMod.confirmDeleteComment))) return;
-    setModerationDeleting(id);
+    moderationCrudState.setEditingId(id);
     try {
       await pb.collection("comments").delete(id);
       setComments(comments.filter(c => c.id !== id));
@@ -203,7 +206,7 @@ export default function SettingsPage() {
       console.error("Failed to delete:", e);
       await alert(tMod.deleteError);
     } finally {
-      setModerationDeleting(null);
+      moderationCrudState.setEditingId(null);
     }
   }
 
@@ -217,7 +220,7 @@ export default function SettingsPage() {
   async function loadMetrics() {
     const pb = getPocketBase();
     try {
-      setMonitoringLoading(true);
+      monitoringCrudState.setIsLoading(true);
       const [
         users, teachers, students, sections, subjects, materials, announcements,
         homework, quizzes, submissions, comments, reactions,
@@ -259,37 +262,32 @@ export default function SettingsPage() {
     } catch (e) {
       console.error("Failed to load metrics:", e);
     } finally {
-      setMonitoringLoading(false);
+      monitoringCrudState.setIsLoading(false);
     }
   }
 
   // ─── Save Platform Settings ────────────────────────────────────────
   async function saveSettings() {
-    setSaving(true);
+    settingsCrudState.setIsLoading(true);
     try {
       await updateSettings({
-        schoolNameAr,
-        schoolNameEn,
-        enableComments,
-        enableReactions,
-        enableQuizzes,
+        schoolNameAr: formState.state.data.schoolNameAr,
+        schoolNameEn: formState.state.data.schoolNameEn,
+        enableComments: formState.state.data.enableComments,
+        enableReactions: formState.state.data.enableReactions,
+        enableQuizzes: formState.state.data.enableQuizzes,
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      settingsCrudState.setShowCreate(true); // Use showCreate as success indicator
+      setTimeout(() => settingsCrudState.setShowCreate(false), 3000);
     } catch (e) {
       console.error("Failed to save settings:", e);
       await alert("Failed to save settings. Please try again.");
     } finally {
-      setSaving(false);
+      settingsCrudState.setIsLoading(false);
     }
   }
 
-  // ─── Toggle Accordion ──────────────────────────────────────────────
-  function toggleAccordion(key: keyof typeof accordions) {
-    setAccordions(prev => ({ ...prev, [key]: !prev[key] }));
-  }
-
-  // ─── Accordion Button Component ────────────────────────────────────
+  // ─── Accordion Button Component ────────────────────────────────
   function AccordionButton({ label, isOpen, icon: Icon }: { label: string; isOpen: boolean; icon: React.ReactNode }) {
     return (
       <div className="flex items-center gap-3">
@@ -322,7 +320,7 @@ export default function SettingsPage() {
       {/* ─── Content Moderation Accordion ─────────────────────────────── */}
       <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden">
         <button
-          onClick={() => toggleAccordion("moderation")}
+          onClick={() => setAccordions(prev => ({ ...prev, moderation: !prev.moderation }))}
           className="w-full px-6 py-4 flex items-center gap-3 hover:bg-[var(--color-surface-hover)] transition-colors"
         >
           <AccordionButton label={tMod.title} isOpen={accordions.moderation} icon={<Shield className="h-4 w-4" />} />
@@ -330,7 +328,7 @@ export default function SettingsPage() {
 
         {accordions.moderation && (
           <div className="border-t border-[var(--color-border)] p-6 space-y-4">
-            {moderationLoading ? (
+            {moderationCrudState.state.isLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" />
               </div>
@@ -341,9 +339,9 @@ export default function SettingsPage() {
                   {(["materials", "announcements", "comments"] as const).map(tab => (
                     <button
                       key={tab}
-                      onClick={() => setModerationTab(tab)}
+                      onClick={() => moderationTabState.setActiveTab(tab)}
                       className={`pb-3 px-1 font-semibold text-sm transition-colors ${
-                        moderationTab === tab
+                        moderationTabState.state.activeTab === tab
                           ? "border-b-2 border-[var(--color-accent)] text-[var(--color-accent)]"
                           : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
                       }`}
@@ -356,7 +354,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Materials Tab */}
-                {moderationTab === "materials" && (
+                {moderationTabState.state.activeTab === "materials" && (
                   <div className="space-y-3 pt-4">
                     {materials.length === 0 ? (
                       <p className="text-sm text-[var(--color-ink-secondary)]">{tMod.noMaterials}</p>
@@ -374,9 +372,9 @@ export default function SettingsPage() {
                               variant="danger"
                               size="sm"
                               onClick={() => deleteMaterial(material.id)}
-                              disabled={moderationDeleting === material.id}
+                              disabled={moderationCrudState.state.editingId === material.id}
                             >
-                              {moderationDeleting === material.id ? (
+                              {moderationCrudState.state.editingId === material.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
                                 <Trash2 className="h-3 w-3" />
@@ -391,7 +389,7 @@ export default function SettingsPage() {
                 )}
 
                 {/* Announcements Tab */}
-                {moderationTab === "announcements" && (
+                {moderationTabState.state.activeTab === "announcements" && (
                   <div className="space-y-3 pt-4">
                     {announcements.length === 0 ? (
                       <p className="text-sm text-[var(--color-ink-secondary)]">{tMod.noAnnouncements}</p>
@@ -414,9 +412,9 @@ export default function SettingsPage() {
                               variant="danger"
                               size="sm"
                               onClick={() => deleteAnnouncement(ann.id)}
-                              disabled={moderationDeleting === ann.id}
+                              disabled={moderationCrudState.state.editingId === ann.id}
                             >
-                              {moderationDeleting === ann.id ? (
+                              {moderationCrudState.state.editingId === ann.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
                                 <Trash2 className="h-3 w-3" />
@@ -431,7 +429,7 @@ export default function SettingsPage() {
                 )}
 
                 {/* Comments Tab */}
-                {moderationTab === "comments" && (
+                {moderationTabState.state.activeTab === "comments" && (
                   <div className="space-y-3 pt-4">
                     {comments.length === 0 ? (
                       <p className="text-sm text-[var(--color-ink-secondary)]">{tMod.noComments}</p>
@@ -449,9 +447,9 @@ export default function SettingsPage() {
                               variant="danger"
                               size="sm"
                               onClick={() => deleteComment(comment.id)}
-                              disabled={moderationDeleting === comment.id}
+                              disabled={moderationCrudState.state.editingId === comment.id}
                             >
-                              {moderationDeleting === comment.id ? (
+                              {moderationCrudState.state.editingId === comment.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
                                 <Trash2 className="h-3 w-3" />
@@ -472,7 +470,7 @@ export default function SettingsPage() {
       {/* ─── System Monitoring Accordion ──────────────────────────────── */}
       <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden">
         <button
-          onClick={() => toggleAccordion("monitoring")}
+          onClick={() => setAccordions(prev => ({ ...prev, monitoring: !prev.monitoring }))}
           className="w-full px-6 py-4 flex items-center gap-3 hover:bg-[var(--color-surface-hover)] transition-colors"
         >
           <AccordionButton label={tMon.title} isOpen={accordions.monitoring} icon={<Activity className="h-4 w-4" />} />
@@ -480,7 +478,7 @@ export default function SettingsPage() {
 
         {accordions.monitoring && (
           <div className="border-t border-[var(--color-border)] p-6">
-            {monitoringLoading ? (
+            {monitoringCrudState.state.isLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" />
               </div>
@@ -603,7 +601,7 @@ export default function SettingsPage() {
       {/* ─── Platform Settings Accordion ──────────────────────────────── */}
       <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden">
         <button
-          onClick={() => toggleAccordion("settings")}
+          onClick={() => setAccordions(prev => ({ ...prev, settings: !prev.settings }))}
           className="w-full px-6 py-4 flex items-center gap-3 hover:bg-[var(--color-surface-hover)] transition-colors"
         >
           <AccordionButton label={t.title} isOpen={accordions.settings} icon={<SettingsIcon className="h-4 w-4" />} />
@@ -622,14 +620,14 @@ export default function SettingsPage() {
                   <h4 className="font-semibold text-[var(--color-ink)]">{t.general}</h4>
                   <Input
                     label={t.schoolNameAr}
-                    value={schoolNameAr}
-                    onChange={(e) => setSchoolNameAr(e.target.value)}
+                    value={formState.state.data.schoolNameAr}
+                    onChange={(e) => formState.setFieldValue("schoolNameAr", e.target.value)}
                     placeholder={t.schoolNameAr}
                   />
                   <Input
                     label={t.schoolNameEn}
-                    value={schoolNameEn}
-                    onChange={(e) => setSchoolNameEn(e.target.value)}
+                    value={formState.state.data.schoolNameEn}
+                    onChange={(e) => formState.setFieldValue("schoolNameEn", e.target.value)}
                     placeholder={t.schoolNameEn}
                   />
                 </div>
@@ -641,8 +639,8 @@ export default function SettingsPage() {
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={enableComments}
-                      onChange={(e) => setEnableComments(e.target.checked)}
+                      checked={formState.state.data.enableComments}
+                      onChange={(e) => formState.setFieldValue("enableComments", e.target.checked)}
                       className="mt-1 h-4 w-4 accent-[var(--color-accent)] cursor-pointer"
                     />
                     <div className="flex-1">
@@ -654,8 +652,8 @@ export default function SettingsPage() {
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={enableReactions}
-                      onChange={(e) => setEnableReactions(e.target.checked)}
+                      checked={formState.state.data.enableReactions}
+                      onChange={(e) => formState.setFieldValue("enableReactions", e.target.checked)}
                       className="mt-1 h-4 w-4 accent-[var(--color-accent)] cursor-pointer"
                     />
                     <div className="flex-1">
@@ -667,8 +665,8 @@ export default function SettingsPage() {
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={enableQuizzes}
-                      onChange={(e) => setEnableQuizzes(e.target.checked)}
+                      checked={formState.state.data.enableQuizzes}
+                      onChange={(e) => formState.setFieldValue("enableQuizzes", e.target.checked)}
                       className="mt-1 h-4 w-4 accent-[var(--color-accent)] cursor-pointer"
                     />
                     <div className="flex-1">
@@ -680,11 +678,11 @@ export default function SettingsPage() {
 
                 {/* Save Button */}
                 <div className="flex items-center gap-3 pt-4 border-t border-[var(--color-border)]">
-                  <Button variant="primary" onClick={saveSettings} disabled={saving}>
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                    {saving ? common.loading : t.saveChanges}
+                  <Button variant="primary" onClick={saveSettings} disabled={settingsCrudState.state.isLoading}>
+                    {settingsCrudState.state.isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    {settingsCrudState.state.isLoading ? common.loading : t.saveChanges}
                   </Button>
-                  {saved && (
+                  {settingsCrudState.state.showCreate && (
                     <span className="flex items-center gap-1.5 text-sm font-semibold text-green-600">
                       <Check className="h-4 w-4" />
                       {t.saved}

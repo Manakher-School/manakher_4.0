@@ -5,6 +5,7 @@ import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
 import pb from "@/lib/pocketbase";
 import { GraduationCap, Plus, Trash2, Pencil, Loader2, X, ChevronDown, Search } from "lucide-react";
+import { FormErrorAlert, useFormError } from "@/components/ui/form-alerts";
 
 interface Teacher {
   id: string;
@@ -102,6 +103,7 @@ export default function TeachersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
+  const { error: formError, setError: setFormError, clearError: clearFormError } = useFormError();
 
   async function load() {
     setLoading(true);
@@ -128,6 +130,7 @@ export default function TeachersPage() {
   function openCreate() {
     setEditingId(null);
     setForm(EMPTY_FORM);
+    clearFormError();
     setShowForm(true);
   }
 
@@ -141,6 +144,7 @@ export default function TeachersPage() {
       sections: teacher.sections ?? [],
       subjects: teacher.subjects ?? [],
     });
+    clearFormError();
     setShowForm(true);
   }
 
@@ -148,10 +152,12 @@ export default function TeachersPage() {
     setShowForm(false);
     setEditingId(null);
     setForm(EMPTY_FORM);
+    clearFormError();
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    clearFormError();
     setSaving(true);
     try {
       if (editingId) {
@@ -182,6 +188,9 @@ export default function TeachersPage() {
       }
       closeForm();
       await load();
+    } catch (err: any) {
+      const errorMessage = err?.message || "Failed to save teacher. Please try again.";
+      setFormError(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -316,13 +325,18 @@ export default function TeachersPage() {
         </div>
       )}
 
-      {/* Create / Edit form */}
+       {/* Create / Edit form */}
       {showForm && (
         <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)]">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-bold text-[var(--color-ink)]">{editingId ? t.editTitle : t.add}</h3>
             <button onClick={closeForm} className="text-[var(--color-ink-placeholder)] hover:text-[var(--color-ink)]"><X className="h-4 w-4" /></button>
           </div>
+          {formError && (
+            <div className="mb-4">
+              <FormErrorAlert error={formError} onDismiss={clearFormError} />
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.nameAr}</label>
