@@ -22,11 +22,11 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
   const base = `/${locale}/dashboard/student`;
 
   const navItems: NavItem[] = [
-    { key: "overview",      href: base,                      icon: <LayoutGrid className="h-5 w-5" /> },
-    { key: "announcements", href: `${base}/announcements`,   icon: <Bell className="h-5 w-5" /> },
-    { key: "materials",     href: `${base}/materials`,       icon: <BookOpen className="h-5 w-5" /> },
-    { key: "homework",      href: `${base}/homework`,        icon: <FileText className="h-5 w-5" /> },
-    { key: "assessments",   href: `${base}/assessments`,     icon: <ClipboardList className="h-5 w-5" /> },
+    { key: "overview",      href: base,                      icon: <LayoutGrid className="h-6 w-6" /> },
+    { key: "announcements", href: `${base}/announcements`,   icon: <Bell className="h-6 w-6" /> },
+    { key: "materials",     href: `${base}/materials`,       icon: <BookOpen className="h-6 w-6" /> },
+    { key: "homework",      href: `${base}/homework`,        icon: <FileText className="h-6 w-6" /> },
+    { key: "assessments",   href: `${base}/assessments`,     icon: <ClipboardList className="h-6 w-6" /> },
   ];
 
   return (
@@ -66,7 +66,7 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
               key={key}
               href={href}
               className={[
-                "flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition-colors",
+                "flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-semibold transition-colors",
                 isActive
                   ? "text-[var(--color-role-student-bold)]"
                   : "text-[var(--color-ink-disabled)] hover:text-[var(--color-ink-secondary)]",
