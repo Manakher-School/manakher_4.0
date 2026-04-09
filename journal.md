@@ -569,7 +569,23 @@ It contains a short and clear to-do list of milestones.
   - **Settings context implementation:** Using context for global settings allows all pages to reactively update when admin changes settings. This is much better than hardcoded dictionary values.
   - **Optimistic updates improve UX:** Updating local state immediately before persisting to DB provides instant feedback, making the app feel faster.
   - **PocketBase settings structure:** Store settings with `key: "school_info"` field and `value: {...}` object for nested data. Filter by key when querying.
-  - **School name changes need to be dynamic:** Students/teachers see different school names than what admins set because dictionary was static. Using context ensures everyone sees the same settings.
+**Iteration 5** (2026-04-09) — Round 6 final cascade delete fix:
+- **What was done:**
+  - **CRITICAL FIX - Student and teacher deletion cascade logic:** Implemented comprehensive cascade delete for both students and teachers:
+    - **Student deletion:** Removes submissions, quiz attempts, comments, and reactions before deleting the user record
+    - **Teacher deletion:** Removes materials, homework (+ all submissions), quizzes (+ questions and attempts), exams, and announcements before deleting the user record
+    - Follows same pattern as section/subject deletion with proper cleanup order (leaf nodes first)
+  - **Fixed Round 6 issue:** Students "Layla" and "Tahani" and teacher "Sarah" can now be deleted successfully
+  - Build passes: 56 pages, zero TypeScript errors.
+  - Committed: "fix: Implement cascade delete for student and teacher records"
+- **Issues/Lessons:**
+  - Student and teacher records had related submissions, quiz attempts, comments, and reactions that blocked deletion
+  - Like sections and subjects, proper cascade delete requires deleting leaf nodes first (submissions before homework, questions/attempts before quizzes)
+  - Always check PocketBase relations when deleting records - missing cascade logic will cause 400 errors on production
+  - The deletion order matters: comments/reactions → submissions → quiz attempts → quiz questions → then parent records
 
-
+### [INPROGRESS] Milestone 10: Final Verification & Production Readiness
+- End-to-end user journey testing (Admin, Teacher, Student)
+- Verify all Round 6 testing issues are fixed
+- Final deployment verification
 
