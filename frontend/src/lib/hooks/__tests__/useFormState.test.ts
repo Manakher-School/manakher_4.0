@@ -19,7 +19,7 @@ describe('useFormState', () => {
 
     expect(result.current.state.data).toEqual(initialData)
     expect(result.current.state.errors).toEqual({})
-    expect(result.current.state.isDirty).toBe(false)
+    expect(result.current.state.touched).toEqual({})
   })
 
   it('should set individual field values', () => {
@@ -30,7 +30,7 @@ describe('useFormState', () => {
     })
 
     expect(result.current.state.data.name).toBe('Jane')
-    expect(result.current.state.isDirty).toBe(true)
+    expect(result.current.state.data.email).toBe('john@example.com')
   })
 
   it('should update multiple fields with setData', () => {
@@ -38,7 +38,6 @@ describe('useFormState', () => {
 
     act(() => {
       result.current.setData({
-        ...result.current.state.data,
         name: 'Alice',
         email: 'alice@example.com',
       })
@@ -57,6 +56,22 @@ describe('useFormState', () => {
     })
 
     expect(result.current.state.errors.email).toBe('Invalid email')
+  })
+
+  it('should set field touched', () => {
+    const { result } = renderHook(() => useFormState(initialData))
+
+    act(() => {
+      result.current.setFieldTouched('name', true)
+    })
+
+    expect(result.current.state.touched.name).toBe(true)
+
+    act(() => {
+      result.current.setFieldTouched('name', false)
+    })
+
+    expect(result.current.state.touched.name).toBe(false)
   })
 
   it('should clear all field errors', () => {
@@ -83,10 +98,12 @@ describe('useFormState', () => {
     act(() => {
       result.current.setFieldValue('name', 'Changed')
       result.current.setFieldError('email', 'Invalid')
+      result.current.setFieldTouched('name', true)
     })
 
     expect(result.current.state.data.name).toBe('Changed')
     expect(result.current.state.errors.email).toBe('Invalid')
+    expect(result.current.state.touched.name).toBe(true)
 
     act(() => {
       result.current.reset()
@@ -94,18 +111,21 @@ describe('useFormState', () => {
 
     expect(result.current.state.data).toEqual(initialData)
     expect(result.current.state.errors).toEqual({})
-    expect(result.current.state.isDirty).toBe(false)
+    expect(result.current.state.touched).toEqual({})
   })
 
-  it('should mark form as dirty after changes', () => {
+  it('should set all errors with setErrors', () => {
     const { result } = renderHook(() => useFormState(initialData))
 
-    expect(result.current.state.isDirty).toBe(false)
+    const errors = {
+      name: 'Name is required',
+      email: 'Invalid email format',
+    }
 
     act(() => {
-      result.current.setFieldValue('name', 'Updated')
+      result.current.setErrors(errors)
     })
 
-    expect(result.current.state.isDirty).toBe(true)
+    expect(result.current.state.errors).toEqual(errors)
   })
 })
