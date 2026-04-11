@@ -55,36 +55,40 @@ function MultiSelect({
   const toggle = (id: string) =>
     onChange(selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id]);
 
-  return (
-    <div className="relative">
-      <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{label}</label>
-      <button
-        type="button"
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm text-start focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-      >
-        <span className={["truncate", selected.length === 0 ? "text-[var(--color-ink-placeholder)]" : "text-[var(--color-ink)]"].join(" ")}>
-          {selected.length === 0 ? "—" : selected.map(getLabel).join("، ")}
-        </span>
-        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--color-ink-placeholder)]" />
-      </button>
-      {open && (
-        <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-card)] shadow-[var(--shadow-md)]">
-          {options.map(o => (
-            <label key={o.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[var(--color-surface-hover)] text-sm">
-              <input
-                type="checkbox"
-                checked={selected.includes(o.id)}
-                onChange={() => toggle(o.id)}
-                className="accent-[var(--color-accent)] h-3.5 w-3.5"
-              />
-              <span>{o.label}</span>
-            </label>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+   return (
+     <div className="relative">
+       <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{label}</label>
+       <button
+         type="button"
+         onClick={() => setOpen(v => !v)}
+         aria-label={`${label}, ${selected.length} selected`}
+         aria-expanded={open}
+         aria-haspopup="listbox"
+         className="w-full flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm text-start focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+       >
+         <span className={["truncate", selected.length === 0 ? "text-[var(--color-ink-placeholder)]" : "text-[var(--color-ink)]"].join(" ")}>
+           {selected.length === 0 ? "—" : selected.map(getLabel).join("، ")}
+         </span>
+         <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--color-ink-placeholder)]" />
+       </button>
+       {open && (
+         <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-card)] shadow-[var(--shadow-md)]" role="listbox">
+           {options.map(o => (
+             <label key={o.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[var(--color-surface-hover)] text-sm focus-within:bg-[var(--color-surface-hover)]">
+               <input
+                 type="checkbox"
+                 checked={selected.includes(o.id)}
+                 onChange={() => toggle(o.id)}
+                 aria-label={o.label}
+                 className="accent-[var(--color-accent)] h-3.5 w-3.5 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+               />
+               <span>{o.label}</span>
+             </label>
+           ))}
+         </div>
+       )}
+     </div>
+   );
 }
 
 export default function TeachersPage() {
@@ -294,44 +298,52 @@ export default function TeachersPage() {
   return (
     <div className="space-y-6">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-role-admin-bg)]">
-            <GraduationCap className="h-5 w-5 text-[var(--color-role-admin-bold)]" />
-          </div>
-          <h2 className="text-xl font-black text-[var(--color-ink)]">{t.title}</h2>
-        </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-4 py-2 text-sm font-bold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--color-accent-hover)] transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          {t.add}
-        </button>
-      </div>
+       {/* Header */}
+       <div className="flex items-center justify-between">
+         <div className="flex items-center gap-3">
+           <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)] bg-[var(--color-role-admin-bg)]">
+             <GraduationCap className="h-5 w-5 text-[var(--color-role-admin-bold)]" />
+           </div>
+           <h2 className="text-xl font-black text-[var(--color-ink)]">{t.title}</h2>
+         </div>
+         <button
+           onClick={openCreate}
+           aria-label={t.add}
+           className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-4 py-2 text-sm font-bold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--color-accent-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+         >
+           <Plus className="h-4 w-4" />
+           {t.add}
+         </button>
+       </div>
 
-      {/* Search bar */}
-      {teachers.length > 0 && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-ink-secondary)]" />
-          <input
-            type="text"
-            placeholder={locale === "ar" ? "ابحث عن مدرس..." : "Search teachers..."}
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] ps-10 pe-3 py-2 text-sm placeholder:text-[var(--color-ink-placeholder)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-          />
-        </div>
-      )}
+       {/* Search bar */}
+       {teachers.length > 0 && (
+         <div className="relative">
+           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-ink-secondary)]" />
+           <input
+             type="text"
+             placeholder={locale === "ar" ? "ابحث عن مدرس..." : "Search teachers..."}
+             aria-label={locale === "ar" ? "ابحث عن مدرس" : "Search teachers"}
+             value={searchQuery}
+             onChange={e => setSearchQuery(e.target.value)}
+             className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] ps-10 pe-3 py-2 text-sm placeholder:text-[var(--color-ink-placeholder)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+           />
+         </div>
+       )}
 
        {/* Create / Edit form */}
       {showForm && (
         <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)]">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-bold text-[var(--color-ink)]">{editingId ? t.editTitle : t.add}</h3>
-            <button onClick={closeForm} className="text-[var(--color-ink-placeholder)] hover:text-[var(--color-ink)]"><X className="h-4 w-4" /></button>
-          </div>
+           <div className="mb-4 flex items-center justify-between">
+             <h3 className="font-bold text-[var(--color-ink)]">{editingId ? t.editTitle : t.add}</h3>
+             <button
+               onClick={closeForm}
+               aria-label={c.cancel}
+               className="text-[var(--color-ink-placeholder)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+             >
+               <X className="h-4 w-4" />
+             </button>
+           </div>
           {formError && (
             <div className="mb-4">
               <FormErrorAlert error={formError} onDismiss={clearFormError} />
@@ -433,23 +445,25 @@ export default function TeachersPage() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      onClick={() => openEdit(teacher)}
-                      className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-accent-subtle)] hover:text-[var(--color-accent-text)] transition-colors"
-                    >
-                      <Pencil className="h-3 w-3" />
-                      {c.edit}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(teacher.id)}
-                      disabled={deletingId === teacher.id}
-                      className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-text)] transition-colors disabled:opacity-50"
-                    >
-                      {deletingId === teacher.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                      {c.delete}
-                    </button>
-                  </div>
+                   <div className="flex items-center gap-1 shrink-0">
+                     <button
+                       onClick={() => openEdit(teacher)}
+                       aria-label={`${c.edit} ${locale === "ar" ? teacher.name_ar : teacher.name_en}`}
+                       className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-accent-subtle)] hover:text-[var(--color-accent-text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                     >
+                       <Pencil className="h-3 w-3" />
+                       {c.edit}
+                     </button>
+                     <button
+                       onClick={() => handleDelete(teacher.id)}
+                       disabled={deletingId === teacher.id}
+                       aria-label={`${c.delete} ${locale === "ar" ? teacher.name_ar : teacher.name_en}`}
+                       className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-text)] transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                     >
+                       {deletingId === teacher.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                       {c.delete}
+                     </button>
+                   </div>
                 </div>
               </div>
             );
