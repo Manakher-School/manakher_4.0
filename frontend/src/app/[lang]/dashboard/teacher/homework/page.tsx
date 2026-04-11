@@ -332,10 +332,10 @@ export default function TeacherHomeworkPage() {
                       {t.submissions}
                       {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                     </button>
-                    <button onClick={() => openEdit(hw)} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]">
+                    <button onClick={() => openEdit(hw)} aria-label={`Edit homework: ${hw.title}`} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]">
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
-                    <button onClick={() => handleDelete(hw.id)} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600">
+                    <button onClick={() => handleDelete(hw.id)} aria-label={`Delete homework: ${hw.title}`} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-[var(--color-danger)]">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
