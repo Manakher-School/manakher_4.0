@@ -240,7 +240,7 @@ export default function SubjectsExamsPage() {
     } finally {
       examListCrudState.setIsLoading(false);
     }
-  }, [examListCrudState]);
+  }, [user]);
 
   const openAddExam = () => {
     examFormData.reset();

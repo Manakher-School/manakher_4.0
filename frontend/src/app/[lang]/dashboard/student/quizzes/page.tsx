@@ -172,7 +172,7 @@ export default function StudentQuizzesPage() {
     } finally {
       listCrudState.setIsLoading(false);
     }
-  }, [user, listCrudState]);
+  }, [user]);
 
   useEffect(() => { load(); }, [load]);
 

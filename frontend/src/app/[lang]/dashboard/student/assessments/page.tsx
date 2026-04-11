@@ -202,7 +202,7 @@ export default function StudentAssessmentsPage() {
     } finally {
       quizListCrudState.setIsLoading(false);
     }
-  }, [user, quizListCrudState]);
+  }, [user]);
 
   // ── Load exams ───────────────────────────────────────────────────────────────
 
@@ -232,7 +232,7 @@ export default function StudentAssessmentsPage() {
     } finally {
       examListCrudState.setIsLoading(false);
     }
-  }, [user, examListCrudState]);
+  }, [user]);
 
   useEffect(() => {
     loadQuizzes();

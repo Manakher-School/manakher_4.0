@@ -103,7 +103,7 @@ export default function TeacherMaterialsPage() {
     } finally {
       crudState.setIsLoading(false);
     }
-  }, [user, locale, filterSection, filterSubject, crudState]);
+  }, [user, locale, filterSection, filterSubject]);
 
   useEffect(() => { load(); }, [load]);
 

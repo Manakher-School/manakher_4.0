@@ -168,7 +168,7 @@ export default function TeacherQuizzesPage() {
     } finally {
       mainCrudState.setIsLoading(false);
     }
-  }, [user, mainCrudState]);
+  }, [user]);
 
   useEffect(() => { load(); }, [load]);
 
