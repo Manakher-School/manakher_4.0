@@ -327,27 +327,27 @@ export default function TeacherQuizzesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-2xl font-black text-[var(--color-ink)]" style={{ letterSpacing: "-0.5px" }}>
-          {t.title}
-        </h2>
-        <Button variant="primary" onClick={openCreateQuiz}>
-          <Plus className="h-4 w-4" />
-          {t.add}
-        </Button>
-      </div>
+       <div className="flex items-center justify-between gap-3 flex-wrap">
+         <h2 className="text-2xl font-black text-[var(--color-ink)]" style={{ letterSpacing: "-0.5px" }}>
+           {t.title}
+         </h2>
+         <Button variant="primary" onClick={openCreateQuiz} aria-label={t.add}>
+           <Plus className="h-4 w-4" />
+           {t.add}
+         </Button>
+       </div>
 
       {/* Quiz create/edit form */}
       {quizFormCrudState.state.showCreate && (
         <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)] space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-black text-[var(--color-ink)]">
-              {quizFormCrudState.state.editingId ? t.editTitle : t.add}
-            </h3>
-            <button onClick={() => quizFormCrudState.setShowCreate(false)} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+           <div className="flex items-center justify-between">
+             <h3 className="font-black text-[var(--color-ink)]">
+               {quizFormCrudState.state.editingId ? t.editTitle : t.add}
+             </h3>
+             <button onClick={() => quizFormCrudState.setShowCreate(false)} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1" aria-label={common.cancel}>
+               <X className="h-4 w-4" />
+             </button>
+           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <Input
@@ -360,11 +360,12 @@ export default function TeacherQuizzesPage() {
             {/* Section */}
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSection}</label>
-              <select
-                value={quizFormData.state.data.section}
-                onChange={(e) => quizFormData.setFieldValue("section", e.target.value)}
-                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-              >
+               <select
+                 value={quizFormData.state.data.section}
+                 onChange={(e) => quizFormData.setFieldValue("section", e.target.value)}
+                 aria-label={t.selectSection}
+                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+               >
                 <option value="">—</option>
                 {sections.map((s) => <option key={s.id} value={s.id}>{sectionName(s)}</option>)}
               </select>
@@ -372,11 +373,12 @@ export default function TeacherQuizzesPage() {
             {/* Subject */}
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSubject}</label>
-              <select
-                value={quizFormData.state.data.subject}
-                onChange={(e) => quizFormData.setFieldValue("subject", e.target.value)}
-                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-              >
+               <select
+                 value={quizFormData.state.data.subject}
+                 onChange={(e) => quizFormData.setFieldValue("subject", e.target.value)}
+                 aria-label={t.selectSubject}
+                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+               >
                 <option value="">—</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{subjectName(s)}</option>)}
               </select>
@@ -490,17 +492,19 @@ export default function TeacherQuizzesPage() {
                       {isROpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                     </button>
                     <button
-                      onClick={() => openEditQuiz(quiz)}
-                      className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
+                       onClick={() => openEditQuiz(quiz)}
+                       className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                       aria-label={`${t.edit}: ${quiz.title}`}
+                     >
+                       <Pencil className="h-3.5 w-3.5" />
+                     </button>
                     <button
-                      onClick={() => deleteQuiz(quiz.id)}
-                      className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                       onClick={() => deleteQuiz(quiz.id)}
+                       className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-300"
+                       aria-label={`${common.delete}: ${quiz.title}`}
+                     >
+                       <Trash2 className="h-3.5 w-3.5" />
+                     </button>
                   </div>
                 </div>
 
@@ -527,12 +531,13 @@ export default function TeacherQuizzesPage() {
                                   <p className="text-sm font-semibold text-[var(--color-ink)]">
                                     {idx + 1}. {q.question_text}
                                   </p>
-                                  <button
-                                    onClick={() => deleteQuestion(q.id)}
-                                    className="shrink-0 p-1 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </button>
+                                   <button
+                                     onClick={() => deleteQuestion(q.id)}
+                                     className="shrink-0 p-1 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-300"
+                                     aria-label={`${common.delete}: Question ${idx + 1}`}
+                                   >
+                                     <Trash2 className="h-3 w-3" />
+                                   </button>
                                 </div>
                                 <ul className="grid grid-cols-2 gap-1">
                                   {q.options.map((opt, oi) => (
@@ -615,10 +620,10 @@ export default function TeacherQuizzesPage() {
                             </div>
                           </div>
                         ) : (
-                          <Button variant="ghost" onClick={() => { questionFormCrudState.setShowCreate(true); questionFormData.reset(); }}>
-                            <Plus className="h-4 w-4" />
-                            {t.addQuestion}
-                          </Button>
+                           <Button variant="ghost" onClick={() => { questionFormCrudState.setShowCreate(true); questionFormData.reset(); }} aria-label={t.addQuestion}>
+                             <Plus className="h-4 w-4" />
+                             {t.addQuestion}
+                           </Button>
                         )}
                       </>
                     )}
