@@ -184,6 +184,7 @@ async function handleSave() {
         <select
           value={filterSection}
           onChange={(e) => setFilterSection(e.target.value)}
+          aria-label="Filter materials by section"
           className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm font-semibold text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
         >
           <option value="">{t.filterSection}: {t.all}</option>
@@ -192,6 +193,7 @@ async function handleSave() {
         <select
           value={filterSubject}
           onChange={(e) => setFilterSubject(e.target.value)}
+          aria-label="Filter materials by subject"
           className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm font-semibold text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
         >
           <option value="">{t.filterSubject}: {t.all}</option>
@@ -204,7 +206,7 @@ async function handleSave() {
         <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)] space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-black text-[var(--color-ink)]">{crudState.state.editingId ? t.editTitle : t.add}</h3>
-            <button onClick={() => crudState.setShowCreate(false)} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]">
+            <button onClick={() => crudState.setShowCreate(false)} aria-label="Close form" className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -306,10 +308,10 @@ async function handleSave() {
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <button onClick={() => openEdit(m)} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]">
+                    <button onClick={() => openEdit(m)} aria-label={`Edit material: ${m.title}`} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]">
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
-                    <button onClick={() => handleDelete(m.id)} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600">
+                    <button onClick={() => handleDelete(m.id)} aria-label={`Delete material: ${m.title}`} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-[var(--color-danger)]">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -336,7 +338,8 @@ async function handleSave() {
                 {/* Expand/Collapse button */}
                 <button
                   onClick={() => crudState.setExpandedId(isExpanded ? null : m.id)}
-                  className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent-text)] hover:underline"
+                  aria-expanded={isExpanded}
+                  className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent-text)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded"
                 >
                   <MessageCircle className="h-4 w-4" />
                   {isExpanded 
