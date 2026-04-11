@@ -112,7 +112,7 @@ export default function TeacherHomeworkPage() {
     } finally {
       hwListCrudState.setIsLoading(false);
     }
-  }, [user, hwListCrudState]);
+  }, [user]);
 
   useEffect(() => { load(); }, [load]);
 
