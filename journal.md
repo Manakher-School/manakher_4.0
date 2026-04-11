@@ -1894,3 +1894,115 @@ const load = useCallback(..., [user]);
 - Forms should respond instantly without infinite loops
 - User interactions smooth and responsive
 - Ready for production testing
+
+---
+
+## [INPROGRESS] Milestone 11: Phase 2 - Accessibility & Error Handling
+
+**Status:** In Progress (Apr 12, 2026)
+**Estimated Duration:** 6-8 hours total
+**Time Invested So Far:** ~2 hours
+
+### Overview
+Phase 2 focuses on adding error boundaries for crash protection and improving accessibility compliance (WCAG 2.1 Level AA target).
+
+### Iteration 1 (2026-04-12) — Error Boundaries & Initial Accessibility
+
+**What was done:**
+
+#### 2.1: Created ErrorBoundary Component
+- **File:** `frontend/src/components/error-boundary.tsx`
+- **Features:**
+  - React error boundary class component catching all subtree errors
+  - User-friendly error fallback UI with "Try Again" and "Go Home" buttons
+  - Development mode shows full error details for debugging
+  - Production mode shows user-friendly message only
+  - Proper TypeScript typing with `Props` and `State` interfaces
+  - Custom fallback function support for advanced use cases
+
+#### 2.2-2.3: Wrapped All Dashboard Layouts
+- **Main Dashboard:** `dashboard/layout.tsx` - wrapped main content area
+- **Admin Layout:** `admin/layout.tsx` - wrapped content area in ErrorBoundary
+- **Teacher Layout:** `teacher/layout.tsx` - wrapped content area in ErrorBoundary
+- **Student Layout:** `student/layout.tsx` - wrapped content area in ErrorBoundary
+- **Result:** Single component errors now isolated, preventing full-page crashes
+
+#### 2.4: Keyboard Navigation Audit
+- **Finding:** Dropdown component (`ui/dropdown.tsx`) already has comprehensive keyboard support:
+  - Arrow keys (Up/Down) for navigation
+  - Enter/Space to select
+  - Escape to close
+  - Tab handling
+  - Full focus management with auto-scrolling
+  - Multi-select mode support
+  - Accessibility attributes (role="listbox", role="option", aria-selected, aria-expanded, aria-haspopup)
+- **Status:** Already implemented, no additional work needed
+
+#### 2.5-2.7: Accessibility Audit Results
+- **Dialog Component:** Already has proper ARIA attributes (role="dialog", aria-modal, aria-labelledby)
+- **Button Component:** Supports aria-label propagation through props
+- **MultiSelect Component:** Has aria-label on toggle button with "N selected" label
+- **RTL/LTR CSS:** Scan found minimal hardcoded directional properties (no border-l/r issues in main components)
+- **Overall:** Codebase already has significant accessibility foundation from previous iterations
+
+### Technical Details
+
+**ErrorBoundary Component:**
+```typescript
+export class ErrorBoundary extends React.Component<Props, State> {
+  static getDerivedStateFromError(error: Error): Partial<State>
+  componentDidCatch(error: Error, errorInfo: ErrorInfo)
+  render() { /* shows ErrorFallback on error */ }
+}
+```
+
+**Integration Points:**
+- Wraps dynamic content areas (pages) not layout containers
+- Preserves header/nav/footer stability even when page crashes
+- Allows users to navigate away or retry without page reload
+
+### Build Status
+✅ **Build PASSED:** All 56 pages compile successfully
+✅ **TypeScript:** Zero errors
+✅ **Bundle Size:** 28MB (no increase)
+
+### Commits Made
+1. `0944b4f` - "feat(a11y): Add ErrorBoundary component and wrap all dashboard layouts"
+
+### Remaining Phase 2 Tasks
+
+**2.8: Browser Testing** (Pending)
+- Manually trigger errors in different pages
+- Verify ErrorBoundary catches and displays error UI
+- Test "Try Again" and "Go Home" recovery flows
+- Test keyboard navigation on dropdowns
+- Verify WCAG 2.1 compliance in browser
+
+**2.9: Journal Updates** (Pending)
+- Document testing results
+- Record any additional accessibility issues found
+- Note lessons learned
+
+**2.10: Final Commit & Push** (Pending)
+- Finalize Phase 2 implementation
+- Push to remote repository
+
+### What Worked Well
+- ErrorBoundary implementation was straightforward and effective
+- Existing accessibility features (keyboard nav, ARIA attributes) already in place
+- Minimal hardcoded directional CSS suggests good RTL/LTR planning
+- Component library design enabled easy error boundary integration
+
+### Observations
+- Previous iterations (Phases 1-11.1) already built solid accessibility foundation
+- Dropdown keyboard support already exceeds WCAG requirements
+- Dialog component follows accessibility best practices
+- No critical a11y violations found in initial scan
+
+### Next Steps
+1. Conduct manual browser testing to verify error boundaries work correctly
+2. Test keyboard navigation across all interactive elements
+3. Run WCAG 2.1 audit in browser developer tools
+4. Document findings and commit final changes
+5. Prepare for Phase 3 (Testing Infrastructure)
+
