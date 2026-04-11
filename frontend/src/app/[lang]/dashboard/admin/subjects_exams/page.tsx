@@ -9,6 +9,7 @@ import { BookOpen, Calendar, Clock, Plus, Trash2, Edit2, Pencil, Loader2, X } fr
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useCrudState, useFormState, useTabState } from "@/lib/hooks";
 
 // ============ SUBJECTS INTERFACES ============
 interface Subject {
@@ -84,68 +85,62 @@ export default function SubjectsExamsPage() {
   const t = dict.dashboard.admin;
 
   // ============ ACTIVE TAB STATE ============
-  const [activeTab, setActiveTab] = useState<TabType>("subjects");
+  const tabState = useTabState("subjects" as TabType);
 
   // ============ SUBJECTS STATE ============
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [subjectsLoading, setSubjectsLoading] = useState(true);
-  const [showSubjectForm, setShowSubjectForm] = useState(false);
-  const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
-  const [savingSubject, setSavingSubject] = useState(false);
+  const subjectListCrudState = useCrudState();
+  const subjectFormData = useFormState(EMPTY_SUBJECT_FORM);
   const [deletingSubjectId, setDeletingSubjectId] = useState<string | null>(null);
-  const [subjectForm, setSubjectForm] = useState(EMPTY_SUBJECT_FORM);
 
   // ============ EXAMS STATE ============
   const [exams, setExams] = useState<ExamSchedule[]>([]);
   const [examSubjects, setExamSubjects] = useState<ExamSubject[]>([]);
   const [examSections, setExamSections] = useState<ExamSection[]>([]);
-  const [examsLoading, setExamsLoading] = useState(true);
-  const [showExamForm, setShowExamForm] = useState(false);
-  const [editingExamId, setEditingExamId] = useState<string | null>(null);
-  const [examFormData, setExamFormData] = useState<ExamFormData>(EMPTY_EXAM_FORM);
-  const [savingExam, setSavingExam] = useState(false);
+  const examListCrudState = useCrudState();
+  const examFormData = useFormState<ExamFormData>(EMPTY_EXAM_FORM);
 
   const pb = getPocketBase();
 
   // ============ SUBJECTS FUNCTIONS ============
   const loadSubjects = async () => {
-    setSubjectsLoading(true);
+    subjectListCrudState.setIsLoading(true);
     try {
       const res = await pb.collection("subjects").getFullList<Subject>({ sort: "name_ar" });
       setSubjects(res);
     } catch (e) {
       console.error("Error loading subjects:", e);
     } finally {
-      setSubjectsLoading(false);
+      subjectListCrudState.setIsLoading(false);
     }
   };
 
   const openCreateSubject = () => {
-    setEditingSubjectId(null);
-    setSubjectForm(EMPTY_SUBJECT_FORM);
-    setShowSubjectForm(true);
+    subjectListCrudState.setEditingId(null);
+    subjectListCrudState.setShowCreate(true);
+    subjectFormData.reset();
   };
 
   const openEditSubject = (s: Subject) => {
-    setEditingSubjectId(s.id);
-    setSubjectForm({ name_ar: s.name_ar, name_en: s.name_en, code: s.code });
-    setShowSubjectForm(true);
+    subjectListCrudState.setEditingId(s.id);
+    subjectListCrudState.setShowCreate(true);
+    subjectFormData.setData({ name_ar: s.name_ar, name_en: s.name_en, code: s.code });
   };
 
   const closeSubjectForm = () => {
-    setShowSubjectForm(false);
-    setEditingSubjectId(null);
-    setSubjectForm(EMPTY_SUBJECT_FORM);
+    subjectListCrudState.setShowCreate(false);
+    subjectListCrudState.setEditingId(null);
+    subjectFormData.reset();
   };
 
   const handleSubmitSubject = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingSubject(true);
+    subjectListCrudState.setIsLoading(true);
     try {
-      if (editingSubjectId) {
-        await pb.collection("subjects").update(editingSubjectId, subjectForm);
+      if (subjectListCrudState.state.editingId) {
+        await pb.collection("subjects").update(subjectListCrudState.state.editingId, subjectFormData.state.data);
       } else {
-        await pb.collection("subjects").create(subjectForm);
+        await pb.collection("subjects").create(subjectFormData.state.data);
       }
       closeSubjectForm();
       await loadSubjects();
@@ -153,7 +148,7 @@ export default function SubjectsExamsPage() {
       console.error("Error saving subject:", e);
       await alert(locale === "ar" ? "حدث خطأ أثناء الحفظ" : "Error saving subject");
     } finally {
-      setSavingSubject(false);
+      subjectListCrudState.setIsLoading(false);
     }
   };
 
@@ -228,7 +223,7 @@ export default function SubjectsExamsPage() {
   // ============ EXAMS FUNCTIONS ============
   const loadExams = useCallback(async () => {
     try {
-      setExamsLoading(true);
+      examListCrudState.setIsLoading(true);
       const [examsData, subjs, sects] = await Promise.all([
         pb.collection("exam_schedules").getFullList<ExamSchedule>({
           sort: "exam_date,start_time",
@@ -243,18 +238,18 @@ export default function SubjectsExamsPage() {
     } catch (e) {
       console.error("Error loading exams:", e);
     } finally {
-      setExamsLoading(false);
+      examListCrudState.setIsLoading(false);
     }
-  }, []);
+  }, [examListCrudState]);
 
   const openAddExam = () => {
-    setExamFormData(EMPTY_EXAM_FORM);
-    setEditingExamId(null);
-    setShowExamForm(true);
+    examFormData.reset();
+    examListCrudState.setShowCreate(true);
+    examListCrudState.setEditingId(null);
   };
 
   const openEditExam = (exam: ExamSchedule) => {
-    setExamFormData({
+    examFormData.setData({
       title: exam.title || "",
       subject: exam.subject,
       section: exam.section,
@@ -264,13 +259,13 @@ export default function SubjectsExamsPage() {
       exam_type: exam.exam_type,
       notes: exam.notes || "",
     });
-    setEditingExamId(exam.id);
-    setShowExamForm(true);
+    examListCrudState.setEditingId(exam.id);
+    examListCrudState.setShowCreate(true);
   };
 
   const closeExamForm = () => {
-    setShowExamForm(false);
-    setEditingExamId(null);
+    examListCrudState.setShowCreate(false);
+    examListCrudState.setEditingId(null);
   };
 
   const handleSubmitExam = async (e: React.FormEvent) => {
@@ -278,14 +273,14 @@ export default function SubjectsExamsPage() {
     if (!user) return;
 
     try {
-      setSavingExam(true);
+      examListCrudState.setIsLoading(true);
       const data = {
-        ...examFormData,
+        ...examFormData.state.data,
         created_by: user.id,
       };
 
-      if (editingExamId) {
-        await pb.collection("exam_schedules").update(editingExamId, data);
+      if (examListCrudState.state.editingId) {
+        await pb.collection("exam_schedules").update(examListCrudState.state.editingId, data);
       } else {
         await pb.collection("exam_schedules").create(data);
       }
@@ -296,7 +291,7 @@ export default function SubjectsExamsPage() {
       console.error("Error saving exam:", err);
       await alert(locale === "ar" ? "حدث خطأ أثناء الحفظ" : "Error saving exam");
     } finally {
-      setSavingExam(false);
+      examListCrudState.setIsLoading(false);
     }
   };
 
@@ -357,16 +352,16 @@ export default function SubjectsExamsPage() {
             <BookOpen className="h-5 w-5 text-[var(--color-role-admin-bold)]" />
           </div>
           <h2 className="text-xl font-black text-[var(--color-ink)]">
-            {activeTab === "subjects" ? t.subjects?.title : t.exams?.title}
+            {tabState.state.activeTab === "subjects" ? t.subjects?.title : t.exams?.title}
           </h2>
         </div>
 
         {/* Tab buttons */}
         <div className="flex gap-2 border border-[var(--color-border)] rounded-[var(--radius-lg)] p-1 bg-[var(--color-surface-card)]">
           <button
-            onClick={() => setActiveTab("subjects")}
+            onClick={() => tabState.setActiveTab("subjects")}
             className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-semibold transition-colors ${
-              activeTab === "subjects"
+              tabState.state.activeTab === "subjects"
                 ? "bg-[var(--color-role-admin-bold)] text-white"
                 : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
             }`}
@@ -374,9 +369,9 @@ export default function SubjectsExamsPage() {
             {t.subjects?.title || "Subjects"}
           </button>
           <button
-            onClick={() => setActiveTab("exams")}
+            onClick={() => tabState.setActiveTab("exams")}
             className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-semibold transition-colors ${
-              activeTab === "exams"
+              tabState.state.activeTab === "exams"
                 ? "bg-[var(--color-role-admin-bold)] text-white"
                 : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
             }`}
@@ -387,7 +382,7 @@ export default function SubjectsExamsPage() {
       </div>
 
       {/* ============ SUBJECTS TAB ============ */}
-      {activeTab === "subjects" && (
+      {tabState.state.activeTab === "subjects" && (
         <div className="space-y-6">
           {/* Add Subject Button */}
           <button
@@ -399,29 +394,29 @@ export default function SubjectsExamsPage() {
           </button>
 
           {/* Subject Form */}
-          {showSubjectForm && (
+          {subjectListCrudState.state.showCreate && (
             <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)]">
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-bold text-[var(--color-ink)]">{editingSubjectId ? t.subjects?.editTitle : t.subjects?.add}</h3>
+                <h3 className="font-bold text-[var(--color-ink)]">{subjectListCrudState.state.editingId ? t.subjects?.editTitle : t.subjects?.add}</h3>
                 <button onClick={closeSubjectForm} className="text-[var(--color-ink-placeholder)] hover:text-[var(--color-ink)]"><X className="h-4 w-4" /></button>
               </div>
               <form onSubmit={handleSubmitSubject} className="grid gap-3 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.subjects?.nameAr}</label>
-                  <input required value={subjectForm.name_ar} placeholder={t.subjects?.phNameAr} onChange={e => setSubjectForm(f => ({...f, name_ar: e.target.value}))} className={inputCls} />
+                  <input required value={subjectFormData.state.data.name_ar} placeholder={t.subjects?.phNameAr} onChange={e => subjectFormData.setFieldValue("name_ar", e.target.value)} className={inputCls} />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.subjects?.nameEn}</label>
-                  <input required value={subjectForm.name_en} placeholder={t.subjects?.phNameEn} onChange={e => setSubjectForm(f => ({...f, name_en: e.target.value}))} className={inputCls} dir="ltr" />
+                  <input required value={subjectFormData.state.data.name_en} placeholder={t.subjects?.phNameEn} onChange={e => subjectFormData.setFieldValue("name_en", e.target.value)} className={inputCls} dir="ltr" />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.subjects?.code}</label>
-                  <input required value={subjectForm.code} placeholder={t.subjects?.phCode} onChange={e => setSubjectForm(f => ({...f, code: e.target.value}))} className={inputCls} dir="ltr" />
+                  <input required value={subjectFormData.state.data.code} placeholder={t.subjects?.phCode} onChange={e => subjectFormData.setFieldValue("code", e.target.value)} className={inputCls} dir="ltr" />
                 </div>
                 <div className="sm:col-span-3 flex gap-2 justify-end pt-1">
                   <button type="button" onClick={closeSubjectForm} className="rounded-[var(--radius-full)] px-4 py-2 text-sm font-semibold text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors">{c.cancel}</button>
-                  <button type="submit" disabled={savingSubject} className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-5 py-2 text-sm font-bold text-white hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-60">
-                    {savingSubject && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  <button type="submit" disabled={subjectListCrudState.state.isLoading} className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-5 py-2 text-sm font-bold text-white hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-60">
+                    {subjectListCrudState.state.isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                     {c.save}
                   </button>
                 </div>
@@ -430,7 +425,7 @@ export default function SubjectsExamsPage() {
           )}
 
           {/* Subjects List */}
-          {subjectsLoading ? (
+          {subjectListCrudState.state.isLoading ? (
             <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" /></div>
           ) : subjects.length === 0 ? (
             <p className="py-16 text-center text-sm text-[var(--color-ink-disabled)]">{t.subjects?.empty || "No subjects"}</p>
@@ -471,7 +466,7 @@ export default function SubjectsExamsPage() {
       )}
 
       {/* ============ EXAMS TAB ============ */}
-      {activeTab === "exams" && (
+      {tabState.state.activeTab === "exams" && (
         <div className="space-y-6">
           {/* Add Exam Button */}
           <Button onClick={openAddExam}>
@@ -480,10 +475,10 @@ export default function SubjectsExamsPage() {
           </Button>
 
           {/* Exam Form */}
-          {showExamForm && (
+          {examListCrudState.state.showCreate && (
             <Card className="p-6">
               <h3 className="text-lg font-bold text-[var(--color-ink)] mb-4">
-                {editingExamId ? t.exams?.editTitle : t.exams?.add}
+                {examListCrudState.state.editingId ? t.exams?.editTitle : t.exams?.add}
               </h3>
               <form onSubmit={handleSubmitExam} className="space-y-4">
                 <div>
@@ -492,8 +487,8 @@ export default function SubjectsExamsPage() {
                   </label>
                   <input
                     type="text"
-                    value={examFormData.title}
-                    onChange={(e) => setExamFormData({ ...examFormData, title: e.target.value })}
+                    value={examFormData.state.data.title}
+                    onChange={(e) => examFormData.setFieldValue("title", e.target.value)}
                     required
                     placeholder={locale === "ar" ? "مثال: امتحان الرياضيات النهائي" : "e.g., Final Math Exam"}
                     className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] placeholder:text-[var(--color-ink-placeholder)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
@@ -506,8 +501,8 @@ export default function SubjectsExamsPage() {
                       {t.exams?.subject}
                     </label>
                     <select
-                      value={examFormData.subject}
-                      onChange={(e) => setExamFormData({ ...examFormData, subject: e.target.value })}
+                      value={examFormData.state.data.subject}
+                      onChange={(e) => examFormData.setFieldValue("subject", e.target.value)}
                       required
                       className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                     >
@@ -525,8 +520,8 @@ export default function SubjectsExamsPage() {
                       {t.exams?.section}
                     </label>
                     <select
-                      value={examFormData.section}
-                      onChange={(e) => setExamFormData({ ...examFormData, section: e.target.value })}
+                      value={examFormData.state.data.section}
+                      onChange={(e) => examFormData.setFieldValue("section", e.target.value)}
                       required
                       className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                     >
@@ -545,8 +540,8 @@ export default function SubjectsExamsPage() {
                     </label>
                     <input
                       type="date"
-                      value={examFormData.exam_date}
-                      onChange={(e) => setExamFormData({ ...examFormData, exam_date: e.target.value })}
+                      value={examFormData.state.data.exam_date}
+                      onChange={(e) => examFormData.setFieldValue("exam_date", e.target.value)}
                       required
                       className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                     />
@@ -557,9 +552,9 @@ export default function SubjectsExamsPage() {
                       {t.exams?.examType}
                     </label>
                     <select
-                      value={examFormData.exam_type}
+                      value={examFormData.state.data.exam_type}
                       onChange={(e) =>
-                        setExamFormData({ ...examFormData, exam_type: e.target.value as any })
+                        examFormData.setFieldValue("exam_type", e.target.value as any)
                       }
                       required
                       className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
@@ -577,8 +572,8 @@ export default function SubjectsExamsPage() {
                     </label>
                     <input
                       type="time"
-                      value={examFormData.start_time}
-                      onChange={(e) => setExamFormData({ ...examFormData, start_time: e.target.value })}
+                      value={examFormData.state.data.start_time}
+                      onChange={(e) => examFormData.setFieldValue("start_time", e.target.value)}
                       required
                       className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                     />
@@ -590,8 +585,8 @@ export default function SubjectsExamsPage() {
                     </label>
                     <input
                       type="time"
-                      value={examFormData.end_time}
-                      onChange={(e) => setExamFormData({ ...examFormData, end_time: e.target.value })}
+                      value={examFormData.state.data.end_time}
+                      onChange={(e) => examFormData.setFieldValue("end_time", e.target.value)}
                       required
                       className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                     />
@@ -603,8 +598,8 @@ export default function SubjectsExamsPage() {
                     {t.exams?.notes}
                   </label>
                   <textarea
-                    value={examFormData.notes}
-                    onChange={(e) => setExamFormData({ ...examFormData, notes: e.target.value })}
+                    value={examFormData.state.data.notes}
+                    onChange={(e) => examFormData.setFieldValue("notes", e.target.value)}
                     rows={3}
                     placeholder={t.exams?.phNotes}
                     className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] placeholder:text-[var(--color-ink-placeholder)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-none"
@@ -612,11 +607,11 @@ export default function SubjectsExamsPage() {
                 </div>
 
                 <div className="flex gap-3 justify-end">
-                  <Button type="button" variant="ghost" onClick={closeExamForm} disabled={savingExam}>
+                  <Button type="button" variant="ghost" onClick={closeExamForm} disabled={examListCrudState.state.isLoading}>
                     {c.cancel}
                   </Button>
-                  <Button type="submit" disabled={savingExam}>
-                    {savingExam ? (locale === "ar" ? "جاري الحفظ..." : "Saving...") : c.save}
+                  <Button type="submit" disabled={examListCrudState.state.isLoading}>
+                    {examListCrudState.state.isLoading ? (locale === "ar" ? "جاري الحفظ..." : "Saving...") : c.save}
                   </Button>
                 </div>
               </form>
@@ -624,7 +619,7 @@ export default function SubjectsExamsPage() {
           )}
 
           {/* Exams List */}
-          {examsLoading ? (
+          {examListCrudState.state.isLoading ? (
             <div className="flex items-center justify-center py-20">
               <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-admin-bold)] border-t-transparent animate-spin" />
             </div>

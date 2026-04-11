@@ -196,8 +196,106 @@ I don't know how stupid you can fucking get but I get it, you discustingly stupi
 
 ###################################################
 
+Round 11:
+Here you will find some new feature we're requested by the client, and more fixes, have them split into patches then get them done, use the ask tool to get answersif you need and, answer all my questions prperly.
 
-
-
-
-
+- جدول الحصص اليومي:
+	- لكل شعبة جدول
+	- تابع لصلاحيات المدير فقط
+- Export user account as  as excel sheet
+- اضافة ملف شخصي للمديرة ولكل معلمة
+	- سوف يحتوي الملف الشخصي على البيانات الشخصية الخالصة بالمستخدم:
+		- الاسم
+		- الحساب الالكتروني
+		- قابلية تغييير كلمةالمرور
+- يجب اضافة الرقم الوطني للمدرسة داخل الملف الشخصي للمديرة
+- يجب عرض اللامتحانات في جدول وبالترتيب التنازلي
+- لا يوجد اختبارات عملية، يجب الغاء هذا الخيار من الامتحانات
+- the seed.js file in the backend cotains hard coded users, why????? remove layla from them!!!!!!
+- what is the seed.js file?????
+- there is a navigation issue when navigating from the settings to any other page
+- تعديل معلومات المستخدم دائمًا تفشل:
+	{
+		XHRPATCH
+		https://pocketbase-production-882e.up.railway.app/api/collections/users/records/9on6blh25z7ob5p
+		[HTTP/2 400  641ms]
+		
+			
+		PATCH
+			https://pocketbase-production-882e.up.railway.app/api/collections/users/records/9on6blh25z7ob5p
+		Status
+		400
+		VersionHTTP/2
+		Transferred641 B (135 B size)
+		Referrer Policystrict-origin-when-cross-origin
+		Request PriorityHighest
+		DNS ResolutionSystem
+		
+		    	
+		    access-control-allow-origin
+		    	*
+		    content-length
+		    	135
+		    content-type
+		    	application/json
+		    date
+		    	Sat, 11 Apr 2026 10:05:22 GMT
+		    server
+		    	railway-edge
+		    vary
+		    	Origin
+		    x-cache
+		    	MISS
+		    x-cache-hits
+		    	0
+		    x-content-type-options
+		    	nosniff
+		    X-Firefox-Spdy
+		    	h2
+		    x-frame-options
+		    	SAMEORIGIN
+		    x-railway-cdn-edge
+		    	fastly/cache-fra-eddf8230063-FRA
+		    x-railway-edge
+		    	railway/europe-west4-drams3a
+		    x-railway-request-id
+		    	JQoJCqxVRUq5m7Z2rJsmnA
+		    x-served-by
+		    	cache-fra-eddf8230063-FRA
+		    x-xss-protection
+		    	1; mode=block
+		    	
+		    Accept
+		    	*/*
+		    Accept-Encoding
+		    	gzip, deflate, br, zstd
+		    Accept-Language
+		    	en-US
+		    Authorization
+		    	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2xsZWN0aW9uSWQiOiJfcGJfdXNlcnNfYXV0aF8iLCJleHAiOjE3NzY1MDU0MjcsImlkIjoiejJ4Njc2NjIwZDY2ZWZ4IiwicmVmcmVzaGFibGUiOnRydWUsInR5cGUiOiJhdXRoIn0.K4VcsTUPn8B8iJAeMQUJCCAw954GNdOip_aJA2qebHw
+		    Connection
+		    	keep-alive
+		    Content-Length
+		    	367
+		    Content-Type
+		    	application/json
+		    Host
+		    	pocketbase-production-882e.up.railway.app
+		    Origin
+		    	https://manakherschool.netlify.app
+		    Priority
+		    	u=0
+		    Referer
+		    	https://manakherschool.netlify.app/
+		    Sec-Fetch-Dest
+		    	empty
+		    Sec-Fetch-Mode
+		    	cors
+		    Sec-Fetch-Site
+		    	cross-site
+		    TE
+		    	trailers
+		    User-Agent
+		    	Mozilla/5.0 (X11; Linux x86_64; rv:149.0) Gecko/20100101 Firefox/149.0
+	}
+- if I wanted to import the students / teachers as an excel or csv file to the system to bulk add the users, will that be possible? and what is the is the schema or format required for the to-be-imported file?
