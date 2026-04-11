@@ -3,6 +3,7 @@ import { Cairo } from "next/font/google";
 import { AuthProvider } from "@/context/auth-context";
 import { DialogProvider } from "@/context/dialog-context";
 import { SettingsProvider } from "@/context/settings-context";
+import { ReactQueryProvider } from "@/lib/react-query";
 import { ErrorBoundary } from "@/components/error-boundary";
 import "./globals.css";
 
@@ -27,11 +28,13 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" className={cairo.variable} suppressHydrationWarning>
       <body className="min-h-full bg-surface text-ink antialiased">
         <ErrorBoundary>
-          <SettingsProvider>
-            <DialogProvider>
-              <AuthProvider>{children}</AuthProvider>
-            </DialogProvider>
-          </SettingsProvider>
+          <ReactQueryProvider>
+            <SettingsProvider>
+              <DialogProvider>
+                <AuthProvider>{children}</AuthProvider>
+              </DialogProvider>
+            </SettingsProvider>
+          </ReactQueryProvider>
         </ErrorBoundary>
       </body>
     </html>
