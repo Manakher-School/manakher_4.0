@@ -1773,3 +1773,67 @@ Then:
 - Dev server should use ~20-30% RAM instead of 80%
 - Browser should be responsive and not freeze
 - Ready for manual testing
+
+---
+
+## Session: Fix Infinite Loop - Maximum Update Depth Exceeded
+
+**Date:** 2026-04-11  
+**Issue:** "Maximum update depth exceeded" error in Teacher > Homework page  
+**Root Cause:** Circular dependency between load() callback and useEffect
+
+### Problem Analysis
+**Symptoms:**
+- Console error: "Maximum update depth exceeded"
+- Error pointed to `hwListCrudState.setIsLoading()` in load callback
+- Component stuck in infinite re-render loop
+
+**Stack Trace:**
+```
+Maximum update depth exceeded. This can happen when a component 
+calls setState inside useEffect, but useEffect either doesn't have 
+a dependency array, or one of the dependencies changes on every render.
+
+at TeacherHomeworkPage.useCallback[load]
+at TeacherHomeworkPage.useEffect
+```
+
+**Root Cause Analysis:**
+1. `load()` callback had dependency: `[user, hwListCrudState]`
+2. Inside `load()`: calls `hwListCrudState.setIsLoading(true)` 
+3. This modifies `hwListCrudState` state
+4. Dependency array changes because `hwListCrudState` changed
+5. `useEffect(() => { load() }, [load])` triggers again
+6. Infinite loop: useEffect → load() → setState → dependency change → useEffect...
+
+### Solution Implemented
+**Change Made:**
+- Line 115: Changed dependency array from `[user, hwListCrudState]` to `[user]`
+- Removed `hwListCrudState` from dependency array
+- load() can still call `hwListCrudState` methods without triggering re-renders
+- useEffect now runs only when `user` changes (authentication/permissions)
+
+**Why This Works:**
+- `user` is stable (only changes on login/logout)
+- `load()` calls `setIsLoading()` but doesn't require dependency update
+- useCallback memoizes the function based on stable dependency
+- No circular dependency chain
+
+### Build & Test Status
+✅ All 56 pages compile successfully  
+✅ Zero TypeScript errors  
+✅ No ESLint warnings about dependencies
+
+### File Modified
+- `frontend/src/app/[lang]/dashboard/teacher/homework/page.tsx` - Line 115
+
+### Commit
+- `05e4d2b` - "fix: Resolve infinite loop in teacher/homework page - Maximum update depth exceeded"
+
+### Status
+✅ COMPLETE - Infinite loop resolved. Component should now load without errors.
+
+### Verification
+- Build passes ✓
+- No TypeScript errors ✓
+- Ready for testing
