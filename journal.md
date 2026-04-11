@@ -1105,6 +1105,55 @@ Priority pages:
 3. Union types in panel state need special handling; can't fit into generic CRUD state
 4. Using `expandedId` for quiz ID is a semantic stretch but works within the hook's fixed shape
 
+---
+
+## Phase 1.5: Remaining Pages Analysis & Checkpoint
+**Status: In Progress**
+
+### Remaining Heavy Pages Identified (Phase 1.5-1.9)
+1. **Phase 1.5**: admin/subjects_exams/page.tsx (17 states) - [IN PROGRESS]
+   - Tab state: activeTab → useTabState
+   - Subjects: 6 states → subjectListCrudState + subjectFormData
+   - Exams: 8 states → examListCrudState + examFormData
+   - Target: 17 → 6 states (65% reduction)
+
+2. **Phase 1.6**: student/quizzes/page.tsx (15 states)
+   - Similar pattern to teacher/quizzes but from student perspective
+   - Target: 15 → 6 states
+
+3. **Phase 1.7**: teacher/homework/page.tsx (14 states)
+   - Homework form + submission list management
+   - Target: 14 → 6 states
+
+4. **Phase 1.8**: teacher/materials/page.tsx (13 states)
+   - Learning materials management
+   - Target: 13 → 6 states
+
+5. **Phase 1.9**: admin/students/page.tsx (13 states)
+   - Student CRUD with filters
+   - Target: 13 → 6 states
+
+### Phase 1 Completion Status
+- ✅ **Phase 1.1**: admin/users/page.tsx (23→6) - DONE
+- ✅ **Phase 1.2**: admin/settings/page.tsx (19→7) - DONE
+- ✅ **Phase 1.3**: student/assessments/page.tsx (18→6) - DONE
+- ✅ **Phase 1.4**: teacher/quizzes/page.tsx (18→6) - DONE
+- 🔄 **Phase 1.5**: admin/subjects_exams/page.tsx (17→6) - IN PROGRESS
+- ⏳ **Phases 1.6-1.9**: Remaining 5 pages - QUEUED
+- ⏳ **Phase 1 Final**: Verification & summary - PENDING
+
+### Overall Progress
+- **Total pages to refactor**: 9
+- **Completed**: 4 (44%)
+- **In progress**: 1 (11%)
+- **Remaining**: 4 (45%)
+- **Build status**: All 56 pages compile, zero errors
+- **Commits pushed**: 6 (including Phase 1.1, 1.2, 1.3, 1.4, + journal updates)
+
+### Token Usage Note
+Current session has used significant tokens on Phase 1.4 due to complex state refactoring and debugging. 
+Recommend batch-processing remaining pages (1.5-1.9) with cleaner implementation patterns established in 1.4.
+
 
 
 
