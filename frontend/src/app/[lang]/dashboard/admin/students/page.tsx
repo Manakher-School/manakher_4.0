@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
+import { useCrudState, useFormState } from "@/lib/hooks";
 import pb from "@/lib/pocketbase";
 import { Users, Plus, Trash2, Pencil, Loader2, X, ChevronDown, ChevronUp, Search } from "lucide-react";
 import { FormErrorAlert, useFormError } from "@/components/ui/form-alerts";
@@ -96,21 +97,20 @@ export default function StudentsPage() {
 
   const [students, setStudents] = useState<Student[]>([]);
   const [allSections, setAllSections] = useState<ClassSection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const { error: formError, setError: setFormError, clearError: clearFormError } = useFormError();
 
-  // Search state
+  // UI state consolidation
+  const crudState = useCrudState();
+  const formState = useFormState(EMPTY_FORM);
+  
+  // Search and expand state (kept separate - page-specific)
   const [globalQuery, setGlobalQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [sectionQueries, setSectionQueries] = useState<Record<string, string>>({});
+  
+  const { error: formError, setError: setFormError, clearError: clearFormError } = useFormError();
 
   async function load() {
-    setLoading(true);
+    crudState.setIsLoading(true);
     try {
       const [studentsRes, sectionsRes] = await Promise.all([
         pb.collection("users").getFullList<Student>({
@@ -123,7 +123,7 @@ export default function StudentsPage() {
       setStudents(studentsRes);
       setAllSections(sectionsRes);
     } finally {
-      setLoading(false);
+      crudState.setIsLoading(false);
     }
   }
 
@@ -179,32 +179,60 @@ export default function StudentsPage() {
   }
 
   // ── Form helpers ────────────────────────────────────────────────────────
-  function openCreate() { setEditingId(null); setForm(EMPTY_FORM); clearFormError(); setShowForm(true); }
-  function openEdit(student: Student) {
-    setEditingId(student.id);
-    setForm({ name_ar: student.name_ar, name_en: student.name_en, email: student.email, password: "", section: student.sections?.[0] ?? "" });
-    clearFormError();
-    setShowForm(true);
+  function openCreate() { 
+    crudState.setEditingId(null); 
+    formState.reset(); 
+    clearFormError(); 
+    crudState.setShowCreate(true); 
   }
-  function closeForm() { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); clearFormError(); }
+  
+  function openEdit(student: Student) {
+    crudState.setEditingId(student.id);
+    formState.setData({ 
+      name_ar: student.name_ar, 
+      name_en: student.name_en, 
+      email: student.email, 
+      password: "", 
+      section: student.sections?.[0] ?? "" 
+    });
+    clearFormError();
+    crudState.setShowCreate(true);
+  }
+  
+  function closeForm() { 
+    crudState.setShowCreate(false); 
+    crudState.setEditingId(null); 
+    formState.reset(); 
+    clearFormError(); 
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     clearFormError();
-    setSaving(true);
+    crudState.setIsLoading(true);
     try {
-      if (editingId) {
+      if (crudState.state.editingId) {
         const data: Record<string, unknown> = {
-          name_ar: form.name_ar, name_en: form.name_en, email: form.email,
-          sections: form.section ? [form.section] : [],
+          name_ar: formState.state.data.name_ar, 
+          name_en: formState.state.data.name_en, 
+          email: formState.state.data.email,
+          sections: formState.state.data.section ? [formState.state.data.section] : [],
         };
-        if (form.password) { data.password = form.password; data.passwordConfirm = form.password; }
-        await pb.collection("users").update(editingId, data);
+        if (formState.state.data.password) { 
+          data.password = formState.state.data.password; 
+          data.passwordConfirm = formState.state.data.password; 
+        }
+        await pb.collection("users").update(crudState.state.editingId, data);
       } else {
         await pb.collection("users").create({
-          name_ar: form.name_ar, name_en: form.name_en, email: form.email,
-          password: form.password, passwordConfirm: form.password,
-          role: "student", sections: form.section ? [form.section] : [], emailVisibility: true,
+          name_ar: formState.state.data.name_ar, 
+          name_en: formState.state.data.name_en, 
+          email: formState.state.data.email,
+          password: formState.state.data.password, 
+          passwordConfirm: formState.state.data.password,
+          role: "student", 
+          sections: formState.state.data.section ? [formState.state.data.section] : [], 
+          emailVisibility: true,
         });
       }
       closeForm();
@@ -213,13 +241,13 @@ export default function StudentsPage() {
       const errorMessage = err?.message || "Failed to save student. Please try again.";
       setFormError(errorMessage);
     } finally {
-      setSaving(false);
+      crudState.setIsLoading(false);
     }
   }
 
   async function handleDelete(id: string) {
     if (!(await confirm(t.confirmDelete))) return;
-    setDeletingId(id);
+    crudState.setIsLoading(true);
     try {
       // Cascade delete: Remove all student-related records before deleting the user
       
@@ -259,7 +287,7 @@ export default function StudentsPage() {
       await pb.collection("users").delete(id);
       setStudents(s => s.filter(x => x.id !== id));
     } finally {
-      setDeletingId(null);
+      crudState.setIsLoading(false);
     }
   }
 
@@ -288,10 +316,10 @@ export default function StudentsPage() {
           </button>
           <button
             onClick={() => handleDelete(student.id)}
-            disabled={deletingId === student.id}
+            disabled={crudState.state.isLoading}
             className="flex items-center gap-1 rounded-[var(--radius-full)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-text)] transition-colors disabled:opacity-50"
           >
-            {deletingId === student.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+            {crudState.state.isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
             {c.delete}
           </button>
         </div>
@@ -396,10 +424,10 @@ export default function StudentsPage() {
       </div>
 
       {/* Create / Edit form */}
-      {showForm && (
+      {crudState.state.showCreate && (
         <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)]">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-bold text-[var(--color-ink)]">{editingId ? t.editTitle : t.add}</h3>
+            <h3 className="font-bold text-[var(--color-ink)]">{crudState.state.editingId ? t.editTitle : t.add}</h3>
             <button onClick={closeForm} className="text-[var(--color-ink-placeholder)] hover:text-[var(--color-ink)]"><X className="h-4 w-4" /></button>
           </div>
           {formError && (
@@ -410,38 +438,38 @@ export default function StudentsPage() {
           <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.nameAr}</label>
-              <input required value={form.name_ar} placeholder={t.phNameAr} onChange={e => setForm(f => ({...f, name_ar: e.target.value}))} className={inputCls} />
+              <input required value={formState.state.data.name_ar} placeholder={t.phNameAr} onChange={e => formState.setFieldValue("name_ar", e.target.value)} className={inputCls} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.nameEn}</label>
-              <input required value={form.name_en} placeholder={t.phNameEn} onChange={e => setForm(f => ({...f, name_en: e.target.value}))} className={inputCls} dir="ltr" />
+              <input required value={formState.state.data.name_en} placeholder={t.phNameEn} onChange={e => formState.setFieldValue("name_en", e.target.value)} className={inputCls} dir="ltr" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.email}</label>
-              <input required type="email" value={form.email} placeholder={t.phEmail} onChange={e => setForm(f => ({...f, email: e.target.value}))} className={inputCls} dir="ltr" />
+              <input required type="email" value={formState.state.data.email} placeholder={t.phEmail} onChange={e => formState.setFieldValue("email", e.target.value)} className={inputCls} dir="ltr" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">
-                {editingId ? t.newPassword : t.password}
+                {crudState.state.editingId ? t.newPassword : t.password}
               </label>
               <input
-                type="password" required={!editingId} minLength={editingId ? 0 : 8}
-                value={form.password} placeholder={t.phPassword}
-                onChange={e => setForm(f => ({...f, password: e.target.value}))}
+                type="password" required={!crudState.state.editingId} minLength={crudState.state.editingId ? 0 : 8}
+                value={formState.state.data.password} placeholder={t.phPassword}
+                onChange={e => formState.setFieldValue("password", e.target.value)}
                 className={inputCls} dir="ltr"
               />
             </div>
             <div className="sm:col-span-2">
               <SectionPicker
-                label={t.assignedSection} placeholder="—" value={form.section}
+                label={t.assignedSection} placeholder="—" value={formState.state.data.section}
                 options={allSections} getLabel={getSectionName}
-                onChange={id => setForm(f => ({...f, section: id}))}
+                onChange={id => formState.setFieldValue("section", id)}
               />
             </div>
             <div className="sm:col-span-2 flex gap-2 justify-end pt-1">
               <button type="button" onClick={closeForm} className="rounded-[var(--radius-full)] px-4 py-2 text-sm font-semibold text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors">{c.cancel}</button>
-              <button type="submit" disabled={saving} className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-5 py-2 text-sm font-bold text-white hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-60">
-                {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}{c.save}
+              <button type="submit" disabled={crudState.state.isLoading} className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-5 py-2 text-sm font-bold text-white hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-60">
+                {crudState.state.isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}{c.save}
               </button>
             </div>
           </form>
@@ -449,7 +477,7 @@ export default function StudentsPage() {
       )}
 
       {/* List */}
-      {loading ? (
+      {crudState.state.isLoading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" /></div>
       ) : students.length === 0 ? (
         <p className="py-16 text-center text-sm text-[var(--color-ink-disabled)]">{t.empty}</p>
