@@ -369,11 +369,12 @@ export default function SettingsPage() {
                               </p>
                             </div>
                             <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => deleteMaterial(material.id)}
-                              disabled={moderationCrudState.state.editingId === material.id}
-                            >
+                               variant="danger"
+                               size="sm"
+                               onClick={() => deleteMaterial(material.id)}
+                               disabled={moderationCrudState.state.editingId === material.id}
+                               aria-label={`${common.delete}: ${material.title}`}
+                             >
                               {moderationCrudState.state.editingId === material.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
@@ -409,11 +410,12 @@ export default function SettingsPage() {
                               </p>
                             </div>
                             <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => deleteAnnouncement(ann.id)}
-                              disabled={moderationCrudState.state.editingId === ann.id}
-                            >
+                               variant="danger"
+                               size="sm"
+                               onClick={() => deleteAnnouncement(ann.id)}
+                               disabled={moderationCrudState.state.editingId === ann.id}
+                               aria-label={`${common.delete}: ${ann.title}`}
+                             >
                               {moderationCrudState.state.editingId === ann.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
@@ -444,11 +446,12 @@ export default function SettingsPage() {
                               <p className="text-sm text-[var(--color-ink)] mt-1">{comment.content}</p>
                             </div>
                             <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => deleteComment(comment.id)}
-                              disabled={moderationCrudState.state.editingId === comment.id}
-                            >
+                               variant="danger"
+                               size="sm"
+                               onClick={() => deleteComment(comment.id)}
+                               disabled={moderationCrudState.state.editingId === comment.id}
+                               aria-label={`${common.delete}: ${t('Comment by', {locale})} ${getDisplayNameFromExpand(comment.expand?.author, locale)}`}
+                             >
                               {moderationCrudState.state.editingId === comment.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (

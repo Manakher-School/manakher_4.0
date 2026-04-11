@@ -205,15 +205,15 @@ export default function AdminExamsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-2xl font-black text-[var(--color-ink)]" style={{ letterSpacing: "-0.5px" }}>
-          {t.title}
-        </h2>
-        <Button onClick={openAdd}>
-          <Plus className="w-4 h-4" />
-          {t.add}
-        </Button>
-      </div>
+       <div className="flex items-center justify-between gap-3 flex-wrap">
+         <h2 className="text-2xl font-black text-[var(--color-ink)]" style={{ letterSpacing: "-0.5px" }}>
+           {t.title}
+         </h2>
+         <Button onClick={openAdd} aria-label={t.add}>
+           <Plus className="w-4 h-4" />
+           {t.add}
+         </Button>
+       </div>
 
       {/* Form */}
       {showForm && (
@@ -242,12 +242,13 @@ export default function AdminExamsPage() {
                 <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
                   {t.subject}
                 </label>
-                <select
-                  value={formData.subject}
-                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                  required
-                  className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                >
+               <select
+                   value={formData.subject}
+                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                   required
+                   aria-label={t.subject}
+                   className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                 >
                   <option value="">{t.subject}</option>
                   {subjects.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -261,12 +262,13 @@ export default function AdminExamsPage() {
                 <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
                   {t.section}
                 </label>
-                <select
-                  value={formData.section}
-                  onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-                  required
-                  className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                >
+                 <select
+                   value={formData.section}
+                   onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+                   required
+                   aria-label={t.section}
+                   className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                 >
                   <option value="">{t.section}</option>
                   {sections.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -410,19 +412,20 @@ export default function AdminExamsPage() {
                     )}
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(exam)}>
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(exam.id)}
-                      className="text-[var(--color-status-danger-text)] hover:bg-[var(--color-status-danger-bg)]"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                   <div className="flex gap-2">
+                     <Button variant="ghost" size="sm" onClick={() => openEdit(exam)} aria-label={`${t.edit}: ${exam.title}`}>
+                       <Edit2 className="w-4 h-4" />
+                     </Button>
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={() => handleDelete(exam.id)}
+                       className="text-[var(--color-status-danger-text)] hover:bg-[var(--color-status-danger-bg)] focus:outline-none focus:ring-2 focus:ring-red-300 rounded-md"
+                       aria-label={`${common.delete}: ${exam.title}`}
+                     >
+                       <Trash2 className="w-4 h-4" />
+                     </Button>
+                   </div>
                 </div>
               </Card>
             );
