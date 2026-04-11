@@ -425,9 +425,13 @@ export default function StudentAssessmentsPage() {
               {completedAttempt.score} {tQuizzes.outOf} {completedAttempt.total_questions}
             </p>
           </div>
-          <Button variant="primary" onClick={() => { setActiveQuiz(null); setCompletedAttempt(null); }}>
-            {locale === "ar" ? "العودة إلى الاختبارات" : "Back to Assessments"}
-          </Button>
+           <Button
+             variant="primary"
+             onClick={() => { setActiveQuiz(null); setCompletedAttempt(null); }}
+             aria-label={locale === "ar" ? "العودة إلى الاختبارات" : "Back to Assessments"}
+           >
+             {locale === "ar" ? "العودة إلى الاختبارات" : "Back to Assessments"}
+           </Button>
         </div>
       );
     }
@@ -536,34 +540,38 @@ export default function StudentAssessmentsPage() {
         {tAssessments.title}
       </h2>
 
-      {/* Tab buttons */}
-      <div className="flex gap-2 border-b border-[var(--color-border)] pb-0">
-        <button
-          onClick={() => tabState.setActiveTab("quizzes")}
-          className={[
-            "px-4 py-2.5 text-sm font-bold rounded-t-lg transition-colors relative",
-            tabState.state.activeTab === "quizzes"
-              ? "text-[var(--color-role-student-bold)] bg-[var(--color-surface-card)] border border-b-0 border-[var(--color-border)]"
-              : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]",
-          ].join(" ")}
-          style={tabState.state.activeTab === "quizzes" ? { marginBottom: "-1px" } : {}}
-        >
-          <ClipboardList className="inline-block h-4 w-4 me-2" />
-          {tAssessments.tabQuizzes}
-        </button>
-        <button
-          onClick={() => tabState.setActiveTab("exams")}
-          className={[
-            "px-4 py-2.5 text-sm font-bold rounded-t-lg transition-colors relative",
-            tabState.state.activeTab === "exams"
-              ? "text-[var(--color-role-student-bold)] bg-[var(--color-surface-card)] border border-b-0 border-[var(--color-border)]"
-              : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]",
-          ].join(" ")}
-          style={tabState.state.activeTab === "exams" ? { marginBottom: "-1px" } : {}}
-        >
-          <Calendar className="inline-block h-4 w-4 me-2" />
-          {tAssessments.tabExams}
-        </button>
+       {/* Tab buttons */}
+       <div className="flex gap-2 border-b border-[var(--color-border)] pb-0">
+         <button
+           onClick={() => tabState.setActiveTab("quizzes")}
+           aria-label={`${tAssessments.tabQuizzes} tab`}
+           aria-current={tabState.state.activeTab === "quizzes" ? "page" : undefined}
+           className={[
+             "px-4 py-2.5 text-sm font-bold rounded-t-lg transition-colors relative focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]",
+             tabState.state.activeTab === "quizzes"
+               ? "text-[var(--color-role-student-bold)] bg-[var(--color-surface-card)] border border-b-0 border-[var(--color-border)]"
+               : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]",
+           ].join(" ")}
+           style={tabState.state.activeTab === "quizzes" ? { marginBottom: "-1px" } : {}}
+         >
+           <ClipboardList className="inline-block h-4 w-4 me-2" />
+           {tAssessments.tabQuizzes}
+         </button>
+         <button
+           onClick={() => tabState.setActiveTab("exams")}
+           aria-label={`${tAssessments.tabExams} tab`}
+           aria-current={tabState.state.activeTab === "exams" ? "page" : undefined}
+           className={[
+             "px-4 py-2.5 text-sm font-bold rounded-t-lg transition-colors relative focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]",
+             tabState.state.activeTab === "exams"
+               ? "text-[var(--color-role-student-bold)] bg-[var(--color-surface-card)] border border-b-0 border-[var(--color-border)]"
+               : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)] hover:bg-[var(--color-surface-hover)]",
+           ].join(" ")}
+           style={tabState.state.activeTab === "exams" ? { marginBottom: "-1px" } : {}}
+         >
+           <Calendar className="inline-block h-4 w-4 me-2" />
+           {tAssessments.tabExams}
+         </button>
       </div>
 
       {/* Quizzes Tab */}
@@ -640,10 +648,14 @@ export default function StudentAssessmentsPage() {
                             </p>
                           </div>
                         ) : status === "open" ? (
-                          <Button variant="primary" onClick={() => startQuiz(quiz)}>
-                            {tQuizzes.startQuiz}
-                          </Button>
-                        ) : status === "upcoming" ? (
+                           <Button
+                             variant="primary"
+                             onClick={() => startQuiz(quiz)}
+                             aria-label={`${tQuizzes.startQuiz} ${quiz.title}`}
+                           >
+                             {tQuizzes.startQuiz}
+                           </Button>
+                         ) : status === "upcoming" ? (
                           <span className="text-xs text-[var(--color-ink-disabled)]">{tQuizzes.notOpen}</span>
                         ) : (
                           <span className="text-xs text-[var(--color-ink-disabled)]">{tQuizzes.closed}</span>
