@@ -1837,3 +1837,60 @@ at TeacherHomeworkPage.useEffect
 - Build passes ✓
 - No TypeScript errors ✓
 - Ready for testing
+
+---
+
+## Session: Fix All Remaining Infinite Loop Issues
+
+**Date:** 2026-04-11  
+**Issue:** Same "Maximum update depth exceeded" error found on 5 more pages  
+**Root Cause:** Same circular dependency pattern as homework page
+
+### Issue Analysis
+**Affected Pages:**
+1. teacher/materials/page.tsx
+2. teacher/quizzes/page.tsx
+3. admin/subjects_exams/page.tsx
+4. student/assessments/page.tsx
+5. student/quizzes/page.tsx
+
+**Pattern Identified:**
+All pages had `CrudState` or `FormState` in useCallback dependency array, causing:
+- useEffect → load() → setState(CrudState) → dependency changes → useEffect loop
+
+### Solution Implemented
+**Removed State Objects from Dependencies:**
+
+BEFORE:
+```
+const load = useCallback(..., [user, mainCrudState]);
+```
+
+AFTER:
+```
+const load = useCallback(..., [user]);
+```
+
+**Applied to All 5 Pages:**
+- teacher/materials: removed `crudState`
+- teacher/quizzes: removed `mainCrudState`
+- admin/subjects_exams: removed `examListCrudState`
+- student/assessments: removed `quizListCrudState` and `examListCrudState`
+- student/quizzes: removed `listCrudState`
+
+### Build Status
+✅ All 56 pages compile successfully  
+✅ Zero TypeScript errors  
+✅ Ready for testing
+
+### Commit
+- `a080496` - "fix: Resolve infinite loop in all CRUD pages - remove CrudState from dependencies"
+
+### Status
+✅ COMPLETE - All infinite loop issues resolved. Ready for comprehensive manual testing.
+
+### Impact
+- All pages should now load without console errors
+- Forms should respond instantly without infinite loops
+- User interactions smooth and responsive
+- Ready for production testing
