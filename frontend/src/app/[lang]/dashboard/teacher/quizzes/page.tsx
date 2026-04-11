@@ -5,6 +5,7 @@ import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
+import { useCrudState, useFormState } from "@/lib/hooks";
 import {
   ClipboardList, Plus, Pencil, Trash2, X, ChevronDown, ChevronUp,
   BarChart2, CheckCircle,
@@ -96,28 +97,40 @@ export default function TeacherQuizzesPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Quiz form
-  const [showQuizForm, setShowQuizForm] = useState(false);
-  const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
-  const [quizForm, setQuizForm] = useState({ ...EMPTY_QUIZ });
-  const [savingQuiz, setSavingQuiz] = useState(false);
-
-  // Expanded quiz panel: "questions" | "results" | null
-  const [expandedQuiz, setExpandedQuiz] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [expandedPanel, setExpandedPanel] = useState<"questions" | "results" | null>(null);
 
-  // Questions
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [loadingQuestions, setLoadingQuestions] = useState(false);
-  const [showQuestionForm, setShowQuestionForm] = useState(false);
-  const [questionForm, setQuestionForm] = useState({ ...EMPTY_QUESTION });
-  const [savingQuestion, setSavingQuestion] = useState(false);
+  // Quiz form CRUD state and form data
+  const quizFormCrudState = useCrudState({
+    showCreate: false,
+    editingId: null,
+    isLoading: false,
+  });
+  const quizFormData = useFormState(EMPTY_QUIZ);
 
-  // Results / attempts
-  const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [loadingAttempts, setLoadingAttempts] = useState(false);
+  // Panel expansion state (expandedId tracks quiz ID)
+  const panelCrudState = useCrudState({
+    showCreate: false,
+    expandedId: null, // This will hold the quiz ID
+    isLoading: false,
+    error: '',
+  });
+
+  // Question form CRUD state and form data
+  const questionFormCrudState = useCrudState({
+    showCreate: false,
+    editingId: null,
+    isLoading: false,
+  });
+  const questionFormData = useFormState(EMPTY_QUESTION);
+
+  // Main CRUD state for initial data loading and attempts loading
+  const mainCrudState = useCrudState({
+    showCreate: false,
+    editingId: null,
+    isLoading: true,
+  });
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -153,22 +166,22 @@ export default function TeacherQuizzesPage() {
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      mainCrudState.setIsLoading(false);
     }
-  }, [user]);
+  }, [user, mainCrudState]);
 
   useEffect(() => { load(); }, [load]);
 
   // ── Quiz CRUD ───────────────────────────────────────────────────────────────
 
   function openCreateQuiz() {
-    setQuizForm({ ...EMPTY_QUIZ });
-    setEditingQuizId(null);
-    setShowQuizForm(true);
+    quizFormData.reset();
+    quizFormCrudState.setEditingId(null);
+    quizFormCrudState.setShowCreate(true);
   }
 
   function openEditQuiz(q: Quiz) {
-    setQuizForm({
+    quizFormData.setData({
       title: q.title,
       description: q.description ?? "",
       time_limit: q.time_limit,
@@ -177,49 +190,49 @@ export default function TeacherQuizzesPage() {
       opens_at: q.opens_at ? q.opens_at.slice(0, 16) : "",
       closes_at: q.closes_at ? q.closes_at.slice(0, 16) : "",
     });
-    setEditingQuizId(q.id);
-    setShowQuizForm(true);
+    quizFormCrudState.setEditingId(q.id);
+    quizFormCrudState.setShowCreate(true);
   }
 
   async function saveQuiz() {
-    if (!user || !quizForm.title || !quizForm.section || !quizForm.subject || !quizForm.time_limit) return;
+    if (!user || !quizFormData.state.data.title || !quizFormData.state.data.section || !quizFormData.state.data.subject || !quizFormData.state.data.time_limit) return;
     
     // If creating a new quiz, warn that questions are required
-     if (!editingQuizId) {
-       const confirmMsg = locale === "ar" 
-         ? "تذكري: يجب إضافة سؤال واحد على الأقل بعد حفظ الاختبار. هل تريدين المتابعة؟"
-         : "Remember: You must add at least one question after saving the quiz. Continue?";
-       if (!(await confirm(confirmMsg))) return;
-     }
+    if (!quizFormCrudState.state.editingId) {
+      const confirmMsg = locale === "ar" 
+        ? "تذكري: يجب إضافة سؤال واحد على الأقل بعد حفظ الاختبار. هل تريدين المتابعة؟"
+        : "Remember: You must add at least one question after saving the quiz. Continue?";
+      if (!(await confirm(confirmMsg))) return;
+    }
     
-    setSavingQuiz(true);
+    quizFormCrudState.setIsLoading(true);
     const pb = getPocketBase();
     try {
-      const payload = { ...quizForm, teacher: user.id };
+      const payload = { ...quizFormData.state.data, teacher: user.id };
       let quizId: string;
       
-      if (editingQuizId) {
-        await pb.collection("quizzes").update(editingQuizId, payload);
-        quizId = editingQuizId;
+      if (quizFormCrudState.state.editingId) {
+        await pb.collection("quizzes").update(quizFormCrudState.state.editingId, payload);
+        quizId = quizFormCrudState.state.editingId;
       } else {
         const newQuiz = await pb.collection("quizzes").create(payload);
         quizId = newQuiz.id;
       }
       
-      setShowQuizForm(false);
+      quizFormCrudState.setShowCreate(false);
       await load();
       
       // If new quiz, auto-expand questions panel and prompt to add question
-      if (!editingQuizId) {
-        setExpandedQuiz(quizId);
+      if (!quizFormCrudState.state.editingId) {
+        panelCrudState.setExpandedId(quizId);
         setExpandedPanel("questions");
         setQuestions([]);
-        setShowQuestionForm(true);
+        questionFormCrudState.setShowCreate(true);
       }
     } catch (e) {
       console.error(e);
     } finally {
-      setSavingQuiz(false);
+      quizFormCrudState.setIsLoading(false);
     }
   }
 
@@ -233,17 +246,17 @@ export default function TeacherQuizzesPage() {
   // ── Panel toggle ────────────────────────────────────────────────────────────
 
   async function togglePanel(quizId: string, panel: "questions" | "results") {
-    if (expandedQuiz === quizId && expandedPanel === panel) {
-      setExpandedQuiz(null);
+    if (panelCrudState.state.expandedId === quizId && expandedPanel === panel) {
+      panelCrudState.setExpandedId(null);
       setExpandedPanel(null);
       return;
     }
-    setExpandedQuiz(quizId);
+    panelCrudState.setExpandedId(quizId);
     setExpandedPanel(panel);
-    setShowQuestionForm(false);
+    questionFormCrudState.setShowCreate(false);
 
     if (panel === "questions") {
-      setLoadingQuestions(true);
+      panelCrudState.setIsLoading(true);
       const pb = getPocketBase();
       try {
         const qs = await pb.collection("quiz_questions").getFullList<Question>({
@@ -252,9 +265,9 @@ export default function TeacherQuizzesPage() {
         });
         setQuestions(qs);
       } catch (e) { console.error(e); }
-      finally { setLoadingQuestions(false); }
+      finally { panelCrudState.setIsLoading(false); }
     } else {
-      setLoadingAttempts(true);
+      mainCrudState.setIsLoading(true);
       const pb = getPocketBase();
       try {
         const ats = await pb.collection("quiz_attempts").getFullList<Attempt>({
@@ -264,45 +277,45 @@ export default function TeacherQuizzesPage() {
         });
         setAttempts(ats);
       } catch (e) { console.error(e); }
-      finally { setLoadingAttempts(false); }
+      finally { mainCrudState.setIsLoading(false); }
     }
   }
 
   // ── Question CRUD ───────────────────────────────────────────────────────────
 
   async function saveQuestion() {
-    if (!expandedQuiz || !questionForm.question_text) return;
-    const filtered = questionForm.options.map((o) => o.trim()).filter(Boolean);
+    if (!panelCrudState.state.expandedId || !questionFormData.state.data.question_text) return;
+    const filtered = questionFormData.state.data.options.map((o) => o.trim()).filter(Boolean);
     if (filtered.length < 2) return;
-    setSavingQuestion(true);
+    questionFormCrudState.setIsLoading(true);
     const pb = getPocketBase();
     try {
       await pb.collection("quiz_questions").create({
-        quiz: expandedQuiz,
-        question_text: questionForm.question_text,
+        quiz: panelCrudState.state.expandedId,
+        question_text: questionFormData.state.data.question_text,
         options: filtered,
-        correct_answer: Math.min(questionForm.correct_answer, filtered.length - 1),
+        correct_answer: Math.min(questionFormData.state.data.correct_answer, filtered.length - 1),
         order: questions.length + 1,
       });
-      setShowQuestionForm(false);
-      setQuestionForm({ ...EMPTY_QUESTION });
+      questionFormCrudState.setShowCreate(false);
+      questionFormData.reset();
       // reload questions
       const qs = await pb.collection("quiz_questions").getFullList<Question>({
-        filter: `quiz = "${expandedQuiz}"`,
+        filter: `quiz = "${panelCrudState.state.expandedId}"`,
         sort: "order,created",
       });
       setQuestions(qs);
     } catch (e) { console.error(e); }
-    finally { setSavingQuestion(false); }
+    finally { questionFormCrudState.setIsLoading(false); }
   }
 
   async function deleteQuestion(id: string) {
     if (!(await confirm(t.deleteQuestion + "?"))) return;
     const pb = getPocketBase();
     await pb.collection("quiz_questions").delete(id);
-    if (expandedQuiz) {
+    if (panelCrudState.state.expandedId) {
       const qs = await pb.collection("quiz_questions").getFullList<Question>({
-        filter: `quiz = "${expandedQuiz}"`,
+        filter: `quiz = "${panelCrudState.state.expandedId}"`,
         sort: "order,created",
       });
       setQuestions(qs);
@@ -325,13 +338,13 @@ export default function TeacherQuizzesPage() {
       </div>
 
       {/* Quiz create/edit form */}
-      {showQuizForm && (
+      {quizFormCrudState.state.showCreate && (
         <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)] space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-black text-[var(--color-ink)]">
-              {editingQuizId ? t.editTitle : t.add}
+              {quizFormCrudState.state.editingId ? t.editTitle : t.add}
             </h3>
-            <button onClick={() => setShowQuizForm(false)} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]">
+            <button onClick={() => quizFormCrudState.setShowCreate(false)} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -339,8 +352,8 @@ export default function TeacherQuizzesPage() {
             <div className="sm:col-span-2">
               <Input
                 label={t.quizTitle}
-                value={quizForm.title}
-                onChange={(e) => setQuizForm((f) => ({ ...f, title: e.target.value }))}
+                value={quizFormData.state.data.title}
+                onChange={(e) => quizFormData.setFieldValue("title", e.target.value)}
                 placeholder={t.phTitle}
               />
             </div>
@@ -348,8 +361,8 @@ export default function TeacherQuizzesPage() {
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSection}</label>
               <select
-                value={quizForm.section}
-                onChange={(e) => setQuizForm((f) => ({ ...f, section: e.target.value }))}
+                value={quizFormData.state.data.section}
+                onChange={(e) => quizFormData.setFieldValue("section", e.target.value)}
                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
               >
                 <option value="">—</option>
@@ -360,8 +373,8 @@ export default function TeacherQuizzesPage() {
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSubject}</label>
               <select
-                value={quizForm.subject}
-                onChange={(e) => setQuizForm((f) => ({ ...f, subject: e.target.value }))}
+                value={quizFormData.state.data.subject}
+                onChange={(e) => quizFormData.setFieldValue("subject", e.target.value)}
                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
               >
                 <option value="">—</option>
@@ -375,8 +388,8 @@ export default function TeacherQuizzesPage() {
                 type="number"
                 min={1}
                 max={180}
-                value={quizForm.time_limit}
-                onChange={(e) => setQuizForm((f) => ({ ...f, time_limit: Number(e.target.value) }))}
+                value={quizFormData.state.data.time_limit}
+                onChange={(e) => quizFormData.setFieldValue("time_limit", Number(e.target.value))}
                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
               />
             </div>
@@ -385,8 +398,8 @@ export default function TeacherQuizzesPage() {
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.opensAt}</label>
               <input
                 type="datetime-local"
-                value={quizForm.opens_at}
-                onChange={(e) => setQuizForm((f) => ({ ...f, opens_at: e.target.value }))}
+                value={quizFormData.state.data.opens_at}
+                onChange={(e) => quizFormData.setFieldValue("opens_at", e.target.value)}
                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
               />
             </div>
@@ -395,23 +408,23 @@ export default function TeacherQuizzesPage() {
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.closesAt}</label>
               <input
                 type="datetime-local"
-                value={quizForm.closes_at}
-                onChange={(e) => setQuizForm((f) => ({ ...f, closes_at: e.target.value }))}
+                value={quizFormData.state.data.closes_at}
+                onChange={(e) => quizFormData.setFieldValue("closes_at", e.target.value)}
                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
               />
             </div>
           </div>
           <div className="flex gap-2 justify-end">
-            <Button variant="ghost" onClick={() => setShowQuizForm(false)}>{common.cancel}</Button>
-            <Button variant="primary" onClick={saveQuiz} disabled={savingQuiz}>
-              {savingQuiz ? common.loading : common.save}
+            <Button variant="ghost" onClick={() => quizFormCrudState.setShowCreate(false)}>{common.cancel}</Button>
+            <Button variant="primary" onClick={saveQuiz} disabled={quizFormCrudState.state.isLoading}>
+              {quizFormCrudState.state.isLoading ? common.loading : common.save}
             </Button>
           </div>
         </div>
       )}
 
       {/* Quiz list */}
-      {loading ? (
+      {mainCrudState.state.isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-teacher-bold)] border-t-transparent animate-spin" />
         </div>
@@ -422,8 +435,8 @@ export default function TeacherQuizzesPage() {
           {quizzes.map((quiz) => {
             const sec = quiz.expand?.section;
             const sub = quiz.expand?.subject;
-            const isQOpen = expandedQuiz === quiz.id && expandedPanel === "questions";
-            const isROpen = expandedQuiz === quiz.id && expandedPanel === "results";
+            const isQOpen = panelCrudState.state.expandedId === quiz.id && expandedPanel === "questions";
+            const isROpen = panelCrudState.state.expandedId === quiz.id && expandedPanel === "results";
             const now = new Date();
             const opensAt = quiz.opens_at ? new Date(quiz.opens_at) : null;
             const closesAt = quiz.closes_at ? new Date(quiz.closes_at) : null;
@@ -494,7 +507,7 @@ export default function TeacherQuizzesPage() {
                 {/* Questions panel */}
                 {isQOpen && (
                   <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] p-4 space-y-4">
-                    {loadingQuestions ? (
+                    {panelCrudState.state.isLoading ? (
                       <div className="flex justify-center py-4">
                         <div className="h-6 w-6 rounded-full border-2 border-[var(--color-role-teacher-bold)] border-t-transparent animate-spin" />
                       </div>
@@ -543,12 +556,12 @@ export default function TeacherQuizzesPage() {
                         )}
 
                         {/* Add question form */}
-                        {showQuestionForm ? (
+                        {questionFormCrudState.state.showCreate ? (
                           <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-4 space-y-3">
                             <div className="flex items-center justify-between">
                               <p className="text-sm font-black text-[var(--color-ink)]">{t.addQuestion}</p>
                               <button
-                                onClick={() => setShowQuestionForm(false)}
+                                onClick={() => questionFormCrudState.setShowCreate(false)}
                                 className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
                               >
                                 <X className="h-4 w-4" />
@@ -559,8 +572,8 @@ export default function TeacherQuizzesPage() {
                               <label className="block text-xs font-semibold text-[var(--color-ink)]">{t.questionText}</label>
                               <textarea
                                 rows={2}
-                                value={questionForm.question_text}
-                                onChange={(e) => setQuestionForm((f) => ({ ...f, question_text: e.target.value }))}
+                                value={questionFormData.state.data.question_text}
+                                onChange={(e) => questionFormData.setFieldValue("question_text", e.target.value)}
                                 placeholder={t.phQuestionText}
                                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] resize-none"
                               />
@@ -568,22 +581,22 @@ export default function TeacherQuizzesPage() {
                             {/* Options */}
                             <div className="space-y-2">
                               <label className="block text-xs font-semibold text-[var(--color-ink)]">{t.options}</label>
-                              {questionForm.options.map((opt, oi) => (
+                              {questionFormData.state.data.options.map((opt, oi) => (
                                 <div key={oi} className="flex items-center gap-2">
                                   <input
                                     type="radio"
                                     name="correct_answer"
-                                    checked={questionForm.correct_answer === oi}
-                                    onChange={() => setQuestionForm((f) => ({ ...f, correct_answer: oi }))}
+                                    checked={questionFormData.state.data.correct_answer === oi}
+                                    onChange={() => questionFormData.setFieldValue("correct_answer", oi)}
                                     className="accent-[var(--color-accent)]"
                                   />
                                   <input
                                     type="text"
                                     value={opt}
                                     onChange={(e) => {
-                                      const opts = [...questionForm.options];
+                                      const opts = [...questionFormData.state.data.options];
                                       opts[oi] = e.target.value;
-                                      setQuestionForm((f) => ({ ...f, options: opts }));
+                                      questionFormData.setFieldValue("options", opts);
                                     }}
                                     placeholder={`${t.option} ${oi + 1}`}
                                     className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
@@ -595,14 +608,14 @@ export default function TeacherQuizzesPage() {
                               </p>
                             </div>
                             <div className="flex gap-2 justify-end">
-                              <Button variant="ghost" onClick={() => setShowQuestionForm(false)}>{common.cancel}</Button>
-                              <Button variant="primary" onClick={saveQuestion} disabled={savingQuestion}>
-                                {savingQuestion ? "..." : t.saveQuestion}
+                              <Button variant="ghost" onClick={() => questionFormCrudState.setShowCreate(false)}>{common.cancel}</Button>
+                              <Button variant="primary" onClick={saveQuestion} disabled={questionFormCrudState.state.isLoading}>
+                                {questionFormCrudState.state.isLoading ? "..." : t.saveQuestion}
                               </Button>
                             </div>
                           </div>
                         ) : (
-                          <Button variant="ghost" onClick={() => { setShowQuestionForm(true); setQuestionForm({ ...EMPTY_QUESTION }); }}>
+                          <Button variant="ghost" onClick={() => { questionFormCrudState.setShowCreate(true); questionFormData.reset(); }}>
                             <Plus className="h-4 w-4" />
                             {t.addQuestion}
                           </Button>
@@ -615,7 +628,7 @@ export default function TeacherQuizzesPage() {
                 {/* Results panel */}
                 {isROpen && (
                   <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] p-4 space-y-3">
-                    {loadingAttempts ? (
+                    {mainCrudState.state.isLoading ? (
                       <div className="flex justify-center py-4">
                         <div className="h-6 w-6 rounded-full border-2 border-[var(--color-role-teacher-bold)] border-t-transparent animate-spin" />
                       </div>
