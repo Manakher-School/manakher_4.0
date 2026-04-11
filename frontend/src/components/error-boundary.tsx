@@ -1,107 +1,105 @@
 'use client';
 
-import React, { ReactNode } from 'react';
-import { AlertTriangle, RotateCcw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import React, { ReactNode, ErrorInfo } from 'react';
+import { AlertCircle } from 'lucide-react';
+import { Button } from './ui/button';
 
-interface ErrorBoundaryProps {
+interface Props {
   children: ReactNode;
   fallback?: (error: Error, reset: () => void) => ReactNode;
 }
 
-interface ErrorBoundaryState {
+interface State {
   hasError: boolean;
   error: Error | null;
+  errorInfo: ErrorInfo | null;
 }
 
-export class ErrorBoundary extends React.Component<
-  ErrorBoundaryProps,
-  ErrorBoundaryState
-> {
-  constructor(props: ErrorBoundaryProps) {
+export class ErrorBoundary extends React.Component<Props, State> {
+  constructor(props: Props) {
     super(props);
     this.state = {
       hasError: false,
       error: null,
+      errorInfo: null,
     };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return {
-      hasError: true,
-      error,
-    };
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Error caught by ErrorBoundary:', error);
-      console.error('Error info:', errorInfo);
-    }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    this.setState({
+      errorInfo,
+    });
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    });
   };
 
   render() {
-    const { hasError, error } = this.state;
-    const { children, fallback } = this.props;
-
-    if (hasError && error) {
-      // Use custom fallback if provided
-      if (fallback) {
-        return fallback(error, this.handleReset);
+    if (this.state.hasError && this.state.error) {
+      if (this.props.fallback) {
+        return this.props.fallback(this.state.error, this.handleReset);
       }
 
-      // Default error UI
-      return (
-        <div className="flex items-center justify-center min-h-screen bg-surface p-4">
-          <Card className="max-w-md w-full p-6">
-            <div className="flex gap-3 mb-4">
-              <AlertTriangle className="h-8 w-8 text-danger shrink-0" />
-              <div>
-                <h1 className="text-lg font-bold text-ink">
-                  Something went wrong
-                </h1>
-                <p className="text-sm text-ink-secondary">
-                  An unexpected error occurred. Please try again.
-                </p>
-              </div>
-            </div>
-
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mb-4 p-3 bg-danger/10 border border-danger/20 rounded-lg">
-                <p className="text-xs font-mono text-danger break-words">
-                  {error.message}
-                </p>
-                {error.stack && (
-                  <details className="mt-2">
-                    <summary className="text-xs cursor-pointer font-semibold text-danger hover:underline">
-                      Stack trace
-                    </summary>
-                    <pre className="mt-2 text-xs overflow-auto max-h-40 text-danger/80">
-                      {error.stack}
-                    </pre>
-                  </details>
-                )}
-              </div>
-            )}
-
-            <Button
-              onClick={this.handleReset}
-              className="w-full gap-2"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Try Again
-            </Button>
-          </Card>
-        </div>
-      );
+      return <DefaultErrorFallback error={this.state.error} onReset={this.handleReset} />;
     }
 
-    return children;
+    return this.props.children;
   }
+}
+
+interface ErrorFallbackProps {
+  error: Error;
+  onReset: () => void;
+}
+
+function DefaultErrorFallback({ error, onReset }: ErrorFallbackProps) {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-surface">
+      <div className="bg-surface-card rounded-xl shadow-md p-8 max-w-md w-full mx-4">
+        <div className="flex items-center gap-3 mb-4">
+          <AlertCircle className="h-6 w-6 text-role-danger" aria-hidden="true" />
+          <h1 className="text-xl font-bold text-ink">Something went wrong</h1>
+        </div>
+
+        <p className="text-ink-secondary mb-4 text-sm">
+          An unexpected error occurred. Please try refreshing the page or contact support if the issue persists.
+        </p>
+
+        {process.env.NODE_ENV === 'development' && (
+          <details className="mb-4 p-3 bg-surface rounded-lg border border-border-subtle">
+            <summary className="font-semibold text-ink cursor-pointer mb-2">
+              Error details (Development only)
+            </summary>
+            <pre className="text-xs text-ink-secondary overflow-auto max-h-40 whitespace-pre-wrap break-words">
+              {error.toString()}
+            </pre>
+          </details>
+        )}
+
+        <div className="flex gap-2">
+          <Button onClick={onReset} variant="primary" size="default" className="flex-1">
+            Try Again
+          </Button>
+          <Button
+            onClick={() => window.location.href = '/'}
+            variant="ghost"
+            size="default"
+            className="flex-1"
+          >
+            Go Home
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }

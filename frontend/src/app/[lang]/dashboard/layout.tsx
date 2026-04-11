@@ -7,6 +7,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { getRoleDashboardPath, getDisplayName } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { LogOut, Loader2 } from "lucide-react";
 
 const roleHeaderAccent: Record<string, string> = {
@@ -110,9 +111,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* ── Page content ───────────────────────────────────────────────── */}
-      <main role="main" aria-label="Main content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
-        {children}
-      </main>
+      <ErrorBoundary>
+        <main role="main" aria-label="Main content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
+          {children}
+        </main>
+      </ErrorBoundary>
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <footer className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-card)] py-3">

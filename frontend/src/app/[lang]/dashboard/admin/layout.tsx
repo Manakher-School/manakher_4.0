@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLocale } from "@/context/locale-context";
+import { ErrorBoundary } from "@/components/error-boundary";
 import {
   LayoutGrid, Layers, BookOpen, Users, Settings
 } from "lucide-react";
@@ -85,7 +86,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* ── Content ── */}
       <div className="flex-1 min-w-0 pb-20 lg:pb-0">
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </div>
     </div>
   );

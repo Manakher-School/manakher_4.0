@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLocale } from "@/context/locale-context";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { LayoutGrid, Bell, BookOpen, FileText, ClipboardList } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -81,7 +82,9 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
 
       {/* ── Content ── */}
       <div className="flex-1 min-w-0 pb-20 lg:pb-0">
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </div>
     </div>
   );
