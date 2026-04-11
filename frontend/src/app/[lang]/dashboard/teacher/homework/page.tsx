@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { RichEditor } from "@/components/ui/rich-editor";
 import { RichContent, stripHtml } from "@/components/ui/rich-content";
+import { useCrudState, useFormState } from "@/lib/hooks";
 
 interface Section {
   id: string;
@@ -70,14 +71,10 @@ export default function TeacherHomeworkPage() {
   const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ ...EMPTY_FORM });
-  const [expandedHw, setExpandedHw] = useState<string | null>(null);
+  const hwListCrudState = useCrudState();
+  const hwFormData = useFormState(EMPTY_FORM);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
+  const submissionCrudState = useCrudState();
   const [gradeForms, setGradeForms] = useState<Record<string, { grade: string; feedback: string }>>({});
   const [savingGrade, setSavingGrade] = useState<string | null>(null);
 
@@ -91,6 +88,7 @@ export default function TeacherHomeworkPage() {
     const sectionIds: string[] = (user as any).sections ?? [];
 
     try {
+      hwListCrudState.setIsLoading(true);
       const [secs, subs] = await Promise.all([
         sectionIds.length > 0
           ? pb.collection("class_sections").getFullList<Section>({
@@ -112,19 +110,19 @@ export default function TeacherHomeworkPage() {
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      hwListCrudState.setIsLoading(false);
     }
-  }, [user, locale]);
+  }, [user, hwListCrudState]);
 
   useEffect(() => { load(); }, [load]);
 
   async function loadSubmissions(hwId: string) {
-    if (expandedHw === hwId) {
-      setExpandedHw(null);
+    if (submissionCrudState.state.expandedId === hwId) {
+      submissionCrudState.setExpandedId(null);
       return;
     }
-    setExpandedHw(hwId);
-    setLoadingSubmissions(true);
+    submissionCrudState.setExpandedId(hwId);
+    submissionCrudState.setIsLoading(true);
     const pb = getPocketBase();
     try {
       const subs = await pb.collection("submissions").getFullList<Submission>({
@@ -141,7 +139,7 @@ export default function TeacherHomeworkPage() {
     } catch (e) {
       console.error(e);
     } finally {
-      setLoadingSubmissions(false);
+      submissionCrudState.setIsLoading(false);
     }
   }
 
@@ -156,7 +154,7 @@ export default function TeacherHomeworkPage() {
         status: "graded",
       });
       // Refresh submissions
-      if (expandedHw) await loadSubmissionsRefresh(expandedHw);
+      if (submissionCrudState.state.expandedId) await loadSubmissionsRefresh(submissionCrudState.state.expandedId);
     } catch (e) {
       console.error(e);
     } finally {
@@ -175,13 +173,13 @@ export default function TeacherHomeworkPage() {
   }
 
   function openCreate() {
-    setForm({ ...EMPTY_FORM });
-    setEditingId(null);
-    setShowForm(true);
+    hwFormData.reset();
+    hwListCrudState.setEditingId(null);
+    hwListCrudState.setShowCreate(true);
   }
 
   function openEdit(hw: Homework) {
-    setForm({
+    hwFormData.setData({
       title: hw.title,
       description: hw.description ?? "",
       due_date: hw.due_date ? hw.due_date.slice(0, 10) : "",
@@ -189,27 +187,27 @@ export default function TeacherHomeworkPage() {
       section: hw.section,
       subject: hw.subject,
     });
-    setEditingId(hw.id);
-    setShowForm(true);
+    hwListCrudState.setEditingId(hw.id);
+    hwListCrudState.setShowCreate(true);
   }
 
   async function handleSave() {
-    if (!user || !form.title || !form.section || !form.subject || !form.due_date) return;
-    setSaving(true);
+    if (!user || !hwFormData.state.data.title || !hwFormData.state.data.section || !hwFormData.state.data.subject || !hwFormData.state.data.due_date) return;
+    hwListCrudState.setIsLoading(true);
     const pb = getPocketBase();
     try {
-      const payload = { ...form, teacher: user.id };
-      if (editingId) {
-        await pb.collection("homework").update(editingId, payload);
+      const payload = { ...hwFormData.state.data, teacher: user.id };
+      if (hwListCrudState.state.editingId) {
+        await pb.collection("homework").update(hwListCrudState.state.editingId, payload);
       } else {
         await pb.collection("homework").create(payload);
       }
-      setShowForm(false);
+      hwListCrudState.setShowCreate(false);
       await load();
     } catch (e) {
       console.error(e);
     } finally {
-      setSaving(false);
+      hwListCrudState.setIsLoading(false);
     }
   }
 
@@ -245,39 +243,39 @@ export default function TeacherHomeworkPage() {
       </div>
 
       {/* Form panel */}
-      {showForm && (
+      {hwListCrudState.state.showCreate && (
         <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)] space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-black text-[var(--color-ink)]">{editingId ? t.editTitle : t.add}</h3>
-            <button onClick={() => setShowForm(false)} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]">
+            <h3 className="font-black text-[var(--color-ink)]">{hwListCrudState.state.editingId ? t.editTitle : t.add}</h3>
+            <button onClick={() => hwListCrudState.setShowCreate(false)} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]">
               <X className="h-4 w-4" />
             </button>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <Input label={t.hwTitle} value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder={t.phTitle} />
+              <Input label={t.hwTitle} value={hwFormData.state.data.title} onChange={(e) => hwFormData.setFieldValue("title", e.target.value)} placeholder={t.phTitle} />
             </div>
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSection}</label>
-              <select value={form.section} onChange={(e) => setForm((f) => ({ ...f, section: e.target.value }))} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]">
+              <select value={hwFormData.state.data.section} onChange={(e) => hwFormData.setFieldValue("section", e.target.value)} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]">
                 <option value="">—</option>
                 {sections.map((s) => <option key={s.id} value={s.id}>{sectionName(s)}</option>)}
               </select>
             </div>
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSubject}</label>
-              <select value={form.subject} onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]">
+              <select value={hwFormData.state.data.subject} onChange={(e) => hwFormData.setFieldValue("subject", e.target.value)} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]">
                 <option value="">—</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{subjectName(s)}</option>)}
               </select>
             </div>
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.dueDate}</label>
-              <input type="date" value={form.due_date} onChange={(e) => setForm((f) => ({ ...f, due_date: e.target.value }))} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" />
+              <input type="date" value={hwFormData.state.data.due_date} onChange={(e) => hwFormData.setFieldValue("due_date", e.target.value)} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" />
             </div>
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.submissionType}</label>
-              <select value={form.submission_type} onChange={(e) => setForm((f) => ({ ...f, submission_type: e.target.value as Homework["submission_type"] }))} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]">
+              <select value={hwFormData.state.data.submission_type} onChange={(e) => hwFormData.setFieldValue("submission_type", e.target.value as Homework["submission_type"])} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]">
                 <option value="online">{t.typeOnline}</option>
                 <option value="onsite">{t.typeOnsite}</option>
               </select>
@@ -285,22 +283,22 @@ export default function TeacherHomeworkPage() {
             <div className="sm:col-span-2 space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.description}</label>
               <RichEditor
-                value={form.description}
-                onChange={(html) => setForm((f) => ({ ...f, description: html }))}
+                value={hwFormData.state.data.description}
+                onChange={(html) => hwFormData.setFieldValue("description", html)}
                 placeholder={t.phDescription}
                 dir={locale === "ar" ? "rtl" : "ltr"}
               />
             </div>
           </div>
           <div className="flex gap-2 justify-end">
-            <Button variant="ghost" onClick={() => setShowForm(false)}>{common.cancel}</Button>
-            <Button variant="primary" onClick={handleSave} disabled={saving}>{saving ? common.loading : common.save}</Button>
+            <Button variant="ghost" onClick={() => hwListCrudState.setShowCreate(false)}>{common.cancel}</Button>
+            <Button variant="primary" onClick={handleSave} disabled={hwListCrudState.state.isLoading}>{hwListCrudState.state.isLoading ? common.loading : common.save}</Button>
           </div>
         </div>
       )}
 
       {/* Homework list */}
-      {loading ? (
+      {hwListCrudState.state.isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-teacher-bold)] border-t-transparent animate-spin" />
         </div>
@@ -311,7 +309,7 @@ export default function TeacherHomeworkPage() {
           {homeworkList.map((hw) => {
             const sec = hw.expand?.section;
             const sub = hw.expand?.subject;
-            const isExpanded = expandedHw === hw.id;
+            const isExpanded = submissionCrudState.state.expandedId === hw.id;
 
             return (
               <div key={hw.id} className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden shadow-[var(--shadow-xs)]">
@@ -346,7 +344,7 @@ export default function TeacherHomeworkPage() {
                 {/* Submissions panel */}
                 {isExpanded && (
                   <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] p-4 space-y-3">
-                    {loadingSubmissions ? (
+                    {submissionCrudState.state.isLoading ? (
                       <div className="flex justify-center py-4">
                         <div className="h-6 w-6 rounded-full border-2 border-[var(--color-role-teacher-bold)] border-t-transparent animate-spin" />
                       </div>
