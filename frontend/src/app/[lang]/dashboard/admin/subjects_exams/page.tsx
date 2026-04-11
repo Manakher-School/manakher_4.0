@@ -357,49 +357,60 @@ export default function SubjectsExamsPage() {
         </div>
 
         {/* Tab buttons */}
-        <div className="flex gap-2 border border-[var(--color-border)] rounded-[var(--radius-lg)] p-1 bg-[var(--color-surface-card)]">
-          <button
-            onClick={() => tabState.setActiveTab("subjects")}
-            className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-semibold transition-colors ${
-              tabState.state.activeTab === "subjects"
-                ? "bg-[var(--color-role-admin-bold)] text-white"
-                : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
-            }`}
-          >
-            {t.subjects?.title || "Subjects"}
-          </button>
-          <button
-            onClick={() => tabState.setActiveTab("exams")}
-            className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-semibold transition-colors ${
-              tabState.state.activeTab === "exams"
-                ? "bg-[var(--color-role-admin-bold)] text-white"
-                : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
-            }`}
-          >
-            {t.exams?.title || "Exams"}
-          </button>
-        </div>
+         <div className="flex gap-2 border border-[var(--color-border)] rounded-[var(--radius-lg)] p-1 bg-[var(--color-surface-card)]">
+           <button
+             onClick={() => tabState.setActiveTab("subjects")}
+             aria-label={`${t.subjects?.title || "Subjects"} tab`}
+             aria-current={tabState.state.activeTab === "subjects" ? "page" : undefined}
+             className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] ${
+               tabState.state.activeTab === "subjects"
+                 ? "bg-[var(--color-role-admin-bold)] text-white"
+                 : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
+             }`}
+           >
+             {t.subjects?.title || "Subjects"}
+           </button>
+           <button
+             onClick={() => tabState.setActiveTab("exams")}
+             aria-label={`${t.exams?.title || "Exams"} tab`}
+             aria-current={tabState.state.activeTab === "exams" ? "page" : undefined}
+             className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] ${
+               tabState.state.activeTab === "exams"
+                 ? "bg-[var(--color-role-admin-bold)] text-white"
+                 : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
+             }`}
+           >
+             {t.exams?.title || "Exams"}
+           </button>
+         </div>
       </div>
 
       {/* ============ SUBJECTS TAB ============ */}
       {tabState.state.activeTab === "subjects" && (
         <div className="space-y-6">
-          {/* Add Subject Button */}
-          <button
-            onClick={openCreateSubject}
-            className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-4 py-2 text-sm font-bold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--color-accent-hover)] transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            {t.subjects?.add || "Add Subject"}
-          </button>
+           {/* Add Subject Button */}
+           <button
+             onClick={openCreateSubject}
+             aria-label={t.subjects?.add || "Add Subject"}
+             className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-4 py-2 text-sm font-bold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--color-accent-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+           >
+             <Plus className="h-4 w-4" />
+             {t.subjects?.add || "Add Subject"}
+           </button>
 
           {/* Subject Form */}
           {subjectListCrudState.state.showCreate && (
             <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)]">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-bold text-[var(--color-ink)]">{subjectListCrudState.state.editingId ? t.subjects?.editTitle : t.subjects?.add}</h3>
-                <button onClick={closeSubjectForm} className="text-[var(--color-ink-placeholder)] hover:text-[var(--color-ink)]"><X className="h-4 w-4" /></button>
-              </div>
+               <div className="mb-4 flex items-center justify-between">
+                 <h3 className="font-bold text-[var(--color-ink)]">{subjectListCrudState.state.editingId ? t.subjects?.editTitle : t.subjects?.add}</h3>
+                 <button
+                   onClick={closeSubjectForm}
+                   aria-label={c.cancel}
+                   className="text-[var(--color-ink-placeholder)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                 >
+                   <X className="h-4 w-4" />
+                 </button>
+               </div>
               <form onSubmit={handleSubmitSubject} className="grid gap-3 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.subjects?.nameAr}</label>
@@ -441,23 +452,25 @@ export default function SubjectsExamsPage() {
                       <span className="font-mono">{s.code}</span>
                     </p>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => openEditSubject(s)}
-                      className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-accent-subtle)] hover:text-[var(--color-accent-text)] transition-colors"
-                    >
-                      <Pencil className="h-3 w-3" />
-                      {c.edit}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteSubject(s.id)}
-                      disabled={deletingSubjectId === s.id}
-                      className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-text)] transition-colors disabled:opacity-50"
-                    >
-                      {deletingSubjectId === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                      {c.delete}
-                    </button>
-                  </div>
+                   <div className="flex items-center gap-1">
+                     <button
+                       onClick={() => openEditSubject(s)}
+                       aria-label={`${c.edit} ${locale === "ar" ? s.name_ar : s.name_en}`}
+                       className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-accent-subtle)] hover:text-[var(--color-accent-text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                     >
+                       <Pencil className="h-3 w-3" />
+                       {c.edit}
+                     </button>
+                     <button
+                       onClick={() => handleDeleteSubject(s.id)}
+                       disabled={deletingSubjectId === s.id}
+                       aria-label={`${c.delete} ${locale === "ar" ? s.name_ar : s.name_en}`}
+                       className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-text)] transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                     >
+                       {deletingSubjectId === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                       {c.delete}
+                     </button>
+                   </div>
                 </div>
               ))}
             </div>
@@ -668,19 +681,25 @@ export default function SubjectsExamsPage() {
                         )}
                       </div>
 
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => openEditExam(exam)}>
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteExam(exam.id)}
-                          className="text-[var(--color-status-danger-text)] hover:bg-[var(--color-status-danger-bg)]"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                       <div className="flex gap-2">
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => openEditExam(exam)}
+                           aria-label={`${c.edit} ${exam.title || ""}`}
+                         >
+                           <Edit2 className="w-4 h-4" />
+                         </Button>
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => handleDeleteExam(exam.id)}
+                           aria-label={`${c.delete} ${exam.title || ""}`}
+                           className="text-[var(--color-status-danger-text)] hover:bg-[var(--color-status-danger-bg)]"
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </Button>
+                       </div>
                     </div>
                   </Card>
                 );
