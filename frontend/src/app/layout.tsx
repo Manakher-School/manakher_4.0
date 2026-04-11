@@ -3,6 +3,7 @@ import { Cairo } from "next/font/google";
 import { AuthProvider } from "@/context/auth-context";
 import { DialogProvider } from "@/context/dialog-context";
 import { SettingsProvider } from "@/context/settings-context";
+import { ErrorBoundary } from "@/components/error-boundary";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -25,11 +26,13 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={cairo.variable} suppressHydrationWarning>
       <body className="min-h-full bg-surface text-ink antialiased">
-        <SettingsProvider>
-          <DialogProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </DialogProvider>
-        </SettingsProvider>
+        <ErrorBoundary>
+          <SettingsProvider>
+            <DialogProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </DialogProvider>
+          </SettingsProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

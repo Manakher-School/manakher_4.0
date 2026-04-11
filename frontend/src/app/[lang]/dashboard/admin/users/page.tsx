@@ -465,7 +465,7 @@ export default function UsersPage() {
                 placeholder={c.search}
                 value={teachersFilter.state.searchTerm}
                 onChange={e => teachersFilter.setSearchTerm(e.target.value)}
-                className="w-full ps-10 pr-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                className="w-full ps-10 pe-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
               />
             </div>
             <button
@@ -637,7 +637,7 @@ export default function UsersPage() {
                 placeholder={c.search}
                 value={studentsFilter.state.searchTerm}
                 onChange={e => studentsFilter.setSearchTerm(e.target.value)}
-                className="w-full ps-10 pr-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                className="w-full ps-10 pe-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
               />
             </div>
             <button
