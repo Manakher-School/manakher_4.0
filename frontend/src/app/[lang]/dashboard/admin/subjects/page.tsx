@@ -158,10 +158,11 @@ export default function SubjectsPage() {
           </div>
           <h2 className="text-xl font-black text-[var(--color-ink)]">{t.title}</h2>
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-4 py-2 text-sm font-bold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--color-accent-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-        >
+         <button
+           onClick={openCreate}
+           className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-4 py-2 text-sm font-bold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--color-accent-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+           aria-label={t.add}
+         >
           <Plus className="h-4 w-4" />
           {t.add}
         </button>
@@ -170,10 +171,10 @@ export default function SubjectsPage() {
       {/* Create / Edit form */}
       {showForm && (
         <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)]">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-bold text-[var(--color-ink)]">{editingId ? t.editTitle : t.add}</h3>
-            <button onClick={closeForm} className="text-[var(--color-ink-placeholder)] hover:text-[var(--color-ink)]"><X className="h-4 w-4" /></button>
-          </div>
+           <div className="mb-4 flex items-center justify-between">
+             <h3 className="font-bold text-[var(--color-ink)]">{editingId ? t.editTitle : t.add}</h3>
+             <button onClick={closeForm} className="text-[var(--color-ink-placeholder)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1" aria-label={c.cancel}><X className="h-4 w-4" /></button>
+           </div>
           <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-3">
             <div>
               <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.nameAr}</label>
@@ -216,18 +217,20 @@ export default function SubjectsPage() {
                 </p>
               </div>
               <div className="flex items-center gap-1">
-                <button
-                  onClick={() => openEdit(s)}
-                  className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-accent-subtle)] hover:text-[var(--color-accent-text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                >
+                 <button
+                   onClick={() => openEdit(s)}
+                   className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-accent-subtle)] hover:text-[var(--color-accent-text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                   aria-label={`${c.edit}: ${locale === "ar" ? s.name_ar : s.name_en}`}
+                 >
                   <Pencil className="h-3 w-3" />
                   {c.edit}
                 </button>
-                <button
-                  onClick={() => handleDelete(s.id)}
-                  disabled={deletingId === s.id}
-                  className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-text)] transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                >
+                 <button
+                   onClick={() => handleDelete(s.id)}
+                   disabled={deletingId === s.id}
+                   className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-text)] transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                   aria-label={`${c.delete}: ${locale === "ar" ? s.name_ar : s.name_en}`}
+                 >
                   {deletingId === s.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
                   {c.delete}
                 </button>

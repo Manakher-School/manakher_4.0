@@ -128,25 +128,25 @@ export default function TeacherAnnouncementsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-2xl font-black text-[var(--color-ink)]" style={{ letterSpacing: "-0.5px" }}>
-          {t.title}
-        </h2>
-        <Button variant="primary" onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          {t.add}
-        </Button>
-      </div>
+       <div className="flex items-center justify-between gap-3 flex-wrap">
+         <h2 className="text-2xl font-black text-[var(--color-ink)]" style={{ letterSpacing: "-0.5px" }}>
+           {t.title}
+         </h2>
+         <Button variant="primary" onClick={openCreate} aria-label={t.add}>
+           <Plus className="h-4 w-4" />
+           {t.add}
+         </Button>
+       </div>
 
       {/* Form panel */}
       {showForm && (
         <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)] space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-black text-[var(--color-ink)]">{editingId ? t.editTitle : t.add}</h3>
-            <button onClick={() => setShowForm(false)} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+           <div className="flex items-center justify-between">
+             <h3 className="font-black text-[var(--color-ink)]">{editingId ? t.editTitle : t.add}</h3>
+             <button onClick={() => setShowForm(false)} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1" aria-label={common.cancel}>
+               <X className="h-4 w-4" />
+             </button>
+           </div>
 
           <Input label={t.annTitle} value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder={t.phTitle} />
 
@@ -174,11 +174,12 @@ export default function TeacherAnnouncementsPage() {
           {form.scope === "section" && (
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSection}</label>
-              <select
-                value={form.section}
-                onChange={(e) => setForm((f) => ({ ...f, section: e.target.value }))}
-                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-              >
+               <select
+                 value={form.section}
+                 onChange={(e) => setForm((f) => ({ ...f, section: e.target.value }))}
+                 aria-label={t.selectSection}
+                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+               >
                 <option value="">—</option>
                 {sections.map((s) => <option key={s.id} value={s.id}>{sectionName(s)}</option>)}
               </select>
@@ -232,22 +233,24 @@ export default function TeacherAnnouncementsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <button onClick={() => openEdit(a)} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={() => handleDelete(a.id)} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                   <div className="flex gap-1 shrink-0">
+                     <button onClick={() => openEdit(a)} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" aria-label={`${t.edit}: ${a.title}`}>
+                       <Pencil className="h-3.5 w-3.5" />
+                     </button>
+                     <button onClick={() => handleDelete(a.id)} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-300" aria-label={`${common.delete}: ${a.title}`}>
+                       <Trash2 className="h-3.5 w-3.5" />
+                     </button>
+                   </div>
                 </div>
                 {!isExpanded && <p className="mt-2 text-sm text-[var(--color-ink-secondary)] line-clamp-3">{stripHtml(a.body)}</p>}
                 
-                {/* Expand/Collapse button */}
-                <button
-                  onClick={() => setExpandedId(isExpanded ? null : a.id)}
-                  className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent-text)] hover:underline"
-                >
+                 {/* Expand/Collapse button */}
+                 <button
+                   onClick={() => setExpandedId(isExpanded ? null : a.id)}
+                   className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent-text)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1"
+                   aria-label={isExpanded ? (locale === "ar" ? "إخفاء التفاصيل" : "Hide Details") : (locale === "ar" ? "عرض التفاصيل والتعليقات" : "View Details & Comments")}
+                   aria-expanded={isExpanded}
+                 >
                   <MessageCircle className="h-4 w-4" />
                   {isExpanded 
                     ? (locale === "ar" ? "إخفاء التفاصيل" : "Hide Details") 
