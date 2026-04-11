@@ -9,7 +9,7 @@ import { getPocketBase } from "@/lib/pocketbase";
 import { BookOpen, Plus, Pencil, Trash2, X, Link2, Paperclip, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RichEditor } from "@/components/ui/rich-editor";
+import { LazyRichEditor } from "@/components/ui/lazy-rich-editor";
 import { stripHtml, RichContent } from "@/components/ui/rich-content";
 import FileUpload from "@/components/ui/file-upload";
 import { Comments } from "@/components/ui/comments";
@@ -261,7 +261,7 @@ async function handleSave() {
             {/* Rich text body */}
             <div className="sm:col-span-2 space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.body}</label>
-              <RichEditor
+              <LazyRichEditor
                 value={formState.state.data.body}
                 onChange={(html) => formState.setFieldValue("body", html)}
                 placeholder={t.phBody}

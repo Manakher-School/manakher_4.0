@@ -10,7 +10,7 @@ import { getDisplayName } from "@/lib/auth";
 import { Users, Layers, GraduationCap, BookOpen, Bell, Plus, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RichEditor } from "@/components/ui/rich-editor";
+import { LazyRichEditor } from "@/components/ui/lazy-rich-editor";
 import { stripHtml } from "@/components/ui/rich-content";
 import pb from "@/lib/pocketbase";
 
@@ -217,7 +217,7 @@ export default function AdminDashboard() {
             
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{dict.dashboard.admin.announcements.body}</label>
-              <RichEditor
+              <LazyRichEditor
                 value={announcementForm.body}
                 onChange={(html) => setAnnouncementForm(f => ({...f, body: html}))}
                 placeholder={dict.dashboard.admin.announcements.phBody}

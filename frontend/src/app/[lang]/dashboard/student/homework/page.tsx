@@ -8,7 +8,7 @@ import { FileText, ChevronDown, ChevronUp, Send, CheckCircle } from "lucide-reac
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RichContent } from "@/components/ui/rich-content";
-import { RichEditor } from "@/components/ui/rich-editor";
+import { LazyRichEditor } from "@/components/ui/lazy-rich-editor";
 
 interface Subject {
   id: string;
@@ -278,7 +278,7 @@ export default function StudentHomeworkPage() {
                               <label className="block text-sm font-semibold text-[var(--color-ink)]">
                                 {t.submitContent}
                               </label>
-                              <RichEditor
+                              <LazyRichEditor
                                 value={content}
                                 onChange={(html) =>
                                   setSubmitContents((prev) => ({ ...prev, [hw.id]: html }))

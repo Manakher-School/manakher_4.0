@@ -8,7 +8,7 @@ import { getPocketBase } from "@/lib/pocketbase";
 import { Bell, Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RichEditor } from "@/components/ui/rich-editor";
+import { LazyRichEditor } from "@/components/ui/lazy-rich-editor";
 import { stripHtml, RichContent } from "@/components/ui/rich-content";
 import { Comments } from "@/components/ui/comments";
 
@@ -188,7 +188,7 @@ export default function TeacherAnnouncementsPage() {
 
           <div className="space-y-1">
             <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.body}</label>
-            <RichEditor
+            <LazyRichEditor
               value={form.body}
               onChange={(html) => setForm((f) => ({ ...f, body: html }))}
               placeholder={t.phBody}

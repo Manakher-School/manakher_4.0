@@ -11,7 +11,7 @@ import { getPocketBase } from "@/lib/pocketbase";
 import { BookOpen, Users, FileText, Clock, Bell, Plus, X, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RichEditor } from "@/components/ui/rich-editor";
+import { LazyRichEditor } from "@/components/ui/lazy-rich-editor";
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
@@ -230,7 +230,7 @@ export default function TeacherDashboard() {
             
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{dict.dashboard.teacher.announcements.body}</label>
-              <RichEditor
+              <LazyRichEditor
                 value={announcementForm.body}
                 onChange={(html) => setAnnouncementForm(f => ({...f, body: html}))}
                 placeholder={dict.dashboard.teacher.announcements.phBody}

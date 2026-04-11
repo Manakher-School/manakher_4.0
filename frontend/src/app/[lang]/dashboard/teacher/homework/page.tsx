@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
@@ -10,7 +10,7 @@ import { FileText, Plus, Pencil, Trash2, X, ChevronDown, ChevronUp } from "lucid
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { RichEditor } from "@/components/ui/rich-editor";
+import { LazyRichEditor } from "@/components/ui/lazy-rich-editor";
 import { RichContent, stripHtml } from "@/components/ui/rich-content";
 import { useCrudState, useFormState } from "@/lib/hooks";
 
@@ -282,7 +282,7 @@ export default function TeacherHomeworkPage() {
             </div>
             <div className="sm:col-span-2 space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.description}</label>
-              <RichEditor
+              <LazyRichEditor
                 value={hwFormData.state.data.description}
                 onChange={(html) => hwFormData.setFieldValue("description", html)}
                 placeholder={t.phDescription}
