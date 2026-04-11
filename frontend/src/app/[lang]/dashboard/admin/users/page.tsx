@@ -67,36 +67,40 @@ function MultiSelect({
   const toggle = (id: string) =>
     onChange(selected.includes(id) ? selected.filter(x => x !== id) : [...selected, id]);
 
-  return (
-    <div className="relative">
-      <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{label}</label>
-      <button
-        type="button"
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm text-start focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-      >
-        <span className={["truncate", selected.length === 0 ? "text-[var(--color-ink-placeholder)]" : "text-[var(--color-ink)]"].join(" ")}>
-          {selected.length === 0 ? "—" : selected.map(getLabel).join("، ")}
-        </span>
-        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--color-ink-placeholder)]" />
-      </button>
-      {open && (
-        <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-card)] shadow-[var(--shadow-md)]">
-          {options.map(o => (
-            <label key={o.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[var(--color-surface-hover)] text-sm">
-              <input
-                type="checkbox"
-                checked={selected.includes(o.id)}
-                onChange={() => toggle(o.id)}
-                className="accent-[var(--color-accent)] h-3.5 w-3.5"
-              />
-              <span>{o.label}</span>
-            </label>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+   return (
+     <div className="relative">
+       <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{label}</label>
+       <button
+         type="button"
+         onClick={() => setOpen(v => !v)}
+         aria-label={`${label}, ${selected.length} selected`}
+         aria-expanded={open}
+         aria-haspopup="listbox"
+         className="w-full flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm text-start focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+       >
+         <span className={["truncate", selected.length === 0 ? "text-[var(--color-ink-placeholder)]" : "text-[var(--color-ink)]"].join(" ")}>
+           {selected.length === 0 ? "—" : selected.map(getLabel).join("، ")}
+         </span>
+         <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--color-ink-placeholder)]" />
+       </button>
+       {open && (
+         <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-card)] shadow-[var(--shadow-md)]" role="listbox">
+           {options.map(o => (
+             <label key={o.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[var(--color-surface-hover)] text-sm focus-within:bg-[var(--color-surface-hover)]">
+               <input
+                 type="checkbox"
+                 checked={selected.includes(o.id)}
+                 onChange={() => toggle(o.id)}
+                 aria-label={o.label}
+                 className="accent-[var(--color-accent)] h-3.5 w-3.5 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+               />
+               <span>{o.label}</span>
+             </label>
+           ))}
+         </div>
+       )}
+     </div>
+   );
 }
 
 function SingleSelect({
@@ -115,36 +119,40 @@ function SingleSelect({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative">
-      <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{label}</label>
-      <button
-        type="button"
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm text-start focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-      >
-        <span className={selected ? "text-[var(--color-ink)]" : "text-[var(--color-ink-placeholder)]"}>
-          {selected ? getLabel(selected) : "—"}
-        </span>
-        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--color-ink-placeholder)]" />
-      </button>
-      {open && (
-        <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-card)] shadow-[var(--shadow-md)]">
-          {options.map(o => (
-            <label key={o.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[var(--color-surface-hover)] text-sm">
-              <input
-                type="radio"
-                name="section"
-                checked={selected === o.id}
-                onChange={() => { onChange(o.id); setOpen(false); }}
-                className="accent-[var(--color-accent)] h-3.5 w-3.5"
-              />
-              <span>{o.label}</span>
-            </label>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+     <div className="relative">
+       <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{label}</label>
+       <button
+         type="button"
+         onClick={() => setOpen(v => !v)}
+         aria-label={`${label}, ${selected ? getLabel(selected) : "not selected"}`}
+         aria-expanded={open}
+         aria-haspopup="listbox"
+         className="w-full flex items-center justify-between rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm text-start focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+       >
+         <span className={selected ? "text-[var(--color-ink)]" : "text-[var(--color-ink-placeholder)]"}>
+           {selected ? getLabel(selected) : "—"}
+         </span>
+         <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--color-ink-placeholder)]" />
+       </button>
+       {open && (
+         <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-card)] shadow-[var(--shadow-md)]" role="listbox">
+           {options.map(o => (
+             <label key={o.id} className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-[var(--color-surface-hover)] text-sm focus-within:bg-[var(--color-surface-hover)]">
+               <input
+                 type="radio"
+                 name="section"
+                 checked={selected === o.id}
+                 onChange={() => { onChange(o.id); setOpen(false); }}
+                 aria-label={o.label}
+                 className="accent-[var(--color-accent)] h-3.5 w-3.5 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+               />
+               <span>{o.label}</span>
+             </label>
+           ))}
+         </div>
+       )}
+     </div>
+   );
 }
 
 export default function UsersPage() {
@@ -470,7 +478,8 @@ export default function UsersPage() {
             </div>
             <button
               onClick={openCreateTeacher}
-              className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)]"
+               aria-label={t_teachers.add}
+              className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
             >
               <Plus className="h-4 w-4" />
               {t_teachers.add}
@@ -642,7 +651,8 @@ export default function UsersPage() {
             </div>
             <button
               onClick={openCreateStudent}
-              className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)]"
+               aria-label={t_students.add}
+              className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
             >
               <Plus className="h-4 w-4" />
               {t_students.add}
