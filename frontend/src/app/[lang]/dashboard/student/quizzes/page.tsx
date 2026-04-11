@@ -334,9 +334,13 @@ export default function StudentQuizzesPage() {
               {completedAttempt.score} {t.outOf} {completedAttempt.total_questions}
             </p>
           </div>
-          <Button variant="primary" onClick={() => { setActiveQuiz(null); setCompletedAttempt(null); }}>
-            {locale === "ar" ? "العودة إلى الاختبارات" : "Back to Quizzes"}
-          </Button>
+          <Button
+             variant="primary"
+             onClick={() => { setActiveQuiz(null); setCompletedAttempt(null); }}
+             aria-label={locale === "ar" ? "العودة إلى الاختبارات" : "Back to Quizzes"}
+           >
+             {locale === "ar" ? "العودة إلى الاختبارات" : "Back to Quizzes"}
+           </Button>
         </div>
       );
     }
@@ -416,28 +420,38 @@ export default function StudentQuizzesPage() {
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="flex items-center justify-between gap-3">
-          <Button
-            variant="ghost"
-            onClick={() => setCurrentQ((c) => Math.max(0, c - 1))}
-            disabled={currentQ === 0}
-          >
-            {locale === "ar" ? "السابق" : "Previous"}
-          </Button>
-          <span className="text-xs text-[var(--color-ink-secondary)] font-semibold">
-            {Object.keys(answers).length} / {totalQ} {locale === "ar" ? "أُجيب عليها" : "answered"}
-          </span>
-          {currentQ < totalQ - 1 ? (
-            <Button variant="primary" onClick={() => setCurrentQ((c) => c + 1)}>
-              {locale === "ar" ? "التالي" : "Next"}
-            </Button>
-           ) : (
-             <Button variant="primary" onClick={handleSubmitClick} disabled={quizCrudState.state.isLoading}>
-               {quizCrudState.state.isLoading ? t.submitting : t.submit}
+         {/* Navigation */}
+         <div className="flex items-center justify-between gap-3">
+           <Button
+             variant="ghost"
+             onClick={() => setCurrentQ((c) => Math.max(0, c - 1))}
+             disabled={currentQ === 0}
+             aria-label={locale === "ar" ? "السابق" : "Previous"}
+           >
+             {locale === "ar" ? "السابق" : "Previous"}
+           </Button>
+           <span className="text-xs text-[var(--color-ink-secondary)] font-semibold">
+             {Object.keys(answers).length} / {totalQ} {locale === "ar" ? "أُجيب عليها" : "answered"}
+           </span>
+           {currentQ < totalQ - 1 ? (
+             <Button
+               variant="primary"
+               onClick={() => setCurrentQ((c) => c + 1)}
+               aria-label={locale === "ar" ? "التالي" : "Next"}
+             >
+               {locale === "ar" ? "التالي" : "Next"}
              </Button>
-           )}
-        </div>
+            ) : (
+              <Button
+                variant="primary"
+                onClick={handleSubmitClick}
+                disabled={quizCrudState.state.isLoading}
+                aria-label={quizCrudState.state.isLoading ? t.submitting : t.submit}
+              >
+                {quizCrudState.state.isLoading ? t.submitting : t.submit}
+              </Button>
+            )}
+         </div>
       </div>
     );
   }
@@ -521,10 +535,14 @@ export default function StudentQuizzesPage() {
                         </p>
                       </div>
                     ) : status === "open" ? (
-                      <Button variant="primary" onClick={() => startQuiz(quiz)}>
-                        {t.startQuiz}
-                      </Button>
-                    ) : status === "upcoming" ? (
+                       <Button
+                         variant="primary"
+                         onClick={() => startQuiz(quiz)}
+                         aria-label={`${t.startQuiz} ${quiz.title}`}
+                       >
+                         {t.startQuiz}
+                       </Button>
+                     ) : status === "upcoming" ? (
                       <span className="text-xs text-[var(--color-ink-disabled)]">{t.notOpen}</span>
                     ) : (
                       <span className="text-xs text-[var(--color-ink-disabled)]">{t.closed}</span>
