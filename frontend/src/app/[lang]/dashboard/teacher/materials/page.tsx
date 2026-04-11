@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
+import { useCrudState, useFormState } from "@/lib/hooks";
 import { getPocketBase } from "@/lib/pocketbase";
 import { BookOpen, Plus, Pencil, Trash2, X, Link2, Paperclip, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,18 +52,18 @@ export default function TeacherMaterialsPage() {
   const t = dict.dashboard.teacher.materials;
   const common = dict.common;
 
+  // Data collections
   const [materials, setMaterials] = useState<Material[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ ...EMPTY_FORM });
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // UI state consolidation
+  const crudState = useCrudState();
+  const formState = useFormState({ title: "", body: "", link_url: "", section: "", subject: "", selectedFile: null as File | null });
+
+  // Filters (kept separate as they're specific to this page)
   const [filterSection, setFilterSection] = useState("");
   const [filterSubject, setFilterSubject] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const sectionName = (s: Section) =>
     locale === "ar" ? `${s.grade_ar} — ${s.section_ar}` : `${s.grade_en} — ${s.section_en}`;
@@ -73,6 +74,7 @@ export default function TeacherMaterialsPage() {
     const pb = getPocketBase();
     const sectionIds: string[] = (user as any).sections ?? [];
 
+    crudState.setIsLoading(true);
     try {
       const [secs, subs] = await Promise.all([
         sectionIds.length > 0
@@ -99,63 +101,62 @@ export default function TeacherMaterialsPage() {
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      crudState.setIsLoading(false);
     }
-  }, [user, locale, filterSection, filterSubject]);
+  }, [user, locale, filterSection, filterSubject, crudState]);
 
   useEffect(() => { load(); }, [load]);
 
   function openCreate() {
-    setForm({ ...EMPTY_FORM });
-    setSelectedFile(null);
-    setEditingId(null);
-    setShowForm(true);
+    formState.setData({ title: "", body: "", link_url: "", section: "", subject: "", selectedFile: null });
+    crudState.setEditingId(null);
+    crudState.setShowCreate(true);
   }
 
 function openEdit(m: Material) {
-  setForm({ 
-    title: m.title, 
-    body: m.body, 
+  formState.setData({
+    title: m.title,
+    body: m.body,
     link_url: m.link_url || "",
-    section: m.section, 
-    subject: m.subject 
+    section: m.section,
+    subject: m.subject,
+    selectedFile: null,
   });
-  setSelectedFile(null);
-  setEditingId(m.id);
-  setShowForm(true);
+  crudState.setEditingId(m.id);
+  crudState.setShowCreate(true);
 }
 
 async function handleSave() {
-  if (!user || !form.title || !form.section || !form.subject) return;
-  setSaving(true);
+  if (!user || !formState.state.data.title || !formState.state.data.section || !formState.state.data.subject) return;
+  crudState.setIsLoading(true);
   const pb = getPocketBase();
   try {
     // Use FormData for file upload support
-    const formData = new FormData();
-    formData.append("title", form.title);
-    formData.append("body", form.body);
-    formData.append("link_url", form.link_url);
-    formData.append("section", form.section);
-    formData.append("subject", form.subject);
-    formData.append("teacher", user.id);
+    const formDataObj = new FormData();
+    formDataObj.append("title", formState.state.data.title);
+    formDataObj.append("body", formState.state.data.body);
+    formDataObj.append("link_url", formState.state.data.link_url);
+    formDataObj.append("section", formState.state.data.section);
+    formDataObj.append("subject", formState.state.data.subject);
+    formDataObj.append("teacher", user.id);
     
     // Append file if selected
-    if (selectedFile) {
-      formData.append("attachment", selectedFile);
+    if (formState.state.data.selectedFile) {
+      formDataObj.append("attachment", formState.state.data.selectedFile);
     }
     
-    if (editingId) {
-      await pb.collection("materials").update(editingId, formData);
+    if (crudState.state.editingId) {
+      await pb.collection("materials").update(crudState.state.editingId, formDataObj);
     } else {
-      await pb.collection("materials").create(formData);
+      await pb.collection("materials").create(formDataObj);
     }
-    setShowForm(false);
-    setSelectedFile(null);
+    crudState.setShowCreate(false);
+    formState.setData({ title: "", body: "", link_url: "", section: "", subject: "", selectedFile: null });
     await load();
   } catch (e) {
     console.error(e);
   } finally {
-    setSaving(false);
+    crudState.setIsLoading(false);
   }
 }
 
@@ -199,26 +200,26 @@ async function handleSave() {
       </div>
 
       {/* Form panel */}
-      {showForm && (
+      {crudState.state.showCreate && (
         <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)] space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-black text-[var(--color-ink)]">{editingId ? t.editTitle : t.add}</h3>
-            <button onClick={() => setShowForm(false)} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]">
+            <h3 className="font-black text-[var(--color-ink)]">{crudState.state.editingId ? t.editTitle : t.add}</h3>
+            <button onClick={() => crudState.setShowCreate(false)} className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]">
               <X className="h-4 w-4" />
             </button>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <Input label={t.materialTitle} value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder={t.phTitle} />
+              <Input label={t.materialTitle} value={formState.state.data.title} onChange={(e) => formState.setFieldValue("title", e.target.value)} placeholder={t.phTitle} />
             </div>
 
             {/* Section select */}
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSection}</label>
               <select
-                value={form.section}
-                onChange={(e) => setForm((f) => ({ ...f, section: e.target.value }))}
+                value={formState.state.data.section}
+                onChange={(e) => formState.setFieldValue("section", e.target.value)}
                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
               >
                 <option value="">—</option>
@@ -230,8 +231,8 @@ async function handleSave() {
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSubject}</label>
               <select
-                value={form.subject}
-                onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
+                value={formState.state.data.subject}
+                onChange={(e) => formState.setFieldValue("subject", e.target.value)}
                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
               >
                 <option value="">—</option>
@@ -241,7 +242,7 @@ async function handleSave() {
 
             {/* Optional link URL */}
             <div className="sm:col-span-2">
-              <Input label={t.linkUrl} value={form.link_url} onChange={(e) => setForm((f) => ({ ...f, link_url: e.target.value }))} placeholder={t.phLink} />
+              <Input label={t.linkUrl} value={formState.state.data.link_url} onChange={(e) => formState.setFieldValue("link_url", e.target.value)} placeholder={t.phLink} />
             </div>
             
             {/* File upload */}
@@ -250,8 +251,8 @@ async function handleSave() {
                 label={t.fileUpload} 
                 acceptedTypes={["application/pdf", "image/jpeg", "image/png", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]}
                 maxSizeMB={10}
-                onFileChange={(file) => setSelectedFile(file)}
-                fileName={selectedFile?.name}
+                onFileChange={(file) => formState.setFieldValue("selectedFile", file)}
+                fileName={formState.state.data.selectedFile?.name}
               />
             </div>
 
@@ -259,8 +260,8 @@ async function handleSave() {
             <div className="sm:col-span-2 space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.body}</label>
               <RichEditor
-                value={form.body}
-                onChange={(html) => setForm((f) => ({ ...f, body: html }))}
+                value={formState.state.data.body}
+                onChange={(html) => formState.setFieldValue("body", html)}
                 placeholder={t.phBody}
                 dir={locale === "ar" ? "rtl" : "ltr"}
               />
@@ -268,16 +269,16 @@ async function handleSave() {
           </div>
 
           <div className="flex gap-2 justify-end">
-            <Button variant="ghost" onClick={() => setShowForm(false)}>{common.cancel}</Button>
-            <Button variant="primary" onClick={handleSave} disabled={saving}>
-              {saving ? common.loading : common.save}
+            <Button variant="ghost" onClick={() => crudState.setShowCreate(false)}>{common.cancel}</Button>
+            <Button variant="primary" onClick={handleSave} disabled={crudState.state.isLoading}>
+              {crudState.state.isLoading ? common.loading : common.save}
             </Button>
           </div>
         </div>
       )}
 
       {/* Materials list */}
-      {loading ? (
+      {crudState.state.isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-teacher-bold)] border-t-transparent animate-spin" />
         </div>
@@ -288,7 +289,7 @@ async function handleSave() {
           {materials.map((m) => {
             const sec = m.expand?.section;
             const sub = m.expand?.subject;
-            const isExpanded = expandedId === m.id;
+            const isExpanded = crudState.state.expandedId === m.id;
             return (
               <div key={m.id} className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] px-5 py-4 shadow-[var(--shadow-xs)]">
                 <div className="flex items-start justify-between gap-3">
@@ -334,7 +335,7 @@ async function handleSave() {
                 
                 {/* Expand/Collapse button */}
                 <button
-                  onClick={() => setExpandedId(isExpanded ? null : m.id)}
+                  onClick={() => crudState.setExpandedId(isExpanded ? null : m.id)}
                   className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent-text)] hover:underline"
                 >
                   <MessageCircle className="h-4 w-4" />
