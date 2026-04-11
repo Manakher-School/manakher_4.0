@@ -58,6 +58,7 @@ export function Dialog({
 
   return (
     <div
+      role="presentation"
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -66,17 +67,20 @@ export function Dialog({
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? "dialog-title" : undefined}
         className={`bg-[var(--color-surface-card)] rounded-[var(--radius-xl)] shadow-[var(--shadow-lg)] w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}
       >
         {/* Header */}
         {title && (
           <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
-            <h2 className="text-lg font-bold text-[var(--color-ink)]">
+            <h2 id="dialog-title" className="text-lg font-bold text-[var(--color-ink)]">
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-[var(--color-surface-hover)] rounded-[var(--radius-md)] transition-colors"
+              className="p-1 hover:bg-[var(--color-surface-hover)] rounded-[var(--radius-md)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
               aria-label="Close dialog"
             >
               <X size={20} className="text-[var(--color-ink-secondary)]" />
@@ -96,6 +100,7 @@ export function Dialog({
                 variant={action.variant || "primary"}
                 onClick={action.onClick}
                 disabled={action.disabled || action.loading}
+                aria-label={action.label}
               >
                 {action.loading ? "..." : action.label}
               </Button>

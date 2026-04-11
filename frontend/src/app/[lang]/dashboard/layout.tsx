@@ -90,7 +90,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             {/* Language switcher */}
             <button
               onClick={() => switchLocale(nextLocale)}
-              className="rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-bold text-[var(--color-ink-secondary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-colors"
+              aria-label={`Switch language to ${nextLocale === 'ar' ? 'العربية' : 'English'}`}
+              className="rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-bold text-[var(--color-ink-secondary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
             >
               {dict.common.switchLang}
             </button>
@@ -98,7 +99,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             {/* Sign out */}
             <button
               onClick={() => { logout(); router.push(`/${locale}/login`); }}
-              className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-bold text-[var(--color-ink-secondary)] hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-text)] transition-colors"
+              aria-label="Sign out"
+              className="flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-bold text-[var(--color-ink-secondary)] hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-danger)]"
             >
               <LogOut className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{dict.common.signOut}</span>
@@ -108,7 +110,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* ── Page content ───────────────────────────────────────────────── */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
+      <main role="main" aria-label="Main content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
         {children}
       </main>
 

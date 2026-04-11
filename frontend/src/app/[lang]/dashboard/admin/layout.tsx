@@ -32,7 +32,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex gap-6">
       {/* ── Sidebar ── */}
-      <aside className="hidden lg:flex w-56 shrink-0 flex-col gap-1 pt-1">
+      <aside className="hidden lg:flex w-56 shrink-0 flex-col gap-1 pt-1" role="navigation" aria-label="Main navigation">
         {navItems.map(({ key, href, icon }) => {
           const isActive = key === "overview"
             ? pathname === href
@@ -41,8 +41,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <Link
               key={key}
               href={href}
+              aria-label={t[key]}
+              aria-current={isActive ? "page" : undefined}
               className={[
-                "flex items-center gap-3 rounded-[var(--radius-lg)] px-3 py-2.5 text-sm font-semibold transition-colors",
+                "flex items-center gap-3 rounded-[var(--radius-lg)] px-3 py-2.5 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]",
                 isActive
                   ? "bg-[var(--color-role-admin-bg)] text-[var(--color-role-admin-text)]"
                   : "text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]",
@@ -56,7 +58,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* ── Mobile tab bar ── */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-20 flex border-t border-[var(--color-border)] bg-[var(--color-surface-card)] px-1 pb-safe">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-20 flex border-t border-[var(--color-border)] bg-[var(--color-surface-card)] px-1 pb-safe" aria-label="Mobile navigation">
         {navItems.map(({ key, href, icon }) => {
           const isActive = key === "overview"
             ? pathname === href
@@ -65,8 +67,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <Link
               key={key}
               href={href}
+              aria-label={t[key]}
+              aria-current={isActive ? "page" : undefined}
               className={[
-                "flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-semibold transition-colors",
+                "flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]",
                 isActive
                   ? "text-[var(--color-role-admin-bold)]"
                   : "text-[var(--color-ink-disabled)] hover:text-[var(--color-ink-secondary)]",
@@ -77,7 +81,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </Link>
           );
         })}
-      </div>
+      </nav>
 
       {/* ── Content ── */}
       <div className="flex-1 min-w-0 pb-20 lg:pb-0">
