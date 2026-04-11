@@ -1210,16 +1210,62 @@ Priority pages:
 - ✅ **Phase 1.3**: student/assessments/page.tsx (18→6) - DONE
 - ✅ **Phase 1.4**: teacher/quizzes/page.tsx (18→6) - DONE
 - ✅ **Phase 1.5.a**: admin/subjects_exams/page.tsx (17→6) - DONE
-- ⏳ **Phase 1.5.b-1.5.e**: Remaining 4 pages - QUEUED
+- ✅ **Phase 1.5.b**: student/quizzes/page.tsx (13→8) - DONE
+- ✅ **Phase 1.5.c**: teacher/homework/page.tsx (12→8) - DONE
+- ✅ **Phase 1.5.d**: teacher/materials/page.tsx (12→8) - DONE (Commit: 6734f16)
+- ⏳ **Phase 1.5.e**: admin/students/page.tsx (13 states) - NEXT
 - ⏳ **Phase 1 Final**: Verification & summary - PENDING
 
 ### Overall Progress
 - **Total pages to refactor**: 9
-- **Completed**: 5 (56%)
+- **Completed**: 8 (89%)
 - **In progress**: 0 (0%)
-- **Remaining**: 4 (44%)
+- **Remaining**: 1 (11%)
 - **Build status**: All 56 pages compile, zero errors
-- **Commits pushed**: 7 (including Phase 1.1-1.5.a + journal updates)
+- **Commits pushed**: 8 (including Phase 1.1-1.5.d + journal updates)
+
+---
+
+## Phase 1.5.d: teacher/materials Refactoring
+
+### What I Did
+1. Analyzed teacher/materials/page.tsx and identified 12 states to consolidate
+2. Imported useCrudState and useFormState hooks
+3. Replaced scattered useState with consolidated hooks:
+   - `loading, showForm, editingId, saving, expandedId` (5 states) → `useCrudState` (1 hook)
+   - `form` properties + `selectedFile` (6 nested) → `useFormState` with initialData (1 hook)
+   - Kept `filterSection, filterSubject` as separate useState since they're page-specific filters
+4. Updated all function implementations to use hook accessors:
+   - `load()`: Changed `setLoading()` to `crudState.setIsLoading()`
+   - `openCreate()`: Changed to use `formState.setData()` and `crudState` setters
+   - `openEdit()`: Updated to use hook methods with proper form state reset
+   - `handleSave()`: Changed validation to use `formState.state.data.*`, loading state to `crudState.state.isLoading`
+5. Updated all JSX to use `.state.` accessor pattern:
+   - Form visibility: `showForm && ...` → `crudState.state.showCreate && ...`
+   - Form data: `form.title` → `formState.state.data.title`
+   - Loading: `loading ?` → `crudState.state.isLoading ?`
+   - Expanded: `expandedId === m.id` → `crudState.state.expandedId === m.id`
+6. Built project - passed with zero TypeScript errors
+7. Committed with detailed message (6734f16)
+
+### State Reduction Results
+- **Before**: 12 state declarations
+- **After**: 8 state declarations (3 data collections + 2 hooks + 2 page-specific filters)
+- **Reduction**: 33% fewer state declarations
+- **Maintained**: All functionality - CRUD, file upload, rich text editor, filtering, expand/collapse with comments
+
+### What Worked Well
+- useCrudState and useFormState integrated seamlessly
+- File upload handling via formState.state.data.selectedFile
+- Page-specific filters (filterSection, filterSubject) work better as separate useState since they don't fit generic FilterState hook pattern
+- All UI interactions preserved: create, edit, delete, expand, filter
+
+### What I Struggled With / Lessons Learned
+- Initially tried to use `useFilterState` for section/subject filters, but that hook is designed for generic search/role/sort/pagination filters
+- Decision: Kept filterSection and filterSubject as simple useState to maintain clarity and avoid unnecessary complexity
+- The hook architecture works best when filtering is generic across pages, but materials page has domain-specific filters
+
+---
 
 
 
