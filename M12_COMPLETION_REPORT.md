@@ -42,12 +42,13 @@
 - ✅ RTL Support: All CSS uses logical properties (ps/pe/ms/me)
 - ✅ Performance: React Query setup, lazy loading, pagination ready
 
-### ⏳ Manual Testing (Pending - Awaiting Database Reseed)
+### ⏳ Manual Testing (Pending - Awaiting Test Data Population)
 
 **Required Setup:**
-- PocketBase database needs to be reseeded with test data
-- seed_data.py requires initial admin user creation
-- Once reseeded, manual browser testing can begin
+- PocketBase database needs to be populated with test data (manual via admin UI)
+- ~~seed_data.py~~ REMOVED - manual data population preferred to avoid conflicts
+- Test data stays local (PocketBase data dir in `.gitignore`) separate from production
+- Once populated, manual browser testing can begin
 
 **Test Plan Ready:**
 - Comprehensive 8-section testing checklist created
@@ -118,7 +119,9 @@
 ## Recommendations for Next Steps
 
 ### Immediate (If Continuing):
-1. **Reseed Database:** Create admin user, then run seed_data.py
+1. **Populate Test Database:** Use PocketBase admin UI to add test data (users, assignments, materials)
+   - Test data stays local in `backend/pb_data/` (excluded from git)
+   - Keeps development separate from production data
 2. **Manual Browser Testing:** Execute test plan against live application
 3. **Performance Profiling:** Measure bundle size improvements
 

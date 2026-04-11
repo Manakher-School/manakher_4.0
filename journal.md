@@ -1600,3 +1600,39 @@ The user should now do manual browser testing to verify:
 8. Mobile responsiveness works
 
 After browser testing validation, move to Milestone 12: Final Polish & Performance Profiling
+
+---
+
+## Session: M12 Setup - Remove Automated Seeding
+
+**Date:** 2026-04-11  
+**Task:** Remove seed_data.py and implement manual test data population
+
+### What Was Done
+1. **Removed seed_data.py** - Automated seeding script deleted from repo
+   - Reason: User prefers manual database population to avoid conflicts with production data
+   - Prevents accidental overwrites of real data on hosted system
+2. **Updated Documentation**
+   - M12_COMPLETION_REPORT.md: Updated "Manual Testing" section to reference manual data population instead of seed_data.py
+   - Updated "Recommendations" section to mention PocketBase admin UI for data entry
+3. **Verified .gitignore**
+   - ✅ PocketBase data directory (`backend/pb_data/`) already excluded from git
+   - ✅ Test data will stay local and not be committed
+4. **Created Commit**
+   - `16de02a` - "chore: Remove seed_data.py - manual database population preferred"
+
+### Next Steps for M12
+User will:
+1. Start PocketBase locally
+2. Populate test database via PocketBase admin UI (http://127.0.0.1:8090)
+3. Create test users (Admin, Teachers, Students)
+4. Create test data (homework, materials, announcements)
+
+Then:
+1. Manual browser testing of all three user roles
+2. Verify RTL/Arabic support
+3. Test mobile responsiveness
+4. Document any issues
+
+### Status
+✅ COMPLETE - seed_data.py removed, documentation updated, M12 ready for manual test data population
