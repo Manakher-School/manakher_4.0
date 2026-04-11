@@ -78,14 +78,26 @@ export function useFormState<T extends Record<string, any>>(initialData: T) {
     }));
   }, []);
 
+  const clearTouched = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      touched: {},
+    }));
+  }, []);
+
+  // Alias for setFieldTouched for backward compatibility
+  const setTouched = setFieldTouched;
+
   return {
     state,
     setFieldValue,
     setFieldError,
     setFieldTouched,
+    setTouched,
     setData,
     setErrors,
     reset,
     clearErrors,
+    clearTouched,
   };
 }
