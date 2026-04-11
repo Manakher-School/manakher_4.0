@@ -86,10 +86,12 @@ export default function StudentAnnouncementsPage() {
                 key={ann.id}
                 className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden shadow-[var(--shadow-xs)]"
               >
-                <button
-                  onClick={() => toggle(ann.id)}
-                  className="w-full flex items-start justify-between gap-3 px-5 py-4 text-start"
-                >
+                 <button
+                   onClick={() => toggle(ann.id)}
+                   className="w-full flex items-start justify-between gap-3 px-5 py-4 text-start focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-accent)] rounded-t-[var(--radius-xl)]"
+                   aria-label={`${ann.title}: ${isExpanded ? "collapse" : "expand"}`}
+                   aria-expanded={isExpanded}
+                 >
                   <div className="flex items-center gap-3">
                     <span
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)]"

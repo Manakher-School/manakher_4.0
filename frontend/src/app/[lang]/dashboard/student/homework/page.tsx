@@ -183,11 +183,13 @@ export default function StudentHomeworkPage() {
                 key={hw.id}
                 className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden shadow-[var(--shadow-xs)]"
               >
-                {/* Header row */}
-                <button
-                  onClick={() => toggleExpand(hw.id)}
-                  className="w-full flex items-start justify-between gap-3 px-5 py-4 text-start"
-                >
+                 {/* Header row */}
+                 <button
+                   onClick={() => toggleExpand(hw.id)}
+                   className="w-full flex items-start justify-between gap-3 px-5 py-4 text-start focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-accent)] rounded-t-[var(--radius-xl)]"
+                   aria-label={`${hw.title}: ${isExpanded ? "collapse" : "expand"}`}
+                   aria-expanded={isExpanded}
+                 >
                   <div className="flex items-center gap-3">
                     <span
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)]"
@@ -286,15 +288,16 @@ export default function StudentHomeworkPage() {
                               />
                             </div>
                             <div className="flex justify-end">
-                              <Button
-                                variant="primary"
-                                onClick={() => handleSubmit(hw.id)}
-                                disabled={submitting === hw.id || !content.trim()}
-                              >
-                                <Send className="h-4 w-4" />
-                                {submitting === hw.id ? t.submitting : t.submitBtn}
-                              </Button>
-                            </div>
+                               <Button
+                                 variant="primary"
+                                 onClick={() => handleSubmit(hw.id)}
+                                 disabled={submitting === hw.id || !content.trim()}
+                                 aria-label={t.submitBtn}
+                               >
+                                 <Send className="h-4 w-4" />
+                                 {submitting === hw.id ? t.submitting : t.submitBtn}
+                               </Button>
+                             </div>
                           </div>
                         )}
                       </div>

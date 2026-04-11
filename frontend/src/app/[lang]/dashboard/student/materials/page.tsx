@@ -127,10 +127,12 @@ export default function StudentMaterialsPage() {
                 key={mat.id}
                 className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden shadow-[var(--shadow-xs)]"
               >
-                <button
-                  onClick={() => toggle(mat.id)}
-                  className="w-full flex items-start justify-between gap-3 px-5 py-4 text-start"
-                >
+                 <button
+                   onClick={() => toggle(mat.id)}
+                   className="w-full flex items-start justify-between gap-3 px-5 py-4 text-start focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-accent)] rounded-t-[var(--radius-xl)]"
+                   aria-label={`${mat.title}: ${isExpanded ? "collapse" : "expand"}`}
+                   aria-expanded={isExpanded}
+                 >
                   <div className="flex items-center gap-3">
                     <span
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)]"
@@ -158,28 +160,30 @@ export default function StudentMaterialsPage() {
                 {isExpanded && (
                   <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] px-5 py-4 space-y-4">
                     {mat.body && <RichContent html={mat.body} />}
-                    {mat.link_url && (
-                      <a
-                        href={mat.link_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent)] hover:underline"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        {t.viewLink}
-                      </a>
-                    )}
-                    {mat.attachment && (
-                      <a
-                        href={`${getPocketBase().baseURL}/api/files/${mat.collectionId}/${mat.id}/${mat.attachment}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent)] hover:underline"
-                      >
-                        <Paperclip className="h-3.5 w-3.5" />
-                        {mat.attachment}
-                      </a>
-                    )}
+                     {mat.link_url && (
+                       <a
+                         href={mat.link_url}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1"
+                         aria-label={`${t.viewLink} for ${mat.title}`}
+                       >
+                         <ExternalLink className="h-3.5 w-3.5" />
+                         {t.viewLink}
+                       </a>
+                     )}
+                     {mat.attachment && (
+                       <a
+                         href={`${getPocketBase().baseURL}/api/files/${mat.collectionId}/${mat.id}/${mat.attachment}`}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1"
+                         aria-label={`Download ${mat.attachment}`}
+                       >
+                         <Paperclip className="h-3.5 w-3.5" />
+                         {mat.attachment}
+                       </a>
+                     )}
                     
                     <Comments targetType="material" targetId={mat.id} />
                   </div>
