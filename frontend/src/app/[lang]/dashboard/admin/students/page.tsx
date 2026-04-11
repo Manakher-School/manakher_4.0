@@ -310,14 +310,16 @@ export default function StudentsPage() {
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => openEdit(student)}
-            className="flex items-center gap-1 rounded-[var(--radius-full)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-accent-subtle)] hover:text-[var(--color-accent-text)] transition-colors"
+            className="flex items-center gap-1 rounded-[var(--radius-full)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-accent-subtle)] hover:text-[var(--color-accent-text)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+            aria-label={`${c.edit}: ${name}`}
           >
             <Pencil className="h-3 w-3" />{c.edit}
           </button>
           <button
             onClick={() => handleDelete(student.id)}
             disabled={crudState.state.isLoading}
-            className="flex items-center gap-1 rounded-[var(--radius-full)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-text)] transition-colors disabled:opacity-50"
+            className="flex items-center gap-1 rounded-[var(--radius-full)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-ink-placeholder)] hover:bg-[var(--color-danger-subtle)] hover:text-[var(--color-danger-text)] transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+            aria-label={`${c.delete}: ${name}`}
           >
             {crudState.state.isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
             {c.delete}
@@ -415,21 +417,22 @@ export default function StudentsPage() {
           </div>
           <h2 className="text-xl font-black text-[var(--color-ink)]">{t.title}</h2>
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-4 py-2 text-sm font-bold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--color-accent-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-        >
-          <Plus className="h-4 w-4" />{t.add}
-        </button>
+         <button
+           onClick={openCreate}
+           className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-4 py-2 text-sm font-bold text-white shadow-[var(--shadow-sm)] hover:bg-[var(--color-accent-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+           aria-label={t.add}
+         >
+           <Plus className="h-4 w-4" />{t.add}
+         </button>
       </div>
 
-      {/* Create / Edit form */}
-      {crudState.state.showCreate && (
-        <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)]">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-bold text-[var(--color-ink)]">{crudState.state.editingId ? t.editTitle : t.add}</h3>
-            <button onClick={closeForm} className="text-[var(--color-ink-placeholder)] hover:text-[var(--color-ink)]"><X className="h-4 w-4" /></button>
-          </div>
+       {/* Create / Edit form */}
+       {crudState.state.showCreate && (
+         <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)]">
+           <div className="mb-4 flex items-center justify-between">
+             <h3 className="font-bold text-[var(--color-ink)]">{crudState.state.editingId ? t.editTitle : t.add}</h3>
+             <button onClick={closeForm} className="text-[var(--color-ink-placeholder)] hover:text-[var(--color-ink)] rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" aria-label={c.cancel}><X className="h-4 w-4" /></button>
+           </div>
           {formError && (
             <div className="mb-4">
               <FormErrorAlert error={formError} onDismiss={clearFormError} />

@@ -184,40 +184,42 @@ export default function TeacherDashboard() {
         </div>
       </div>
       
-      {/* ── Announcements Section ───────────────────────────────────── */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-black text-[var(--color-ink)]" style={{ letterSpacing: "-0.2px" }}>
-            {dict.dashboard.teacher.announcements.title}
-          </h3>
-          <button 
-            onClick={() => {
-              setAnnouncementForm({title: "", body: ""});
-              setEditingAnnouncementId(null);
-              setShowAnnouncementForm(true);
-            }}
-            className="flex items-center gap-2 text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
-          >
-            <Plus className="h-4 w-4" />
-            <span>{dict.dashboard.teacher.announcements.add}</span>
-          </button>
-        </div>
-        
-        {/* Announcements Form */}
-        {showAnnouncementForm && (
-          <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)] space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-black text-[var(--color-ink)]">{editingAnnouncementId ? dict.dashboard.teacher.announcements.editTitle : dict.dashboard.teacher.announcements.add}</h3>
-              <button 
-                onClick={() => {
-                  setShowAnnouncementForm(false);
-                  setEditingAnnouncementId(null);
-                }}
-                className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+       {/* ── Announcements Section ───────────────────────────────────── */}
+       <div className="space-y-4">
+         <div className="flex items-center justify-between">
+           <h3 className="text-xl font-black text-[var(--color-ink)]" style={{ letterSpacing: "-0.2px" }}>
+             {dict.dashboard.teacher.announcements.title}
+           </h3>
+           <button 
+             onClick={() => {
+               setAnnouncementForm({title: "", body: ""});
+               setEditingAnnouncementId(null);
+               setShowAnnouncementForm(true);
+             }}
+             className="flex items-center gap-2 text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1"
+             aria-label={dict.dashboard.teacher.announcements.add}
+           >
+             <Plus className="h-4 w-4" />
+             <span>{dict.dashboard.teacher.announcements.add}</span>
+           </button>
+         </div>
+         
+         {/* Announcements Form */}
+         {showAnnouncementForm && (
+           <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-5 shadow-[var(--shadow-sm)] space-y-4">
+             <div className="flex items-center justify-between">
+               <h3 className="font-black text-[var(--color-ink)]">{editingAnnouncementId ? dict.dashboard.teacher.announcements.editTitle : dict.dashboard.teacher.announcements.add}</h3>
+               <button 
+                 onClick={() => {
+                   setShowAnnouncementForm(false);
+                   setEditingAnnouncementId(null);
+                 }}
+                 className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)] rounded-md p-1 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                 aria-label={dict.common.cancel}
+               >
+                 <X className="h-4 w-4" />
+               </button>
+             </div>
             
             <Input 
               label={dict.dashboard.teacher.announcements.annTitle} 
@@ -283,13 +285,15 @@ export default function TeacherDashboard() {
                     <div className="flex gap-1 shrink-0">
                       <button 
                         onClick={() => openAnnouncementEdit(ann)}
-                        className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]"
+                        className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                        aria-label={`${dict.common.edit}: ${ann.title}`}
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button 
                         onClick={() => handleDeleteAnnouncement(ann.id)}
-                        className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600"
+                        className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                        aria-label={`${dict.common.delete}: ${ann.title}`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
