@@ -9,6 +9,7 @@ import { getTextDirection } from "@/lib/text-direction";
 import { ClipboardList, Clock, CheckCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useCrudState } from "@/lib/hooks";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -118,19 +119,17 @@ export default function StudentQuizzesPage() {
 
   // Quiz list state
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [loading, setLoading] = useState(true);
+  const listCrudState = useCrudState();
   // Map: quizId -> attempt (null if not attempted)
   const [attemptMap, setAttemptMap] = useState<Record<string, Attempt | null>>({});
-  const [loadingAttempts, setLoadingAttempts] = useState(false);
 
   // Active quiz-taking state
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const quizCrudState = useCrudState();
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [currentQ, setCurrentQ] = useState(0);
   const [quizEndTime, setQuizEndTime] = useState<Date | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [completedAttempt, setCompletedAttempt] = useState<Attempt | null>(null);
 
   const subjectName = (s: Subject) => (locale === "ar" ? s.name_ar : s.name_en);
@@ -143,11 +142,12 @@ export default function StudentQuizzesPage() {
     const sections: string[] = (user as any).sections ?? [];
 
     if (sections.length === 0) {
-      setLoading(false);
+      listCrudState.setIsLoading(false);
       return;
     }
 
     try {
+      listCrudState.setIsLoading(true);
       const sectionFilter = sections.map((id) => `section = "${id}"`).join(" || ");
       const qzs = await pb.collection("quizzes").getFullList<Quiz>({
         filter: sectionFilter,
@@ -158,7 +158,6 @@ export default function StudentQuizzesPage() {
 
       // Load all attempts for this student for these quizzes
       if (qzs.length > 0) {
-        setLoadingAttempts(true);
         const quizFilter = qzs.map((q) => `quiz = "${q.id}"`).join(" || ");
         const ats = await pb.collection("quiz_attempts").getFullList<Attempt>({
           filter: `student = "${user.id}" && (${quizFilter})`,
@@ -167,14 +166,13 @@ export default function StudentQuizzesPage() {
         qzs.forEach((q) => { map[q.id] = null; });
         ats.forEach((a) => { map[a.quiz] = a; });
         setAttemptMap(map);
-        setLoadingAttempts(false);
       }
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      listCrudState.setIsLoading(false);
     }
-  }, [user]);
+  }, [user, listCrudState]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -239,7 +237,7 @@ export default function StudentQuizzesPage() {
       return;
     }
     
-    setLoadingQuestions(true);
+    quizCrudState.setIsLoading(true);
     setActiveQuiz(quiz);
     setAnswers({});
     setCurrentQ(0);
@@ -261,16 +259,16 @@ export default function StudentQuizzesPage() {
       console.error(e);
       setActiveQuiz(null);
     } finally {
-      setLoadingQuestions(false);
+      quizCrudState.setIsLoading(false);
     }
   }
 
   // ── Submit quiz ──────────────────────────────────────────────────────────────
 
   async function submitQuiz(forceAnswers?: Record<string, number>) {
-    if (!activeQuiz || !user || submitting) return;
+    if (!activeQuiz || !user || quizCrudState.state.isLoading) return;
     const finalAnswers = forceAnswers ?? answers;
-    setSubmitting(true);
+    quizCrudState.setIsLoading(true);
 
     // Auto-grade: count correct answers
     let score = 0;
@@ -296,7 +294,7 @@ export default function StudentQuizzesPage() {
     } catch (e) {
       console.error(e);
     } finally {
-      setSubmitting(false);
+      quizCrudState.setIsLoading(false);
     }
   }
 
@@ -344,7 +342,7 @@ export default function StudentQuizzesPage() {
     }
 
     // Loading questions
-    if (loadingQuestions) {
+    if (quizCrudState.state.isLoading) {
       return (
         <div className="flex items-center justify-center py-20">
           <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-student-bold)] border-t-transparent animate-spin" />
@@ -434,11 +432,11 @@ export default function StudentQuizzesPage() {
             <Button variant="primary" onClick={() => setCurrentQ((c) => c + 1)}>
               {locale === "ar" ? "التالي" : "Next"}
             </Button>
-          ) : (
-            <Button variant="primary" onClick={handleSubmitClick} disabled={submitting}>
-              {submitting ? t.submitting : t.submit}
-            </Button>
-          )}
+           ) : (
+             <Button variant="primary" onClick={handleSubmitClick} disabled={quizCrudState.state.isLoading}>
+               {quizCrudState.state.isLoading ? t.submitting : t.submit}
+             </Button>
+           )}
         </div>
       </div>
     );
@@ -452,7 +450,7 @@ export default function StudentQuizzesPage() {
         {t.title}
       </h2>
 
-      {loading || loadingAttempts ? (
+      {listCrudState.state.isLoading ? (
         <div className="flex items-center justify-center py-20">
           <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-student-bold)] border-t-transparent animate-spin" />
         </div>
