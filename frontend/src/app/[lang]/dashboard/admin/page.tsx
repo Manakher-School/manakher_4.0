@@ -158,12 +158,12 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── Stat cards ────────────────────────────────────────────── */}
-      <div>
-        <h3 className="text-base font-black text-[var(--color-ink)] mb-4" style={{ letterSpacing: "-0.2px" }}>
-          {t.nav.overview}
-        </h3>
-        <div className="stat-card-group grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+       {/* ── Stat cards ────────────────────────────────────────────── */}
+       <div>
+         <h3 className="text-base font-black text-[var(--color-ink)] mb-6" style={{ letterSpacing: "-0.2px" }}>
+           {t.nav.overview}
+         </h3>
+         <div className="stat-card-group grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard icon={<Users />}        label={t.stats.users}    value={stats.users} />
           <StatCard icon={<Layers />}       label={t.stats.classes}  value={stats.sections} />
           <StatCard icon={<GraduationCap />} label={t.stats.teachers} value={stats.teachers} />

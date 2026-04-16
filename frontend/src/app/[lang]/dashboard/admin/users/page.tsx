@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
 import pb from "@/lib/pocketbase";
-import { Plus, Trash2, Pencil, Loader2, X, ChevronDown, Search } from "lucide-react";
+import { Plus, Trash2, Pencil, Loader2, X, ChevronDown, Search, Upload } from "lucide-react";
 import { useCrudState, useFormState, useFilterState, useTabState } from "@/lib/hooks";
+import { parseStudentCSV, readFileAsText } from "@/lib/csv-parser";
 
 interface Teacher {
   id: string;
@@ -179,6 +180,12 @@ export default function UsersPage() {
 
   // Students data state
   const [studentsData, setStudentsData] = useState<{ items: Student[]; sections: ClassSection[] }>({ items: [], sections: [] });
+
+  // CSV Import state
+  const [showCsvImport, setShowCsvImport] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvError, setCsvError] = useState<string | null>(null);
 
   const t_teachers = dict.dashboard.admin.teachers;
   const t_students = dict.dashboard.admin.students;
@@ -420,13 +427,61 @@ export default function UsersPage() {
       for (const r of reactions) { try { await pb.collection("reactions").delete(r.id); } catch {} }
 
       await pb.collection("users").delete(id);
-      await loadStudents();
-    } catch (err) {
-      studentsCrud.setError(`Failed to delete student: ${err}`);
-    } finally {
-      studentsCrud.setEditingId(null);
-    }
-  }
+       await loadStudents();
+     } catch (err) {
+       studentsCrud.setError(`Failed to delete student: ${err}`);
+     } finally {
+       studentsCrud.setEditingId(null);
+     }
+   }
+
+   async function handleCsvImport() {
+     if (!csvFile) return;
+     setCsvImporting(true);
+     setCsvError(null);
+     try {
+       const csvContent = await readFileAsText(csvFile);
+       const rows = parseStudentCSV(csvContent);
+       
+       // Validate all section_ids exist
+       const validSectionIds = studentsData.sections.map(s => s.id);
+       for (const row of rows) {
+         if (!validSectionIds.includes(row.section_id)) {
+           throw new Error(`Invalid section ID in row: ${row.section_id}`);
+         }
+       }
+       
+       // Create students
+       let created = 0;
+       for (const row of rows) {
+         try {
+           await pb.collection("users").create({
+             name_ar: row.name_ar,
+             name_en: row.name_en,
+             email: row.email,
+             password: row.password,
+             passwordConfirm: row.password,
+             role: "student",
+             sections: [row.section_id],
+             emailVisibility: true,
+           });
+           created++;
+         } catch (err) {
+           console.error(`Failed to create student ${row.email}:`, err);
+         }
+       }
+       
+       await alert(`Successfully imported ${created} out of ${rows.length} students`);
+       setCsvFile(null);
+       setShowCsvImport(false);
+       await loadStudents();
+     } catch (err) {
+       const errorMsg = err instanceof Error ? err.message : String(err);
+       setCsvError(errorMsg);
+     } finally {
+       setCsvImporting(false);
+     }
+   }
 
   const filteredTeachers = teachersData.items.filter(t =>
     `${t.name_ar} ${t.name_en} ${t.email}`.toLowerCase().includes(teachersFilter.state.searchTerm.toLowerCase())
@@ -465,26 +520,26 @@ export default function UsersPage() {
       {/* Teachers Tab */}
       {tab === "teachers" && (
         <div>
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute inset-y-0 left-3 h-4 w-4 text-[var(--color-ink-placeholder)]" />
-              <input
-                type="text"
-                placeholder={c.search}
-                value={teachersFilter.state.searchTerm}
-                onChange={e => teachersFilter.setSearchTerm(e.target.value)}
-                className="w-full ps-10 pe-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-              />
-            </div>
-            <button
-              onClick={openCreateTeacher}
-               aria-label={t_teachers.add}
-              className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-            >
-              <Plus className="h-4 w-4" />
-              {t_teachers.add}
-            </button>
-          </div>
+           <div className="mb-4 flex items-center justify-center gap-3">
+             <div className="flex-1 max-w-md relative">
+               <Search className="absolute inset-y-0 left-3 h-4 w-4 text-[var(--color-ink-placeholder)]" />
+               <input
+                 type="text"
+                 placeholder={c.search}
+                 value={teachersFilter.state.searchTerm}
+                 onChange={e => teachersFilter.setSearchTerm(e.target.value)}
+                 className="w-full ps-10 pe-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+               />
+             </div>
+             <button
+               onClick={openCreateTeacher}
+                aria-label={t_teachers.add}
+               className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+             >
+               <Plus className="h-4 w-4" />
+               {t_teachers.add}
+             </button>
+           </div>
 
           {teachersCrud.state.isLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -501,15 +556,15 @@ export default function UsersPage() {
                       <h3 className="font-semibold">{teacher.name_en}</h3>
                       <p className="text-sm text-[var(--color-ink-secondary)]">{teacher.name_ar}</p>
                       <p className="text-xs text-[var(--color-ink-placeholder)] mt-1">{teacher.email}</p>
-                      {teacher.expand?.sections?.length ? (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {teacher.expand.sections.map(s => (
-                            <span key={s.id} className="inline-block rounded bg-[var(--color-accent)] bg-opacity-20 px-2 py-0.5 text-xs font-semibold text-[var(--color-accent)]">
-                              {s.section_en}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
+                       {teacher.expand?.sections?.length ? (
+                         <div className="mt-2 flex flex-wrap gap-1">
+                           {teacher.expand.sections.map(s => (
+                             <span key={s.id} className="inline-block rounded bg-[var(--color-accent)] bg-opacity-20 px-2 py-0.5 text-xs font-semibold text-white">
+                               {s.section_en}
+                             </span>
+                           ))}
+                         </div>
+                       ) : null}
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -635,29 +690,37 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* Students Tab */}
-      {tab === "students" && (
-        <div>
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute inset-y-0 left-3 h-4 w-4 text-[var(--color-ink-placeholder)]" />
-              <input
-                type="text"
-                placeholder={c.search}
-                value={studentsFilter.state.searchTerm}
-                onChange={e => studentsFilter.setSearchTerm(e.target.value)}
-                className="w-full ps-10 pe-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-              />
+       {/* Students Tab */}
+       {tab === "students" && (
+          <div>
+            <div className="mb-4 flex items-center justify-center gap-3 flex-wrap">
+              <div className="flex-1 max-w-md relative">
+                <Search className="absolute inset-y-0 left-3 h-4 w-4 text-[var(--color-ink-placeholder)]" />
+                <input
+                  type="text"
+                  placeholder={c.search}
+                  value={studentsFilter.state.searchTerm}
+                  onChange={e => studentsFilter.setSearchTerm(e.target.value)}
+                  className="w-full ps-10 pe-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                />
+              </div>
+              <button
+                onClick={openCreateStudent}
+                 aria-label={t_students.add}
+                className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+              >
+                <Plus className="h-4 w-4" />
+                {t_students.add}
+              </button>
+              <button
+                onClick={() => setShowCsvImport(true)}
+                 aria-label="Import students from CSV"
+                className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-role-admin-bold)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+              >
+                <Upload className="h-4 w-4" />
+                Import CSV
+              </button>
             </div>
-            <button
-              onClick={openCreateStudent}
-               aria-label={t_students.add}
-              className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-            >
-              <Plus className="h-4 w-4" />
-              {t_students.add}
-            </button>
-          </div>
 
           {studentsCrud.state.isLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -789,14 +852,109 @@ export default function UsersPage() {
                     >
                       {studentsCrud.state.isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                       {c.save}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </main>
-  );
-}
+                     </button>
+                   </div>
+                 </form>
+               </div>
+             </div>
+           )}
+
+           {/* CSV Import Modal */}
+           {showCsvImport && (
+             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+               <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-6 w-full max-w-md shadow-lg">
+                 <div className="flex items-center justify-between mb-4">
+                   <h3 className="text-lg font-bold text-[var(--color-ink)]">Import Students from CSV</h3>
+                   <button
+                     onClick={() => {
+                       setShowCsvImport(false);
+                       setCsvFile(null);
+                       setCsvError(null);
+                     }}
+                     className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
+                   >
+                     <X className="h-5 w-5" />
+                   </button>
+                 </div>
+
+                 <div className="space-y-4">
+                   <div className="text-sm text-[var(--color-ink-secondary)]">
+                     <p className="mb-2">Required CSV columns:</p>
+                     <ul className="list-disc list-inside space-y-1 text-xs">
+                       <li><code>name_ar</code> - Arabic name</li>
+                       <li><code>name_en</code> - English name</li>
+                       <li><code>email</code> - Email address</li>
+                       <li><code>password</code> - Initial password</li>
+                       <li><code>section_id</code> - PocketBase section ID</li>
+                     </ul>
+                   </div>
+
+                   <div className="rounded-lg border-2 border-dashed border-[var(--color-border)] p-4 text-center cursor-pointer hover:border-[var(--color-accent)]"
+                     onClick={() => {
+                       const input = document.createElement('input');
+                       input.type = 'file';
+                       input.accept = '.csv';
+                       input.onchange = (e) => {
+                         const file = (e.target as HTMLInputElement).files?.[0];
+                         if (file) setCsvFile(file);
+                       };
+                       input.click();
+                     }}
+                   >
+                     {csvFile ? (
+                       <div>
+                         <p className="text-sm font-semibold text-[var(--color-accent)]">{csvFile.name}</p>
+                         <p className="text-xs text-[var(--color-ink-secondary)]">Click to change</p>
+                       </div>
+                     ) : (
+                       <div>
+                         <p className="text-sm font-semibold text-[var(--color-ink)]">Click to select CSV file</p>
+                         <p className="text-xs text-[var(--color-ink-secondary)]">or drag & drop</p>
+                       </div>
+                     )}
+                   </div>
+
+                   {csvError && (
+                     <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                       {csvError}
+                     </div>
+                   )}
+
+                   <div className="flex gap-2">
+                     <button
+                       onClick={() => {
+                         setShowCsvImport(false);
+                         setCsvFile(null);
+                         setCsvError(null);
+                       }}
+                       className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-hover)]"
+                     >
+                       Cancel
+                     </button>
+                     <button
+                       onClick={handleCsvImport}
+                       disabled={!csvFile || csvImporting}
+                       className="flex-1 flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                     >
+                       {csvImporting ? (
+                         <>
+                           <Loader2 className="h-4 w-4 animate-spin" />
+                           Importing...
+                         </>
+                       ) : (
+                         <>
+                           <Upload className="h-4 w-4" />
+                           Import
+                         </>
+                       )}
+                     </button>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           )}
+         </div>
+       )}
+     </main>
+   );
+ }

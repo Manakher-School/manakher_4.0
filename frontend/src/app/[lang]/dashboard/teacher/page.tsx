@@ -172,12 +172,12 @@ export default function TeacherDashboard() {
       </div>
 
       {/* ── Stat cards ────────────────────────────────────────────── */}
-      <div>
-        <h3 className="text-base font-black text-[var(--color-ink)] mb-4" style={{ letterSpacing: "-0.2px" }}>
-          {t.nav.overview}
-        </h3>
-        <div className="stat-card-group grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard icon={<BookOpen />} label={t.stats.subjects} value={subjectCount} />
+       <div>
+         <h3 className="text-base font-black text-[var(--color-ink)] mb-6" style={{ letterSpacing: "-0.2px" }}>
+           {t.nav.overview}
+         </h3>
+         <div className="stat-card-group grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+           <StatCard icon={<BookOpen />} label={t.stats.subjects} value={subjectCount} />
           <StatCard icon={<Users />} label={t.stats.students} value={studentCount} />
           <StatCard icon={<FileText />} label={t.stats.assignments} value={hwCount} />
           <StatCard icon={<Clock />} label={t.stats.pending} value={pendingCount} />

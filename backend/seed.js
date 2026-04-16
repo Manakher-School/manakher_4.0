@@ -60,19 +60,19 @@ async function seed() {
     });
     console.log(`✓ Created teacher user: ${teacher.email}\n`);
     
-    // Create student user
-    console.log('Creating student user...');
-    const student = await pb.collection('users').create({
-      email: 'student@manakher.edu.jo',
-      password: 'Student123!',
-      passwordConfirm: 'Student123!',
-      name_ar: 'الطالبة ليلى',
-      name_en: 'Layla',
-      role: 'student',
-      verified: true,
-      sections: [sections[0].id] // 1st Grade A
-    });
-    console.log(`✓ Created student user: ${student.email}\n`);
+     // Create student user
+     console.log('Creating student user...');
+     const student = await pb.collection('users').create({
+       email: 'student@manakher.edu.jo',
+       password: 'Student123!',
+       passwordConfirm: 'Student123!',
+       name_ar: 'الطالب أحمد',
+       name_en: 'Ahmed',
+       role: 'student',
+       verified: true,
+       sections: [sections[0].id] // 1st Grade A
+     });
+     console.log(`✓ Created student user: ${student.email}\n`);
     
     console.log('✅ Database seeding complete!\n');
     console.log('=== Login Credentials ===');

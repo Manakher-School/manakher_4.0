@@ -362,76 +362,69 @@ export default function AdminExamsPage() {
         </Card>
       )}
 
-      {/* List */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-admin-bold)] border-t-transparent animate-spin" />
-        </div>
-      ) : list.length === 0 ? (
-        <p className="text-[var(--color-ink-secondary)] text-sm">{t.empty}</p>
-      ) : (
-        <div className="grid gap-3">
-          {list.map((exam) => {
-            const subject = exam.expand?.subject;
-            const section = exam.expand?.section;
-            const subjectName = subject ? getSubjectName(subject) : "";
-            const sectionName = section ? getSectionName(section) : "";
+       {/* List */}
+       {loading ? (
+         <div className="flex items-center justify-center py-20">
+           <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-admin-bold)] border-t-transparent animate-spin" />
+         </div>
+       ) : list.length === 0 ? (
+         <p className="text-[var(--color-ink-secondary)] text-sm">{t.empty}</p>
+       ) : (
+         <div className="overflow-x-auto rounded-[var(--radius-xl)] border border-[var(--color-border)]">
+           <table className="w-full text-sm">
+             <thead>
+               <tr className="bg-[var(--color-role-admin-bg)] border-b border-[var(--color-border)]">
+                 <th className="px-4 py-3 text-start font-bold text-[var(--color-role-admin-text)]">{t.examTitle || (locale === "ar" ? "عنوان الامتحان" : "Exam Title")}</th>
+                 <th className="px-4 py-3 text-start font-bold text-[var(--color-role-admin-text)]">{t.subject}</th>
+                 <th className="px-4 py-3 text-start font-bold text-[var(--color-role-admin-text)]">{t.section}</th>
+                 <th className="px-4 py-3 text-start font-bold text-[var(--color-role-admin-text)]">{t.examDate}</th>
+                 <th className="px-4 py-3 text-start font-bold text-[var(--color-role-admin-text)]">{t.startTime}</th>
+                 <th className="px-4 py-3 text-start font-bold text-[var(--color-role-admin-text)]">{t.endTime}</th>
+                 <th className="px-4 py-3 text-start font-bold text-[var(--color-role-admin-text)]">{t.examType}</th>
+                 <th className="px-4 py-3 text-center font-bold text-[var(--color-role-admin-text)]">{common.actions || "Actions"}</th>
+               </tr>
+             </thead>
+             <tbody>
+               {list.map((exam, idx) => {
+                 const subject = exam.expand?.subject;
+                 const section = exam.expand?.section;
+                 const subjectName = subject ? getSubjectName(subject) : "";
+                 const sectionName = section ? getSectionName(section) : "";
 
-            return (
-              <Card key={exam.id} className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-bold text-[var(--color-ink)]">{exam.title || subjectName}</h4>
-                      <Badge variant="accent">{getExamTypeLabel(exam.exam_type)}</Badge>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 flex-wrap text-sm text-[var(--color-ink-secondary)]">
-                      <span>{subjectName}</span>
-                      <span>·</span>
-                      <span>{sectionName}</span>
-                    </div>
-
-                    <div className="space-y-1 text-sm text-[var(--color-ink-secondary)]">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>{formatDate(exam.exam_date)}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        <span>
-                          {exam.start_time} - {exam.end_time}
-                        </span>
-                      </div>
-                    </div>
-
-                    {exam.notes && (
-                      <p className="text-sm text-[var(--color-ink)] p-3 rounded-lg bg-[var(--color-surface-sunken)]">
-                        {exam.notes}
-                      </p>
-                    )}
-                  </div>
-
-                   <div className="flex gap-2">
-                     <Button variant="ghost" size="sm" onClick={() => openEdit(exam)} aria-label={`${t.edit}: ${exam.title}`}>
-                       <Edit2 className="w-4 h-4" />
-                     </Button>
-                     <Button
-                       variant="ghost"
-                       size="sm"
-                       onClick={() => handleDelete(exam.id)}
-                       className="text-[var(--color-status-danger-text)] hover:bg-[var(--color-status-danger-bg)] focus:outline-none focus:ring-2 focus:ring-red-300 rounded-md"
-                       aria-label={`${common.delete}: ${exam.title}`}
-                     >
-                       <Trash2 className="w-4 h-4" />
-                     </Button>
-                   </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                 return (
+                   <tr key={exam.id} className={`border-b border-[var(--color-border)] ${idx % 2 === 0 ? "bg-[var(--color-surface-card)]" : "bg-[var(--color-surface)]"} hover:bg-[var(--color-surface-hover)]`}>
+                     <td className="px-4 py-3 font-semibold text-[var(--color-ink)]">{exam.title || subjectName}</td>
+                     <td className="px-4 py-3 text-[var(--color-ink-secondary)]">{subjectName}</td>
+                     <td className="px-4 py-3 text-[var(--color-ink-secondary)]">{sectionName}</td>
+                     <td className="px-4 py-3 text-[var(--color-ink-secondary)]">{formatDate(exam.exam_date)}</td>
+                     <td className="px-4 py-3 text-[var(--color-ink-secondary)]">{exam.start_time}</td>
+                     <td className="px-4 py-3 text-[var(--color-ink-secondary)]">{exam.end_time}</td>
+                     <td className="px-4 py-3">
+                       <Badge variant="accent">{getExamTypeLabel(exam.exam_type)}</Badge>
+                     </td>
+                     <td className="px-4 py-3 text-center">
+                       <div className="flex gap-2 justify-center">
+                         <Button variant="ghost" size="sm" onClick={() => openEdit(exam)} aria-label={`${t.edit}: ${exam.title}`}>
+                           <Edit2 className="w-4 h-4" />
+                         </Button>
+                         <Button
+                           variant="ghost"
+                           size="sm"
+                           onClick={() => handleDelete(exam.id)}
+                           className="text-[var(--color-status-danger-text)] hover:bg-[var(--color-status-danger-bg)] focus:outline-none focus:ring-2 focus:ring-red-300 rounded-md"
+                           aria-label={`${common.delete}: ${exam.title}`}
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </Button>
+                       </div>
+                     </td>
+                   </tr>
+                 );
+               })}
+             </tbody>
+           </table>
+         </div>
+       )}
     </div>
   );
 }
