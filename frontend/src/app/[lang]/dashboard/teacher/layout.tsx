@@ -22,14 +22,24 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
 
   const base = `/${locale}/dashboard/teacher`;
 
-  const navItems: NavItem[] = [
-    { key: "overview",       href: base,                       icon: <LayoutGrid className="h-6 w-6" /> },
-    { key: "sections",       href: `${base}/sections`,         icon: <Users className="h-6 w-6" /> },
-    { key: "materials",      href: `${base}/materials`,        icon: <BookOpen className="h-6 w-6" /> },
-    { key: "homework",       href: `${base}/homework`,         icon: <FileText className="h-6 w-6" /> },
-    { key: "announcements",  href: `${base}/announcements`,    icon: <Bell className="h-6 w-6" /> },
-    { key: "quizzes",        href: `${base}/quizzes`,          icon: <ClipboardList className="h-6 w-6" /> },
-  ];
+   const navItems: NavItem[] = [
+     { key: "overview",       href: base,                       icon: <LayoutGrid className="h-6 w-6" /> },
+     { key: "sections",       href: `${base}/sections`,         icon: <Users className="h-6 w-6" /> },
+     { key: "materials",      href: `${base}/materials`,        icon: <BookOpen className="h-6 w-6" /> },
+     { key: "homework",       href: `${base}/homework`,         icon: <FileText className="h-6 w-6" /> },
+     { key: "announcements",  href: `${base}/announcements`,    icon: <Bell className="h-6 w-6" /> },
+     { key: "quizzes",        href: `${base}/quizzes`,          icon: <ClipboardList className="h-6 w-6" /> },
+   ];
+
+   // Mobile-sized icons for bottom tab bar
+   const mobileNavItems: NavItem[] = [
+     { key: "overview",       href: base,                       icon: <LayoutGrid className="h-7 w-7" /> },
+     { key: "sections",       href: `${base}/sections`,         icon: <Users className="h-7 w-7" /> },
+     { key: "materials",      href: `${base}/materials`,        icon: <BookOpen className="h-7 w-7" /> },
+     { key: "homework",       href: `${base}/homework`,         icon: <FileText className="h-7 w-7" /> },
+     { key: "announcements",  href: `${base}/announcements`,    icon: <Bell className="h-7 w-7" /> },
+     { key: "quizzes",        href: `${base}/quizzes`,          icon: <ClipboardList className="h-7 w-7" /> },
+   ];
 
   return (
     <div className="flex gap-6">
@@ -57,27 +67,27 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
         })}
       </aside>
 
-      {/* ── Mobile tab bar ── */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 z-20 flex border-t border-[var(--color-border)] bg-[var(--color-surface-card)] px-1 pb-safe">
-        {navItems.map(({ key, href, icon }) => {
-          const isActive = key === "overview"
-            ? pathname === href
-            : pathname.startsWith(href);
-          return (
-            <Link
-              key={key}
-              href={href}
-              className={[
-                "flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-semibold transition-colors",
-                isActive
-                  ? "text-[var(--color-role-teacher-bold)]"
-                  : "text-[var(--color-ink-disabled)] hover:text-[var(--color-ink-secondary)]",
-              ].join(" ")}
-            >
-              {icon}
-              <span className="hidden xs:block">{t[key]}</span>
-            </Link>
-          );
+       {/* ── Mobile tab bar ── */}
+       <div className="lg:hidden fixed bottom-0 inset-x-0 z-20 flex border-t border-[var(--color-border)] bg-[var(--color-surface-card)] px-1 pb-safe">
+         {mobileNavItems.map(({ key, href, icon }) => {
+           const isActive = key === "overview"
+             ? pathname === href
+             : pathname.startsWith(href);
+           return (
+             <Link
+               key={key}
+               href={href}
+               className={[
+                 "flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-semibold transition-colors",
+                 isActive
+                   ? "text-[var(--color-role-teacher-bold)]"
+                   : "text-[var(--color-ink-disabled)] hover:text-[var(--color-ink-secondary)]",
+               ].join(" ")}
+             >
+               {icon}
+               <span className="hidden xs:block">{t[key]}</span>
+             </Link>
+           );
         })}
       </div>
 
