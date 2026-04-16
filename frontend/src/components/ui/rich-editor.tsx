@@ -91,18 +91,19 @@ export function RichEditor({
   const { alert } = useDialog();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
-        // Disable link from StarterKit to avoid duplicate with our custom Link extension
-        link: false,
-      }),
-      Underline,
-      Image.configure({ inline: false, allowBase64: false }),
-      Link.configure({ openOnClick: false, HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" } }),
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-    ],
+   const editor = useEditor({
+     extensions: [
+       StarterKit.configure({
+         heading: { levels: [1, 2, 3] },
+         // Disable link and underline from StarterKit to avoid duplicates with our custom extensions
+         link: false,
+         underline: false,
+       }),
+       Underline,
+       Image.configure({ inline: false, allowBase64: false }),
+       Link.configure({ openOnClick: false, HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" } }),
+       TextAlign.configure({ types: ["heading", "paragraph"] }),
+     ],
     content: value,
     editorProps: {
       attributes: {
