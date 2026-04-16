@@ -1,6 +1,6 @@
 # AI Agents Instructions
 
-If you are an AI assistant working on this project (`manakher_2.0`), you **MUST** follow these rules:
+If you are an AI assistant working on this project, you **MUST** follow these rules:
 
 **Tech Stack Note:** We are using **Next.js** for the frontend, **PocketBase** for the backend, and you should leverage the **pocketbase-mcp** this is for you (the agent) to interact with pocketbase (with great power comes great responsibility).
 

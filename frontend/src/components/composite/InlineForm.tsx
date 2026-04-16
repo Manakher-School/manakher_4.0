@@ -257,16 +257,17 @@ export function InlineForm({
                   className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder-[var(--color-ink-placeholder)] outline-none transition-all duration-150 focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               ) : (
-                <input
-                  type={field.type || 'text'}
-                  name={field.name}
-                  value={fieldValue}
-                  onChange={(e) => handleFieldChange(field.name, e.target.value)}
-                  onBlur={() => handleFieldBlur(field.name)}
-                  placeholder={field.placeholder}
-                  disabled={field.readOnly || isLoading}
-                  className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder-[var(--color-ink-placeholder)] outline-none transition-all duration-150 focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-                />
+              <input
+                type={field.type || 'text'}
+                name={field.name}
+                value={fieldValue}
+                onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                onBlur={() => handleFieldBlur(field.name)}
+                placeholder={field.placeholder}
+                aria-label={field.label || field.placeholder}
+                disabled={field.readOnly || isLoading}
+                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm text-[var(--color-ink)] placeholder-[var(--color-ink-placeholder)] outline-none transition-all duration-150 focus:border-[var(--color-accent)] focus:ring-2 focus:ring-[var(--color-accent-subtle)] focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+              />
               )}
 
               {/* Field Error */}
