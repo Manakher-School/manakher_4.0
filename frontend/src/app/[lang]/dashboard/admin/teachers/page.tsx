@@ -259,13 +259,33 @@ export default function TeachersPage() {
         try { await pb.collection("exam_schedules").delete(exam.id); } catch (e) { /* silently skip */ }
       }
       
-      // 8. Delete announcements
-      for (const ann of announcements) {
-        try { await pb.collection("announcements").delete(ann.id); } catch (e) { /* silently skip */ }
-      }
-      
-      // 9. Finally delete the teacher user
-      await pb.collection("users").delete(id);
+       // 8. Delete announcements
+       for (const ann of announcements) {
+         try { await pb.collection("announcements").delete(ann.id); } catch (e) { /* silently skip */ }
+       }
+       
+       // 9. Delete comments and reactions on teacher's content
+       const contentIds = [...materials.map(m => m.id), ...announcements.map(a => a.id)];
+       try {
+         const comments = await pb.collection("comments").getFullList({}).catch(() => []);
+         for (const comment of comments) {
+           if (contentIds.includes(comment.target_id)) {
+             try { await pb.collection("comments").delete(comment.id); } catch (e) { /* silently skip */ }
+           }
+         }
+       } catch (e) { /* collection might not exist */ }
+       
+       try {
+         const reactions = await pb.collection("reactions").getFullList({}).catch(() => []);
+         for (const reaction of reactions) {
+           if (contentIds.includes(reaction.target_id)) {
+             try { await pb.collection("reactions").delete(reaction.id); } catch (e) { /* silently skip */ }
+           }
+         }
+       } catch (e) { /* collection might not exist */ }
+       
+       // 10. Finally delete the teacher user
+       await pb.collection("users").delete(id);
       setTeachers(s => s.filter(x => x.id !== id));
     } finally {
       setDeletingId(null);

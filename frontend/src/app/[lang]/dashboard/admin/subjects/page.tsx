@@ -122,18 +122,53 @@ export default function SubjectsPage() {
       // 4. Delete exam schedules
       const exams = await pb.collection("exam_schedules").getFullList({ filter: `subject = "${id}"` });
       for (const exam of exams) {
-        await pb.collection("exam_schedules").delete(exam.id);
-      }
-      
-      // 5. Remove subject from users (teachers)
-      const usersWithSubject = await pb.collection("users").getFullList({ filter: `subjects ~ "${id}"` });
-      for (const user of usersWithSubject) {
-        const updatedSubjects = (user.subjects as string[]).filter(s => s !== id);
-        await pb.collection("users").update(user.id, { subjects: updatedSubjects });
-      }
-      
-       // Finally, delete the subject itself
-       await pb.collection("subjects").delete(id);
+         await pb.collection("exam_schedules").delete(exam.id);
+       }
+       
+       // 5. Delete comments and reactions on materials
+       const materialIds = materials.map(m => m.id);
+       try {
+         const comments = await pb.collection("comments").getFullList({ 
+           filter: `target_type = "material"` 
+         });
+         for (const comment of comments) {
+           if (materialIds.includes(comment.target_id)) {
+             try {
+               await pb.collection("comments").delete(comment.id);
+             } catch (e) {
+               // Silently ignore if comment already deleted
+             }
+           }
+         }
+       } catch (e) {
+         // Collection might not exist, continue
+       }
+       
+       // Delete reactions
+       try {
+         const reactions = await pb.collection("reactions").getFullList({});
+         for (const reaction of reactions) {
+           if (materialIds.includes(reaction.target_id)) {
+             try {
+               await pb.collection("reactions").delete(reaction.id);
+             } catch (e) {
+               // Silently ignore if reaction already deleted
+             }
+           }
+         }
+       } catch (e) {
+         // Collection might not exist, continue
+       }
+       
+       // 6. Remove subject from users (teachers)
+       const usersWithSubject = await pb.collection("users").getFullList({ filter: `subjects ~ "${id}"` });
+       for (const user of usersWithSubject) {
+         const updatedSubjects = (user.subjects as string[]).filter(s => s !== id);
+         await pb.collection("users").update(user.id, { subjects: updatedSubjects });
+       }
+       
+        // Finally, delete the subject itself
+        await pb.collection("subjects").delete(id);
        setSubjects(s => s.filter(x => x.id !== id));
        
        await alert(locale === "ar" ? "تم الحذف بنجاح" : "Deleted successfully");

@@ -299,3 +299,10 @@ Here you will find some new feature we're requested by the client, and more fixe
 	}
 - if I wanted to import the students / teachers as an excel or csv file to the system to bulk add the users, will that be possible? and what is the is the schema or format required for the to-be-imported file?
 - I want an export functionality to exaport the users in an excel sheet (student in a file, and the teachers in another).
+
+################################################################
+
+Round 12:
+
+- I see this issue always visible on the side here in opencode everytime I use opencode on this project, this the issue:
+	- pocketbase MCP error -32000: Connection closed.

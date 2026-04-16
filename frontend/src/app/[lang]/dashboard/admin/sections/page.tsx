@@ -146,15 +146,44 @@ export default function SectionsPage() {
         await pb.collection("exam_schedules").delete(exam.id);
       }
       
-      // 6. Remove section from users (teachers and students)
-      const usersWithSection = await pb.collection("users").getFullList({ filter: `sections ~ "${id}"` });
-      for (const user of usersWithSection) {
-        const updatedSections = (user.sections as string[]).filter(s => s !== id);
-        await pb.collection("users").update(user.id, { sections: updatedSections });
-      }
-      
-      // Finally, delete the section itself
-      await pb.collection("class_sections").delete(id);
+       // 6. Delete comments and reactions on materials/announcements
+       const comments = await pb.collection("comments").getFullList({ 
+         filter: `target_type = "material" || target_type = "announcement"` 
+       });
+       // Get IDs of all materials and announcements we just deleted
+       const deletedMaterialIds = materials.map(m => m.id);
+       const deletedAnnIds = announcements.map(a => a.id);
+       for (const comment of comments) {
+         if (deletedMaterialIds.includes(comment.target_id) || deletedAnnIds.includes(comment.target_id)) {
+           try {
+             await pb.collection("comments").delete(comment.id);
+           } catch (e) {
+             // Silently ignore if comment already deleted
+           }
+         }
+       }
+       
+       // Delete reactions
+       const reactions = await pb.collection("reactions").getFullList({});
+       for (const reaction of reactions) {
+         if (deletedMaterialIds.includes(reaction.target_id) || deletedAnnIds.includes(reaction.target_id)) {
+           try {
+             await pb.collection("reactions").delete(reaction.id);
+           } catch (e) {
+             // Silently ignore if reaction already deleted
+           }
+         }
+       }
+       
+       // 7. Remove section from users (teachers and students)
+       const usersWithSection = await pb.collection("users").getFullList({ filter: `sections ~ "${id}"` });
+       for (const user of usersWithSection) {
+         const updatedSections = (user.sections as string[]).filter(s => s !== id);
+         await pb.collection("users").update(user.id, { sections: updatedSections });
+       }
+       
+       // Finally, delete the section itself
+       await pb.collection("class_sections").delete(id);
       setSections(s => s.filter(x => x.id !== id));
       
       await alert(locale === "ar" ? "تم الحذف بنجاح" : "Deleted successfully");
