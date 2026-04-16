@@ -358,7 +358,7 @@ export default function StudentQuizzesPage() {
     const totalQ = questions.length;
 
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-2xl mx-auto space-y-6" dir={locale === "ar" ? "rtl" : "ltr"}>
         {/* Quiz header */}
         <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] px-5 py-4">
           <div className="flex items-center justify-between gap-4">
@@ -412,7 +412,7 @@ export default function StudentQuizzesPage() {
                     dir={getTextDirection(opt)}
                   >
                     <span className="font-bold shrink-0">{String.fromCharCode(65 + oi)}.</span>
-                    <span className="text-start flex-1">{opt}</span>
+                    <span className="flex-1">{opt}</span>
                   </button>
                 );
               })}
