@@ -3400,3 +3400,207 @@ Fixed all 4 issues from Round 5 testing: removed test student, added ODS file su
 ### Next Steps
 - ⏳ Browser testing to verify all fixes work in production environment
 - ⏳ Check test_report.txt for additional testing rounds
+
+---
+
+## Round 6 Testing - Multi-Step Import Wizard (2026-04-17)
+
+### Overview
+Implemented comprehensive 4-step student import wizard to replace simple single-step CSV import. Users can now set email, English name, password, and section for each student during import process.
+
+### Requirements Analysis
+From test_report.txt Round 6:
+- ✅ After uploading file, user sees student list as confirmation (Step 1)
+- ✅ Next, user sees form for setting email, English name, and password for each student (Step 2)
+- ✅ Next, user can set class and section for all students (Step 3)
+- ✅ Finally, user sees list of added students before creating accounts (Step 4)
+- ✅ On successful creation, students appear in the system
+
+### Implementation Details
+
+#### Files Created
+1. **`/frontend/src/lib/transliteration.ts`** (167 lines)
+   - `transliterateArabic()`: Converts Arabic text to Latin characters
+   - `generateEmail()`: Creates email in format `firstname.lastname@school.edu` from Arabic name
+   - `generatePassword()`: Generates 12-character random password with mixed character types
+   - `isValidEmail()`: Email format validation
+   - `isValidPassword()`: Password minimum 8 characters validation
+   - Arabic character mapping: 33 character pairs for phonetic transliteration
+
+#### Files Modified
+
+1. **`/frontend/src/app/[lang]/dashboard/admin/users/page.tsx`** (Major Refactor)
+   - Updated imports: Added transliteration functions and Lucide icons (Check, AlertCircle, RefreshCw)
+   - Added new state variables:
+     - `wizardStep`: Current step (1-4)
+     - `StudentImportData` interface: Tracks name_ar, name_en, email, password, section_id
+     - `importStudents`: Array of student data during import
+     - `wizardError`: Error message display
+   - Replaced old `handleCsvImport()` with 6 new handler functions:
+     - `handleFileUpload()`: Parse file, auto-generate email/password
+     - `updateStudent()`: Modify student data
+     - `regenerateEmail()`: New random email for specific student
+     - `regeneratePassword()`: New random password for specific student
+     - `validateStep2()`: Check email format, English name, password strength
+     - `validateStep3()`: Ensure section is selected
+     - `handleWizardSubmit()`: Batch create students with duplicate email check
+     - `closeWizard()`: Reset state and close modal
+   - Replaced old CSV import modal with new 4-step wizard UI:
+     - Step indicator with checkmarks for completed steps
+     - Dynamic content for each step
+     - Error message display with AlertCircle icon
+     - Back/Next/Cancel/Confirm buttons with conditional logic
+
+2. **`/frontend/src/lib/csv-parser.ts`**
+   - Extended `StudentImportRow` interface to include optional fields:
+     - `name_en?: string`
+     - `email?: string`
+     - `password?: string`
+     - `section_id?: string`
+
+3. **`/frontend/src/dictionaries/en.json`**
+   - Added `importWizard` object under `students` with keys:
+     - Step titles and descriptions (step1Title-4Title, step1Desc-4Desc)
+     - Button labels (nextButton, prevButton, confirmButton, cancelButton)
+     - Success/error messages
+     - Validation error messages for each field
+     - Helper labels (generatePassword, autoGenerateEmail, selectSection, preview)
+
+4. **`/frontend/src/dictionaries/ar.json`**
+   - Added Arabic translations matching English dictionary
+   - All UI text fully bilingual
+
+### UI/UX Features
+
+#### Step Indicator
+- Visual circle indicators (1, 2, 3, 4)
+- Connected by progress lines
+- Completed steps show green checkmarks
+- Current step highlighted in accent color
+
+#### Step 1: File Upload
+- Drag-and-drop file input
+- Accepts: CSV, Excel (.xlsx, .xls), ODS (.ods)
+- Shows file info after selection
+- File validation with user-friendly error messages
+
+#### Step 2: Student Details (Table-based editing)
+- One row per student showing:
+  - Student number (#1, #2, etc.)
+  - Arabic name
+  - Email field (editable, auto-generated as default)
+  - Regenerate email button (RefreshCw icon)
+  - English name field (required, editable)
+  - Password field (editable, showing masked dots)
+  - Regenerate password button (RefreshCw icon)
+- Scrollable container for large student lists
+- Compact design with 3-column grid layout
+
+#### Step 3: Section Assignment
+- Section dropdown selector
+- Bulk assignment message: "All X students will be assigned to..."
+- Single selector affects all students uniformly
+
+#### Step 4: Review & Confirm
+- Student table with 4-column grid:
+  - # and Arabic name (left column)
+  - English name (right column)
+  - Email (left column)
+  - Password (right column)
+- Read-only display for review
+- Scrollable for large lists
+- "Create Students" button triggers batch creation
+
+### Validation Rules
+
+**Step 1 → Step 2:**
+- File must be selected
+
+**Step 2 → Step 3:**
+- Each student must have:
+  - English name (not empty)
+  - Valid email format (standard email regex)
+  - Password of at least 8 characters
+- Errors show which student (#) and which field failed
+
+**Step 3 → Step 4:**
+- All students must have a section assigned
+
+**Step 4 → Complete:**
+- Email uniqueness check against existing users
+- Batch creation with error reporting
+- Success message shows count created
+
+### Error Handling
+- Validation errors show which student (#) and field
+- Duplicate email detection before creation
+- Individual student creation failures logged but don't block others
+- Final success message shows count created vs. attempted
+- Failed student names listed in error output
+
+### Functionality
+
+#### Email Generation
+- Algorithm: Arabic → Latin transliteration
+- Format: first_name.last_name@school.edu
+- Example: "أحمد محمد" → "ahmad.mohammad@school.edu"
+- User can edit or regenerate per-student
+
+#### Password Generation
+- 12 characters
+- Mix of: uppercase (A-Z), lowercase (a-z), numbers (0-9), symbols (!@#$%)
+- User can regenerate or edit per-student
+
+#### Batch Creation
+- Loop through all students
+- Check for duplicate emails before each create
+- Create user with:
+  - name_ar (from file)
+  - name_en (from Step 2)
+  - email (from Step 2)
+  - password (from Step 2)
+  - role: "student"
+  - sections: [section_id from Step 3]
+  - emailVisibility: false
+- Count successes and failures
+- Display results with failed student list
+
+### Build Status
+✅ All 56 pages compile successfully
+✅ Zero TypeScript errors
+✅ Development server running at http://localhost:3001
+
+### Commits
+- `66834c5` - Round 6: Implement 4-step student import wizard
+
+### Testing Checklist
+
+**Manual Browser Tests Needed:**
+- [ ] Step 1: Upload CSV file with Arabic names
+- [ ] Step 2: Verify emails auto-generated in correct format
+- [ ] Step 2: Test regenerate email button
+- [ ] Step 2: Edit English names for all students
+- [ ] Step 2: Test regenerate password button
+- [ ] Step 3: Select section from dropdown
+- [ ] Step 4: Review all student data
+- [ ] Step 4: Click "Create Students" and verify creation
+- [ ] Step 4: Verify students appear in list after creation
+- [ ] Validation: Try next without file → error shown
+- [ ] Validation: Try next without English name → error shown specific to student
+- [ ] Validation: Try next without section → error shown
+- [ ] Navigation: Previous button maintains data
+- [ ] Navigation: Cancel button closes and resets
+
+### Known Limitations
+- Section assignment is bulk (all students same section)
+  - User mentioned this in requirements ("set the class and section"), no per-student sectioning needed
+- Email format is always firstname.lastname@school.edu
+  - User can edit each one individually if needed
+- Passwords visible in Step 4 review (security note: only shown in modal, not stored)
+
+### Next Steps
+- ⏳ Browser testing with real CSV file upload
+- ⏳ Verify students created in PocketBase (Railway backend)
+- ⏳ Check that created students appear in students list
+- ⏳ Test with large CSV (100+ students)
+- ⏳ Test error scenarios (duplicate emails, invalid data)
