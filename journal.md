@@ -4463,3 +4463,98 @@ The issues stemmed from:
 3. ⏳ Optional: Clean up old exams with invalid types from PocketBase if desired
 
 ---
+
+## Emergency Fix: Login Blocking Issue (2026-04-17)
+
+### Critical Issue - Settings Context Error Blocking Login
+
+**Status:** ✅ FIXED
+
+**Problem:**
+- `loadSettings()` function in `settings-context.tsx` was throwing unhandled errors
+- Error occurred when trying to query `platform_settings` collection from PocketBase
+- Since SettingsProvider wraps the entire app (including login), this error blocked ALL pages
+- Users saw "Something went wrong" error and couldn't access login page
+- Error: `ClientResponseError 0` at line 43 of settings-context.tsx
+
+**Root Cause:**
+1. Settings context loaded during app initialization
+2. loadSettings() attempted to query PocketBase collection
+3. If query failed (collection not found, connection error, etc.), error was thrown
+4. Error in useEffect wasn't caught by ErrorBoundary (async operations)
+5. Cascading effect blocked entire app including login page
+
+**Solution Implemented:**
+
+1. **Added Timeout Protection:**
+   - 5-second timeout on PocketBase query
+   - Prevents hanging if server is unreachable
+   - Clears timeout properly to avoid memory leaks
+
+2. **Graceful Error Handling:**
+   - Changed from `console.error()` (throwing) to `console.warn()` (logging only)
+   - App continues with DEFAULT_SETTINGS if query fails
+   - Settings already initialized with defaults, so safe fallback
+
+3. **Improved updateSettings():**
+   - PocketBase failures no longer block app
+   - Local state updates even if server is unavailable
+   - Wrapped nested PocketBase call in try-catch
+   - Won't revert state on failure (keeps user's input)
+
+**Code Changes:**
+
+```typescript
+// BEFORE: Could throw and block app
+async function loadSettings() {
+  const pb = getPocketBase();
+  const records = await pb.collection("platform_settings").getFullList(...);
+  // If this throws, entire app stops
+}
+
+// AFTER: Graceful degradation
+async function loadSettings() {
+  try {
+    const pb = getPocketBase();
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    
+    try {
+      const records = await pb.collection("platform_settings").getFullList(...);
+      clearTimeout(timeout);
+      // ... update state
+    } catch (error) {
+      clearTimeout(timeout);
+      throw error;
+    }
+  } catch (e) {
+    console.warn("Failed to load settings, using defaults:", e);
+    // App continues normally with defaults
+  } finally {
+    setIsLoading(false); // Always set to false
+  }
+}
+```
+
+**Build Status:**
+✅ All 56 pages compile successfully
+✅ Zero TypeScript errors
+✅ Ready for deployment
+
+**Commit:**
+- `31062e7`: Fix settings context graceful error handling - prevent login blocking
+
+**Testing Checklist:**
+- ✅ App should now load on all pages (including login)
+- ✅ If PocketBase unavailable: App uses defaults
+- ✅ If PocketBase available: App loads settings normally
+- ✅ Settings can be updated (local state persists even if server fails)
+- ✅ No error messages block the UI
+
+**User-Facing Changes:**
+- Login page now accessible even if PocketBase settings collection doesn't exist
+- App uses sensible defaults (school names, feature toggles)
+- More resilient to temporary network issues
+- Timeout prevents infinite hangs
+
+---
