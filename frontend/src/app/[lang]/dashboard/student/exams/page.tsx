@@ -14,7 +14,7 @@ interface ExamSchedule {
   exam_date: string;
   start_time: string;
   end_time: string;
-  exam_type: "midterm" | "final" | "quiz" | "practical";
+  exam_type: "month1" | "month2" | "month3" | "final";
   notes?: string;
   expand?: {
     subject?: { name_ar: string; name_en: string; code: string };
@@ -30,7 +30,7 @@ export default function StudentExamsPage() {
   const [list, setList] = useState<ExamSchedule[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
+   const load = useCallback(async () => {
     if (!user) return;
     const pb = getPocketBase();
     const sections: string[] = (user as any).sections ?? [];
@@ -49,7 +49,24 @@ export default function StudentExamsPage() {
         sort: "exam_date,start_time",
         expand: "subject,section",
       });
-      setList(items);
+      
+      // Valid exam types
+      const validTypes = ["month1", "month2", "month3", "final"];
+      
+      // Filter out exams with invalid types (old types like "quiz", "midterm", "practical")
+      const validExams = items.filter(exam => {
+        if (!validTypes.includes(exam.exam_type)) {
+          console.warn(`Filtering out exam "${exam.title}" with invalid type "${exam.exam_type}". Valid types are: ${validTypes.join(", ")}`);
+          return false;
+        }
+        return true;
+      });
+      
+      if (validExams.length < items.length) {
+        console.warn(`Filtered ${items.length - validExams.length} exams with invalid types`);
+      }
+      
+      setList(validExams);
     } catch (e) {
       console.error(e);
     } finally {
@@ -78,14 +95,14 @@ export default function StudentExamsPage() {
 
   const getExamTypeLabel = (type: string) => {
     switch (type) {
-      case "midterm":
-        return t.typeMidterm;
+      case "month1":
+        return t.typeMonth1 || "1st Month";
+      case "month2":
+        return t.typeMonth2 || "2nd Month";
+      case "month3":
+        return t.typeMonth3 || "3rd Month";
       case "final":
-        return t.typeFinal;
-      case "quiz":
-        return t.typeQuiz;
-      case "practical":
-        return t.typePractical;
+        return t.typeFinal || "Final";
       default:
         return type;
     }

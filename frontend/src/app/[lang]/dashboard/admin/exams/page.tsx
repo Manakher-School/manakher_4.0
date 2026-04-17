@@ -33,7 +33,7 @@ interface ExamSchedule {
   exam_date: string;
   start_time: string;
   end_time: string;
-  exam_type: "midterm" | "final" | "quiz" | "practical";
+  exam_type: "month1" | "month2" | "month3" | "final";
   notes?: string;
   created_by: string;
   expand?: {
@@ -49,7 +49,7 @@ interface FormData {
   exam_date: string;
   start_time: string;
   end_time: string;
-  exam_type: "midterm" | "final" | "quiz" | "practical";
+  exam_type: "month1" | "month2" | "month3" | "final";
   notes: string;
 }
 
@@ -73,7 +73,7 @@ export default function AdminExamsPage() {
     exam_date: "",
     start_time: "",
     end_time: "",
-    exam_type: "midterm",
+    exam_type: "month1",
     notes: "",
   });
   const [submitting, setSubmitting] = useState(false);
@@ -91,7 +91,24 @@ export default function AdminExamsPage() {
         pb.collection("subjects").getFullList<Subject>({ sort: "name_ar" }),
         pb.collection("class_sections").getFullList<Section>({ sort: "grade_order,section_ar" }),
       ]);
-      setList(exams);
+      
+      // Valid exam types
+      const validTypes = ["month1", "month2", "month3", "final"];
+      
+      // Filter out exams with invalid types (old types like "quiz", "midterm", "practical")
+      const validExams = exams.filter(exam => {
+        if (!validTypes.includes(exam.exam_type)) {
+          console.warn(`Filtering out exam "${exam.title}" with invalid type "${exam.exam_type}". Valid types are: ${validTypes.join(", ")}`);
+          return false;
+        }
+        return true;
+      });
+      
+      if (validExams.length < exams.length) {
+        console.warn(`Filtered ${exams.length - validExams.length} exams with invalid types`);
+      }
+      
+      setList(validExams);
       setSubjects(subjs);
       setSections(sects);
     } catch (e) {
@@ -111,7 +128,7 @@ export default function AdminExamsPage() {
       exam_date: "",
       start_time: "",
       end_time: "",
-      exam_type: "midterm",
+      exam_type: "month1",
       notes: "",
     });
     setEditId(null);
@@ -190,14 +207,14 @@ export default function AdminExamsPage() {
 
   const getExamTypeLabel = (type: string) => {
     switch (type) {
-      case "midterm":
-        return t.typeMidterm;
+      case "month1":
+        return t.typeMonth1 || "1st Month";
+      case "month2":
+        return t.typeMonth2 || "2nd Month";
+      case "month3":
+        return t.typeMonth3 || "3rd Month";
       case "final":
-        return t.typeFinal;
-      case "quiz":
-        return t.typeQuiz;
-      case "practical":
-        return t.typePractical;
+        return t.typeFinal || "Final";
       default:
         return type;
     }
@@ -303,10 +320,10 @@ export default function AdminExamsPage() {
                   required
                   className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                 >
-                  <option value="midterm">{t.typeMidterm}</option>
-                  <option value="final">{t.typeFinal}</option>
-                  <option value="quiz">{t.typeQuiz}</option>
-                  <option value="practical">{t.typePractical}</option>
+                   <option value="month1">{getExamTypeLabel("month1")}</option>
+                   <option value="month2">{getExamTypeLabel("month2")}</option>
+                   <option value="month3">{getExamTypeLabel("month3")}</option>
+                   <option value="final">{getExamTypeLabel("final")}</option>
                 </select>
               </div>
 

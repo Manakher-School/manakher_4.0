@@ -66,7 +66,7 @@ interface ExamSchedule {
   exam_date: string;
   start_time: string;
   end_time: string;
-  exam_type: "midterm" | "final" | "quiz" | "practical";
+  exam_type: "month1" | "month2" | "month3" | "final";
   notes?: string;
   expand?: {
     subject?: { name_ar: string; name_en: string; code: string };

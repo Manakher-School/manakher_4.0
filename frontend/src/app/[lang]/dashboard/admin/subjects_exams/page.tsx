@@ -36,32 +36,32 @@ interface ExamSubject {
 }
 
 interface ExamSchedule {
-   id: string;
-   title: string;
-   subject: string;
-   section: string;
-   exam_date: string;
-   start_time: string;
-   end_time: string;
-   exam_type: "month1" | "month2" | "month3" | "midterm" | "final";
-   notes?: string;
-   created_by: string;
-   expand?: {
-     subject?: ExamSubject;
-     section?: ExamSection;
-   };
+    id: string;
+    title: string;
+    subject: string;
+    section: string;
+    exam_date: string;
+    start_time: string;
+    end_time: string;
+    exam_type: "month1" | "month2" | "month3" | "final";
+    notes?: string;
+    created_by: string;
+    expand?: {
+      subject?: ExamSubject;
+      section?: ExamSection;
+    };
 }
 
 interface ExamFormData {
-   title: string;
-   subject: string;
-   section: string;
-   exam_date: string;
-   start_time: string;
-   end_time: string;
-   exam_type: "month1" | "month2" | "month3" | "midterm" | "final";
-   notes: string;
- }
+    title: string;
+    subject: string;
+    section: string;
+    exam_date: string;
+    start_time: string;
+    end_time: string;
+    exam_type: "month1" | "month2" | "month3" | "final";
+    notes: string;
+  }
 
 type TabType = "subjects" | "exams";
 
@@ -103,7 +103,7 @@ export default function SubjectsExamsPage() {
   const pb = getPocketBase();
 
   // ============ SUBJECTS FUNCTIONS ============
-  const loadSubjects = async () => {
+  const loadSubjects = useCallback(async () => {
     subjectListCrudState.setIsLoading(true);
     try {
       const res = await pb.collection("subjects").getFullList<Subject>({ sort: "name_ar" });
@@ -113,7 +113,7 @@ export default function SubjectsExamsPage() {
     } finally {
       subjectListCrudState.setIsLoading(false);
     }
-  };
+  }, [subjectListCrudState]);
 
   const openCreateSubject = () => {
     subjectListCrudState.setEditingId(null);
@@ -257,7 +257,7 @@ export default function SubjectsExamsPage() {
     } finally {
       examListCrudState.setIsLoading(false);
     }
-  }, [user]);
+  }, [examListCrudState, user]);
 
   const openAddExam = () => {
     examFormData.reset();
@@ -414,7 +414,7 @@ export default function SubjectsExamsPage() {
   useEffect(() => {
     loadSubjects();
     loadExams();
-  }, []);
+  }, [loadSubjects, loadExams]);
 
   const inputCls = "w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm placeholder:text-[var(--color-ink-placeholder)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]";
 
