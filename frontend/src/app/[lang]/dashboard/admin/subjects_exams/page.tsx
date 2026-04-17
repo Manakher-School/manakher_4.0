@@ -308,13 +308,18 @@ export default function SubjectsExamsPage() {
         end_time: formData.end_time,
         exam_type: formData.exam_type,
         notes: formData.notes || "",
-        ...(examListCrudState.state.editingId === null && { created_by: user.id }), // Only add created_by when creating
+      };
+
+      // Only add created_by for new records (create, not update)
+      const createData = {
+        ...data,
+        created_by: user.id,
       };
 
       console.log("Submitting exam data:", {
         isEditing: !!examListCrudState.state.editingId,
         editingId: examListCrudState.state.editingId,
-        data: data,
+        data: examListCrudState.state.editingId ? data : createData,
       });
 
       if (examListCrudState.state.editingId) {
@@ -322,7 +327,7 @@ export default function SubjectsExamsPage() {
         await pb.collection("exam_schedules").update(examListCrudState.state.editingId, data);
       } else {
         console.log("Creating new exam...");
-        await pb.collection("exam_schedules").create(data);
+        await pb.collection("exam_schedules").create(createData);
       }
 
       await loadExams();

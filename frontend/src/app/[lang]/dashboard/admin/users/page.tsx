@@ -902,16 +902,16 @@ export default function UsersPage() {
                     <div className="flex-1">
                       <h3 className="font-semibold">{student.name_en}</h3>
                       <p className="text-sm text-[var(--color-ink-secondary)]">{student.name_ar}</p>
-                      <p className="text-xs text-[var(--color-ink-placeholder)] mt-1">{student.email}</p>
-                      {student.expand?.sections?.length ? (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {student.expand.sections.map(s => (
-                            <span key={s.id} className="inline-block rounded bg-[var(--color-accent)] bg-opacity-20 px-2 py-0.5 text-xs font-semibold text-[var(--color-accent)]">
-                              {s.section_en}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
+                       <p className="text-xs text-[var(--color-ink-placeholder)] mt-1">{student.email}</p>
+                       {student.expand?.sections?.length ? (
+                         <div className="mt-2 flex flex-wrap gap-1">
+                           {student.expand.sections.map(s => (
+                             <span key={s.id} className="inline-block rounded bg-[var(--color-accent)] px-2 py-0.5 text-xs font-semibold text-white">
+                               {s.grade_en} - {s.section_en}
+                             </span>
+                           ))}
+                         </div>
+                       ) : null}
                     </div>
                     <div className="flex gap-2">
                       <button
