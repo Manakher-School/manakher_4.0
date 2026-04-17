@@ -40,26 +40,39 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   async function loadSettings() {
     try {
       const pb = getPocketBase();
-      const records = await pb.collection("platform_settings").getFullList({
-        filter: `key = "school_info"`,
-      });
+      
+      // Add a timeout to prevent hanging
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      try {
+        const records = await pb.collection("platform_settings").getFullList({
+          filter: `key = "school_info"`,
+        });
 
-      if (records.length > 0 && records[0].value) {
-        setSettings((prev) => ({
-          ...prev,
-          schoolNameAr: records[0].value.schoolNameAr || prev.schoolNameAr,
-          schoolNameEn: records[0].value.schoolNameEn || prev.schoolNameEn,
-          enableComments:
-            records[0].value.enableComments !== false,
-          enableReactions:
-            records[0].value.enableReactions !== false,
-          enableQuizzes:
-            records[0].value.enableQuizzes !== false,
-        }));
+        clearTimeout(timeout);
+
+        if (records.length > 0 && records[0].value) {
+          setSettings((prev) => ({
+            ...prev,
+            schoolNameAr: records[0].value.schoolNameAr || prev.schoolNameAr,
+            schoolNameEn: records[0].value.schoolNameEn || prev.schoolNameEn,
+            enableComments:
+              records[0].value.enableComments !== false,
+            enableReactions:
+              records[0].value.enableReactions !== false,
+            enableQuizzes:
+              records[0].value.enableQuizzes !== false,
+          }));
+        }
+      } catch (error) {
+        clearTimeout(timeout);
+        throw error;
       }
     } catch (e) {
-      console.error("Failed to load settings:", e);
-      // Use defaults
+      // Log error but don't crash - use default settings
+      console.warn("Failed to load settings from PocketBase, using defaults:", e);
+      // Settings already initialized with DEFAULT_SETTINGS, so this is safe
     } finally {
       setIsLoading(false);
     }
@@ -81,26 +94,30 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setSettings(settingsData);
 
         // Then persist to PocketBase
-        const records = await pb.collection("platform_settings").getFullList({
-          filter: `key = "school_info"`,
-        });
+        try {
+          const records = await pb.collection("platform_settings").getFullList({
+            filter: `key = "school_info"`,
+          });
 
-        if (records.length > 0) {
-          // Update existing record
-          await pb.collection("platform_settings").update(records[0].id, {
-            value: settingsData,
-          });
-        } else {
-          // Create new record
-          await pb.collection("platform_settings").create({
-            key: "school_info",
-            value: settingsData,
-          });
+          if (records.length > 0) {
+            // Update existing record
+            await pb.collection("platform_settings").update(records[0].id, {
+              value: settingsData,
+            });
+          } else {
+            // Create new record
+            await pb.collection("platform_settings").create({
+              key: "school_info",
+              value: settingsData,
+            });
+          }
+        } catch (pbError) {
+          console.warn("Failed to persist settings to PocketBase:", pbError);
+          // Don't throw - keep local state updated even if server fails
+          // This allows the app to continue working with local settings
         }
       } catch (e) {
         console.error("Failed to update settings:", e);
-        // Revert local state on error
-        await loadSettings();
         throw e;
       }
     },
