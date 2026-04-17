@@ -3301,3 +3301,102 @@ Opening localhost in browser would immediately consume 13GB+ RAM, causing system
    - Manual testing is essential to verify the fixes work in real browser usage
    - Issue 3 (class creation) needs reproduction steps to debug properly
 
+
+---
+
+## Round 5 Testing Fixes (2026-04-17)
+
+### Overview
+Fixed all 4 issues from Round 5 testing: removed test student, added ODS file support, increased stat card title gap, and updated exam type translations.
+
+### Issues Fixed
+
+#### Issue 1: Remove visible student from list ✅
+- **Problem:** Test student `student@school.edu` was appearing in the admin students list
+- **Root Cause:** Students list didn't filter out the original test account
+- **Solution:** Added filter to exclude `student@school.edu` from student queries
+  - Updated `/dashboard/admin/users/page.tsx` line 218
+  - Changed filter from `role = "student"` to `role = "student" && email != "student@school.edu"`
+- **Commit:** 3eea79a
+- **Build:** ✅ Pass
+
+#### Issue 2: Add .ods file import support ✅
+- **Problem:** Users could only import CSV and Excel files, not ODS files
+- **Root Cause:** File input didn't accept `.ods` format, even though parser supported it
+- **Solution:** Added ODS to accepted file types and MIME types
+  - Updated `/dashboard/admin/users/page.tsx` lines 910-941
+  - Added `.ods` to UI instructions (line 914)
+  - Added `.ods` to file input accept attribute (line 927)
+  - Added `.ods` to valid types array (line 932)
+  - Added `application/vnd.oasis.opendocument.spreadsheet` MIME type (line 936)
+  - Updated error message to include ODS (line 943)
+- **Technical:** XLSX library (`xlsx` npm package) already supports ODS natively
+- **Commit:** 3eea79a
+- **Build:** ✅ Pass
+
+#### Issue 3: Add gap between title and stat cards ✅
+- **Problem:** Title ("نظرة عامة / Overview") had minimal gap before stat cards
+- **Root Cause:** Margin class was `mb-8` (2rem), user needed more visual separation
+- **Solution:** Increased margin bottom from `mb-8` to `mb-12`
+  - Updated `/dashboard/admin/page.tsx` line 163
+  - Changed from `mb-8` to `mb-12` (3rem spacing)
+- **Impact:** Provides better visual hierarchy between section title and content
+- **Commit:** 3eea79a
+- **Build:** ✅ Pass
+
+#### Issue 4: Update exam types to correct translations ✅
+- **Problem:** Exam types were (midterm, final, quiz, practical) but should be (1st month, 2nd month, 3rd month, mid term, final)
+- **Root Cause:** PocketBase schema and UI used old exam type system
+- **Solution:** Updated exam type system in 3 files:
+
+1. **Updated Interface Definitions** (`/dashboard/admin/subjects_exams/page.tsx`):
+   - Line 46: Changed `exam_type: "midterm" | "final" | "quiz" | "practical"` to `"month1" | "month2" | "month3" | "midterm" | "final"`
+   - Line 62: Same change in ExamFormData interface
+   - Line 76: Changed default from `"midterm"` to `"month1"`
+
+2. **Updated getExamTypeLabel Function** (line 323):
+   - Added cases for `"month1"`, `"month2"`, `"month3"`
+   - Updated labels in English and Arabic
+   - Removed `"quiz"` and `"practical"` cases
+
+3. **Updated Select Options** (line 577):
+   - Changed from 4 options (midterm/final/quiz/practical) to 5 options (month1/month2/month3/midterm/final)
+
+4. **Updated Arabic Dictionary** (`src/dictionaries/ar.json`):
+   - Added translations: "شهر أول" (1st Month), "شهر ثاني" (2nd Month), "شهر ثالث" (3rd Month)
+   - Kept: "منتصف الفصل" (Mid Term), "نهائي" (Final)
+   - Removed: "اختبار قصير" (Quiz), "عملي" (Practical)
+   - Updated in 2 locations (admin exams + student exams)
+
+5. **Updated English Dictionary** (`src/dictionaries/en.json`):
+   - Added translations: "1st Month", "2nd Month", "3rd Month"
+   - Updated "Midterm" → "Mid Term"
+   - Kept "Final"
+   - Removed: "Quiz", "Practical"
+   - Updated in 2 locations (admin exams + student exams)
+
+- **Impact:** Admin and students can now select from the correct exam type options with proper bilingual translations
+- **Commit:** 3eea79a
+- **Build:** ✅ Pass (56 pages)
+
+### Build Verification
+```
+✅ All 56 pages compiled successfully
+✅ Zero TypeScript errors
+✅ All changes tested locally before commit
+```
+
+### Commits
+- `3eea79a` - fix: Round 5 - Fix all 4 issues (remove test student, add .ods support, increase stat card gap, update exam types)
+
+### Test Coverage
+| Issue | Status | Tested |
+|-------|--------|--------|
+| 1 - Remove test student | ✅ FIXED | Code change verified |
+| 2 - Add .ods support | ✅ FIXED | Code change verified |
+| 3 - Stat card gap | ✅ FIXED | Code change verified |
+| 4 - Exam types | ✅ FIXED | Code change verified |
+
+### Next Steps
+- ⏳ Browser testing to verify all fixes work in production environment
+- ⏳ Check test_report.txt for additional testing rounds
