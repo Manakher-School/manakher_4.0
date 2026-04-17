@@ -133,7 +133,41 @@
             "phEmail": "student@school.edu",
             "phPassword": "8 أحرف على الأقل",
             "confirmDelete": "هل أنت متأكدة من حذف هذا/ه الطالب/ة؟",
-            "empty": "لا توجد طلاب مضافين بعد."
+            "empty": "لا توجد طلاب مضافين بعد.",
+            "importWizard": {
+              "title": "استيراد الطلاب",
+              "step": "الخطوة {n}",
+              "of": "من {total}",
+              "step1Title": "تحميل الملف",
+              "step1Desc": "اختر ملف CSV أو Excel يحتوي على أسماء الطلاب",
+              "step2Title": "تعيين بيانات الطلاب",
+              "step2Desc": "قم بتكوين البريد الإلكتروني والاسم الإنجليزي وكلمة المرور لكل طالب",
+              "step3Title": "تعيين الفصل",
+              "step3Desc": "اختر الفصل الدراسي لجميع الطلاب المستوردين",
+              "step4Title": "مراجعة وتأكيد",
+              "step4Desc": "تحقق من الطلاب المستوردين قبل إنشاء الحسابات",
+              "nextButton": "التالي",
+              "prevButton": "السابق",
+              "confirmButton": "إنشاء الطلاب",
+              "cancelButton": "إلغاء",
+              "submitSuccess": "تم إنشاء {count} طالب/ة بنجاح",
+              "submitError": "فشل في إنشاء بعض الطلاب",
+              "validation": {
+                "emailRequired": "البريد الإلكتروني مطلوب",
+                "emailInvalid": "صيغة البريد الإلكتروني غير صحيحة",
+                "emailExists": "البريد الإلكتروني موجود بالفعل",
+                "nameEnRequired": "الاسم الإنجليزي مطلوب",
+                "passwordRequired": "كلمة المرور مطلوبة",
+                "passwordTooShort": "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
+                "sectionRequired": "يجب تحديد الفصل",
+                "noStudents": "لا توجد طلاب للاستيراد"
+              },
+              "generatePassword": "توليد",
+              "autoGenerateEmail": "توليد تلقائي",
+              "allStudents": "جميع الطلاب",
+              "selectSection": "اختر فصلاً",
+              "preview": "معاينة ({count})"
+            }
           },
           "announcements": {
             "title": "الإعلانات",

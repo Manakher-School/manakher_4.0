@@ -7,6 +7,10 @@ import * as XLSX from 'xlsx';
 
 export interface StudentImportRow {
   name_ar: string;
+  name_en?: string;
+  email?: string;
+  password?: string;
+  section_id?: string;
   rowNumber: number;
 }
 

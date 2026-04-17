@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
 import pb from "@/lib/pocketbase";
-import { Plus, Trash2, Pencil, Loader2, X, ChevronDown, Search, Upload } from "lucide-react";
+import { Plus, Trash2, Pencil, Loader2, X, ChevronDown, Search, Upload, Check, AlertCircle, RefreshCw } from "lucide-react";
 import { useCrudState, useFormState, useFilterState, useTabState } from "@/lib/hooks";
 import { parseStudentFile } from "@/lib/csv-parser";
+import { generateEmail, generatePassword, isValidEmail, isValidPassword, transliterateArabic } from "@/lib/transliteration";
 
 interface Teacher {
   id: string;
@@ -186,6 +187,18 @@ export default function UsersPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvError, setCsvError] = useState<string | null>(null);
+  
+  // Import Wizard state
+  const [wizardStep, setWizardStep] = useState(1);
+  interface StudentImportData {
+    name_ar: string;
+    name_en: string;
+    email: string;
+    password: string;
+    section_id: string;
+  }
+  const [importStudents, setImportStudents] = useState<StudentImportData[]>([]);
+  const [wizardError, setWizardError] = useState<string | null>(null);
 
   const t_teachers = dict.dashboard.admin.teachers;
   const t_students = dict.dashboard.admin.students;
@@ -435,80 +448,188 @@ export default function UsersPage() {
      }
    }
 
-    async function handleCsvImport() {
-      if (!csvFile) return;
-      setCsvImporting(true);
-      setCsvError(null);
+    // Wizard Step 1: File upload
+    async function handleFileUpload() {
+      if (!csvFile) {
+        setWizardError(locale === "ar" ? "يرجى اختيار ملف" : "Please select a file");
+        return;
+      }
+      
       try {
+        setCsvImporting(true);
+        setWizardError(null);
+        
+        // Parse the file
         const rows = await parseStudentFile(csvFile);
         
-        // Validate we have data
         if (!rows || rows.length === 0) {
           throw new Error(locale === "ar" ? "لا توجد بيانات صحيحة في الملف" : "No valid data found in file");
         }
-
-        // Show preview and allow user to confirm
-        const previewCount = Math.min(rows.length, 5);
-        const previewList = rows.slice(0, previewCount)
-          .map((r, i) => `${i + 1}. ${r.name_ar}`)
-          .join('\n');
         
-        const confirmMsg = locale === "ar" 
-          ? `سيتم إنشاء ${rows.length} طالب/طالبة جديد/جديدة:\n\n${previewList}${rows.length > 5 ? `\n... و ${rows.length - 5} آخرين` : ''}\n\nهل تريد المتابعة؟`
-          : `Will create ${rows.length} new students:\n\n${previewList}${rows.length > 5 ? `\n... and ${rows.length - 5} more` : ''}\n\nContinue?`;
+        // Convert to import data with auto-generated defaults
+        const importData: StudentImportData[] = rows.map(row => ({
+          name_ar: row.name_ar,
+          name_en: "",
+          email: generateEmail(row.name_ar),
+          password: generatePassword(),
+          section_id: ""
+        }));
         
-        if (!(await confirm(confirmMsg))) {
-          setCsvImporting(false);
-          return;
+        setImportStudents(importData);
+        setWizardStep(2);
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        setWizardError(errorMsg);
+      } finally {
+        setCsvImporting(false);
+      }
+    }
+    
+    // Update a student's data
+    function updateStudent(index: number, data: Partial<StudentImportData>) {
+      setImportStudents(prev => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], ...data };
+        return updated;
+      });
+    }
+    
+    // Regenerate email for a student
+    function regenerateEmail(index: number) {
+      try {
+        const newEmail = generateEmail(importStudents[index].name_ar);
+        updateStudent(index, { email: newEmail });
+      } catch (err) {
+        console.error("Error regenerating email", err);
+      }
+    }
+    
+    // Regenerate password for a student
+    function regeneratePassword(index: number) {
+      const newPassword = generatePassword();
+      updateStudent(index, { password: newPassword });
+    }
+    
+    // Validate Step 2
+    function validateStep2(): boolean {
+      setWizardError(null);
+      
+      for (let i = 0; i < importStudents.length; i++) {
+        const student = importStudents[i];
+        
+        if (!student.name_en.trim()) {
+          setWizardError(`${locale === "ar" ? "الطالب" : "Student"} ${i + 1}: ${locale === "ar" ? "الاسم الإنجليزي مطلوب" : "English name is required"}`);
+          return false;
         }
-
-        // Create students - use auto-generated email and password
+        
+        if (!student.email.trim()) {
+          setWizardError(`${locale === "ar" ? "الطالب" : "Student"} ${i + 1}: ${locale === "ar" ? "البريد الإلكتروني مطلوب" : "Email is required"}`);
+          return false;
+        }
+        
+        if (!isValidEmail(student.email)) {
+          setWizardError(`${locale === "ar" ? "الطالب" : "Student"} ${i + 1}: ${locale === "ar" ? "صيغة البريد الإلكتروني غير صحيحة" : "Invalid email format"}`);
+          return false;
+        }
+        
+        if (!student.password.trim()) {
+          setWizardError(`${locale === "ar" ? "الطالب" : "Student"} ${i + 1}: ${locale === "ar" ? "كلمة المرور مطلوبة" : "Password is required"}`);
+          return false;
+        }
+        
+        if (!isValidPassword(student.password)) {
+          setWizardError(`${locale === "ar" ? "الطالب" : "Student"} ${i + 1}: ${locale === "ar" ? "كلمة المرور يجب أن تكون 8 أحرف على الأقل" : "Password must be at least 8 characters"}`);
+          return false;
+        }
+      }
+      
+      return true;
+    }
+    
+    // Validate Step 3
+    function validateStep3(): boolean {
+      setWizardError(null);
+      
+      for (const student of importStudents) {
+        if (!student.section_id) {
+          setWizardError(locale === "ar" ? "يجب تحديد الفصل لجميع الطلاب" : "Section must be selected for all students");
+          return false;
+        }
+      }
+      
+      return true;
+    }
+    
+    // Submit wizard (Step 4 confirm)
+    async function handleWizardSubmit() {
+      if (!validateStep3()) return;
+      
+      setCsvImporting(true);
+      setWizardError(null);
+      
+      try {
         let created = 0;
         let failed = 0;
         const failedNames: string[] = [];
         
-        for (const row of rows) {
+        for (const student of importStudents) {
           try {
-            // Generate email from name
-            const sanitizedName = row.name_ar
-              .replace(/\s+/g, '_')
-              .replace(/[^\u0600-\u06FF\w_]/g, '')
-              .toLowerCase();
-            const email = `${sanitizedName}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}@school.local`;
-            const password = Math.random().toString(36).slice(-8);
+            // Check if email already exists
+            const existingEmail = await pb.collection("users").getFullList({
+              filter: `email = "${student.email}"`
+            });
             
+            if (existingEmail.length > 0) {
+              throw new Error(`${locale === "ar" ? "البريد الإلكتروني موجود بالفعل" : "Email already exists"}: ${student.email}`);
+            }
+            
+            // Create student
             await pb.collection("users").create({
-              name_ar: row.name_ar,
-              name_en: row.name_ar, // Use Arabic name as fallback for English
-              email: email,
-              password: password,
-              passwordConfirm: password,
+              name_ar: student.name_ar,
+              name_en: student.name_en,
+              email: student.email,
+              password: student.password,
+              passwordConfirm: student.password,
               role: "student",
-              sections: studentsData.sections.length > 0 ? [studentsData.sections[0].id] : [],
+              sections: [student.section_id],
               emailVisibility: false,
             });
             created++;
           } catch (err) {
             failed++;
-            failedNames.push(row.name_ar);
-            console.error(`Failed to create student ${row.name_ar}:`, err);
+            failedNames.push(student.name_ar);
+            console.error(`Failed to create student ${student.name_ar}:`, err);
           }
         }
         
+        // Show result
         const resultMsg = locale === "ar"
-          ? `تم إنشاء ${created} من أصل ${rows.length} طالب/طالبة بنجاح${failed > 0 ? `\n\nفشل في إنشاء: ${failedNames.slice(0, 3).join(', ')}${failedNames.length > 3 ? ' وآخرين' : ''}` : ''}`
-          : `Successfully created ${created} out of ${rows.length} students${failed > 0 ? `\n\nFailed: ${failedNames.slice(0, 3).join(', ')}${failedNames.length > 3 ? ' and others' : ''}` : ''}`;
+          ? `تم إنشاء ${created} من أصل ${importStudents.length} طالب/طالبة بنجاح${failed > 0 ? `\n\nفشل في إنشاء: ${failedNames.slice(0, 3).join(', ')}${failedNames.length > 3 ? ' وآخرين' : ''}` : ''}`
+          : `Successfully created ${created} out of ${importStudents.length} students${failed > 0 ? `\n\nFailed: ${failedNames.slice(0, 3).join(', ')}${failedNames.length > 3 ? ' and others' : ''}` : ''}`;
         
         await alert(resultMsg);
+        
+        // Reset wizard
+        setWizardStep(1);
+        setImportStudents([]);
         setCsvFile(null);
         setShowCsvImport(false);
         await loadStudents();
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
-        setCsvError(errorMsg);
+        setWizardError(errorMsg);
       } finally {
         setCsvImporting(false);
       }
+    }
+    
+    // Close wizard
+    function closeWizard() {
+      setShowCsvImport(false);
+      setWizardStep(1);
+      setImportStudents([]);
+      setCsvFile(null);
+      setWizardError(null);
     }
 
   const filteredTeachers = teachersData.items.filter(t =>
@@ -888,122 +1009,348 @@ export default function UsersPage() {
            )}
 
            {/* CSV Import Modal */}
-           {showCsvImport && (
-             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-               <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-6 w-full max-w-md shadow-lg">
-                 <div className="flex items-center justify-between mb-4">
-                   <h3 className="text-lg font-bold text-[var(--color-ink)]">Import Students from CSV</h3>
-                   <button
-                     onClick={() => {
-                       setShowCsvImport(false);
-                       setCsvFile(null);
-                       setCsvError(null);
-                     }}
-                     className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
-                   >
-                     <X className="h-5 w-5" />
-                   </button>
-                 </div>
-
-                  <div className="space-y-4">
-                     <div className="text-sm text-[var(--color-ink-secondary)]">
-                       <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "تنسيقات مقبولة:" : "Accepted formats:"}</p>
-                       <ul className="list-disc list-inside space-y-1 text-xs mb-3">
-                         <li>CSV (.csv)</li>
-                         <li>Excel (.xlsx, .xls)</li>
-                         <li>ODS (.ods)</li>
-                         <li>Google Sheets (exported as CSV)</li>
-                       </ul>
-                       <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "العمود المطلوب:" : "Required column:"}</p>
-                       <ul className="list-disc list-inside space-y-1 text-xs">
-                         <li><code>الاسم</code> {locale === "ar" ? "- الاسم بالعربية" : "- Arabic name"}</li>
-                       </ul>
-                       <p className="mt-3 text-xs text-[var(--color-ink-secondary)]">{locale === "ar" ? "سيتم استخراج الأسماء من العمود 'الاسم' فقط وتخطي أي أعمدة أخرى." : "Only the 'الاسم' column will be extracted. Other columns are ignored."}</p>
-                     </div>
-
-                    <div className="rounded-lg border-2 border-dashed border-[var(--color-border)] p-4 text-center cursor-pointer hover:border-[var(--color-accent)]"
-                      onClick={() => {
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = '.csv,.xlsx,.xls,.ods,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/vnd.oasis.opendocument.spreadsheet';
-                        input.onchange = (e) => {
-                          const file = (e.target as HTMLInputElement).files?.[0];
-                          if (file) {
-                            // Validate file type
-                            const validTypes = ['.csv', '.xlsx', '.xls', '.ods'];
-                            const validMimes = [
-                              'text/csv',
-                              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                              'application/vnd.ms-excel',
-                              'application/vnd.oasis.opendocument.spreadsheet'
-                            ];
-                            const fileName = file.name.toLowerCase();
-                            const isValidType = validTypes.some(ext => fileName.endsWith(ext)) || 
-                                               validMimes.includes(file.type);
-                            
-                            if (!isValidType) {
-                              setCsvError(locale === "ar" ? "نوع الملف غير مدعوم. يرجى استخدام CSV أو Excel أو ODS." : "Unsupported file type. Please use CSV, Excel, or ODS.");
-                              return;
-                            }
-                            setCsvFile(file);
-                            setCsvError(null);
-                          }
-                        };
-                        input.click();
-                      }}
-                    >
-                      {csvFile ? (
-                        <div>
-                          <p className="text-sm font-semibold text-[var(--color-accent)]">{csvFile.name}</p>
-                          <p className="text-xs text-[var(--color-ink-secondary)]">{locale === "ar" ? "اضغط لتغيير" : "Click to change"}</p>
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="text-sm font-semibold text-[var(--color-ink)]">{locale === "ar" ? "اختر ملف CSV أو Excel" : "Select CSV or Excel file"}</p>
-                          <p className="text-xs text-[var(--color-ink-secondary)]">{locale === "ar" ? "أو اسحب وأفلت" : "or drag & drop"}</p>
-                        </div>
-                      )}
+            {showCsvImport && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-6 w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto">
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-lg font-bold text-[var(--color-ink)]">
+                        {locale === "ar" ? dict.dashboard.admin.students.importWizard.title : dict.dashboard.admin.students.importWizard.title}
+                      </h3>
+                      <p className="text-xs text-[var(--color-ink-secondary)] mt-1">
+                        {locale === "ar" ? `الخطوة ${wizardStep} من 4` : `Step ${wizardStep} of 4`}
+                      </p>
                     </div>
+                    <button
+                      onClick={closeWizard}
+                      className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
 
-                   {csvError && (
-                     <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                       {csvError}
-                     </div>
-                   )}
+                  {/* Step Indicator */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between">
+                      {[1, 2, 3, 4].map((step) => (
+                        <div key={step} className="flex items-center flex-1">
+                          <div
+                            className={`flex items-center justify-center w-8 h-8 rounded-full font-semibold text-sm ${
+                              step < wizardStep
+                                ? 'bg-[var(--color-accent)] text-white'
+                                : step === wizardStep
+                                ? 'bg-[var(--color-accent)] text-white'
+                                : 'bg-[var(--color-surface-sunken)] text-[var(--color-ink-secondary)]'
+                            }`}
+                          >
+                            {step < wizardStep ? <Check className="h-4 w-4" /> : step}
+                          </div>
+                          {step < 4 && (
+                            <div
+                              className={`flex-1 h-0.5 mx-2 ${
+                                step < wizardStep ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-border)]'
+                              }`}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-                   <div className="flex gap-2">
-                     <button
-                       onClick={() => {
-                         setShowCsvImport(false);
-                         setCsvFile(null);
-                         setCsvError(null);
-                       }}
-                       className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-hover)]"
-                     >
-                       Cancel
-                     </button>
-                     <button
-                       onClick={handleCsvImport}
-                       disabled={!csvFile || csvImporting}
-                       className="flex-1 flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
-                     >
-                       {csvImporting ? (
-                         <>
-                           <Loader2 className="h-4 w-4 animate-spin" />
-                           Importing...
-                         </>
-                       ) : (
-                         <>
-                           <Upload className="h-4 w-4" />
-                           Import
-                         </>
-                       )}
-                     </button>
-                   </div>
-                 </div>
-               </div>
-             </div>
-           )}
+                  {/* Error message */}
+                  {wizardError && (
+                    <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                      <span>{wizardError}</span>
+                    </div>
+                  )}
+
+                  {/* Step 1: File Upload */}
+                  {wizardStep === 1 && (
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-[var(--color-ink)] mb-1">
+                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step1Title : dict.dashboard.admin.students.importWizard.step1Title}
+                        </h4>
+                        <p className="text-xs text-[var(--color-ink-secondary)]">
+                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step1Desc : dict.dashboard.admin.students.importWizard.step1Desc}
+                        </p>
+                      </div>
+
+                      <div className="text-sm text-[var(--color-ink-secondary)]">
+                        <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "تنسيقات مقبولة:" : "Accepted formats:"}</p>
+                        <ul className="list-disc list-inside space-y-1 text-xs mb-3">
+                          <li>CSV (.csv)</li>
+                          <li>Excel (.xlsx, .xls)</li>
+                          <li>ODS (.ods)</li>
+                        </ul>
+                        <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "العمود المطلوب:" : "Required column:"}</p>
+                        <ul className="list-disc list-inside space-y-1 text-xs">
+                          <li><code>الاسم</code> {locale === "ar" ? "- الاسم بالعربية" : "- Arabic name"}</li>
+                        </ul>
+                      </div>
+
+                      <div className="rounded-lg border-2 border-dashed border-[var(--color-border)] p-4 text-center cursor-pointer hover:border-[var(--color-accent)] transition-colors"
+                        onClick={() => {
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = '.csv,.xlsx,.xls,.ods,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/vnd.oasis.opendocument.spreadsheet';
+                          input.onchange = (e) => {
+                            const file = (e.target as HTMLInputElement).files?.[0];
+                            if (file) {
+                              const validTypes = ['.csv', '.xlsx', '.xls', '.ods'];
+                              const validMimes = [
+                                'text/csv',
+                                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                                'application/vnd.ms-excel',
+                                'application/vnd.oasis.opendocument.spreadsheet'
+                              ];
+                              const fileName = file.name.toLowerCase();
+                              const isValidType = validTypes.some(ext => fileName.endsWith(ext)) || 
+                                                 validMimes.includes(file.type);
+                              
+                              if (!isValidType) {
+                                setWizardError(locale === "ar" ? "نوع الملف غير مدعوم. يرجى استخدام CSV أو Excel أو ODS." : "Unsupported file type. Please use CSV, Excel, or ODS.");
+                                return;
+                              }
+                              setCsvFile(file);
+                              setWizardError(null);
+                            }
+                          };
+                          input.click();
+                        }}
+                      >
+                        {csvFile ? (
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--color-accent)]">{csvFile.name}</p>
+                            <p className="text-xs text-[var(--color-ink-secondary)]">{locale === "ar" ? "اضغط لتغيير" : "Click to change"}</p>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--color-ink)]">{locale === "ar" ? "اختر ملف CSV أو Excel" : "Select CSV or Excel file"}</p>
+                            <p className="text-xs text-[var(--color-ink-secondary)]">{locale === "ar" ? "أو اسحب وأفلت" : "or drag & drop"}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 2: Student Details */}
+                  {wizardStep === 2 && (
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-[var(--color-ink)] mb-1">
+                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step2Title : dict.dashboard.admin.students.importWizard.step2Title}
+                        </h4>
+                        <p className="text-xs text-[var(--color-ink-secondary)]">
+                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step2Desc : dict.dashboard.admin.students.importWizard.step2Desc}
+                        </p>
+                      </div>
+
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {importStudents.map((student, idx) => (
+                          <div key={idx} className="border border-[var(--color-border)] rounded-lg p-3 space-y-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs font-semibold text-[var(--color-ink)]">#{idx + 1}</p>
+                              <p className="text-xs text-[var(--color-ink-secondary)]">{student.name_ar}</p>
+                            </div>
+
+                            {/* Email field */}
+                            <div>
+                              <label className="text-xs font-semibold text-[var(--color-ink-secondary)] block mb-1">
+                                {locale === "ar" ? dict.dashboard.admin.students.email : dict.dashboard.admin.students.email}
+                              </label>
+                              <div className="flex gap-1">
+                                <input
+                                  type="email"
+                                  value={student.email}
+                                  onChange={(e) => updateStudent(idx, { email: e.target.value })}
+                                  className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => regenerateEmail(idx)}
+                                  className="px-2 py-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                                  title={locale === "ar" ? "توليد تلقائي" : "Auto-generate"}
+                                >
+                                  <RefreshCw className="h-3.5 w-3.5 text-[var(--color-ink-secondary)]" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* English name field */}
+                            <div>
+                              <label className="text-xs font-semibold text-[var(--color-ink-secondary)] block mb-1">
+                                {locale === "ar" ? dict.dashboard.admin.students.nameEn : dict.dashboard.admin.students.nameEn}
+                              </label>
+                              <input
+                                type="text"
+                                value={student.name_en}
+                                onChange={(e) => updateStudent(idx, { name_en: e.target.value })}
+                                placeholder={locale === "ar" ? "e.g. Noura Khalid" : "e.g. Noura Khalid"}
+                                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                              />
+                            </div>
+
+                            {/* Password field */}
+                            <div>
+                              <label className="text-xs font-semibold text-[var(--color-ink-secondary)] block mb-1">
+                                {locale === "ar" ? dict.dashboard.admin.students.password : dict.dashboard.admin.students.password}
+                              </label>
+                              <div className="flex gap-1">
+                                <input
+                                  type="text"
+                                  value={student.password}
+                                  onChange={(e) => updateStudent(idx, { password: e.target.value })}
+                                  className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => regeneratePassword(idx)}
+                                  className="px-2 py-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                                  title={locale === "ar" ? "توليد" : "Generate"}
+                                >
+                                  <RefreshCw className="h-3.5 w-3.5 text-[var(--color-ink-secondary)]" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 3: Section Assignment */}
+                  {wizardStep === 3 && (
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-[var(--color-ink)] mb-1">
+                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step3Title : dict.dashboard.admin.students.importWizard.step3Title}
+                        </h4>
+                        <p className="text-xs text-[var(--color-ink-secondary)]">
+                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step3Desc : dict.dashboard.admin.students.importWizard.step3Desc}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-[var(--color-ink-secondary)] block mb-2">
+                          {locale === "ar" ? dict.dashboard.admin.students.assignedSection : dict.dashboard.admin.students.assignedSection}
+                        </label>
+                        <select
+                          value={importStudents[0]?.section_id || ""}
+                          onChange={(e) => {
+                            const sectionId = e.target.value;
+                            setImportStudents(prev => prev.map(s => ({ ...s, section_id: sectionId })));
+                          }}
+                          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                        >
+                          <option value="">{locale === "ar" ? dict.dashboard.admin.students.importWizard.selectSection : dict.dashboard.admin.students.importWizard.selectSection}</option>
+                          {studentsData.sections.map(section => (
+                            <option key={section.id} value={section.id}>
+                              {section.grade_en} - {section.section_en}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <p className="text-xs text-[var(--color-ink-secondary)] bg-[var(--color-surface-sunken)] p-3 rounded-lg">
+                        {locale === "ar" 
+                          ? `سيتم تعيين جميع الـ ${importStudents.length} طالب/ة للفصل المحدد`
+                          : `All ${importStudents.length} students will be assigned to the selected section`}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Step 4: Review & Confirm */}
+                  {wizardStep === 4 && (
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-[var(--color-ink)] mb-1">
+                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step4Title : dict.dashboard.admin.students.importWizard.step4Title}
+                        </h4>
+                        <p className="text-xs text-[var(--color-ink-secondary)]">
+                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step4Desc : dict.dashboard.admin.students.importWizard.step4Desc}
+                        </p>
+                      </div>
+
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {importStudents.map((student, idx) => (
+                          <div key={idx} className="border border-[var(--color-border)] rounded-lg p-3">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <p className="text-[var(--color-ink-secondary)] font-semibold">#{idx + 1}</p>
+                                <p className="text-[var(--color-ink)] font-medium">{student.name_ar}</p>
+                              </div>
+                              <div>
+                                <p className="text-[var(--color-ink-secondary)] font-semibold">{locale === "ar" ? "English" : "English"}</p>
+                                <p className="text-[var(--color-ink)]">{student.name_en}</p>
+                              </div>
+                              <div>
+                                <p className="text-[var(--color-ink-secondary)] font-semibold">{locale === "ar" ? dict.dashboard.admin.students.email : dict.dashboard.admin.students.email}</p>
+                                <p className="text-[var(--color-ink)] break-all">{student.email}</p>
+                              </div>
+                              <div>
+                                <p className="text-[var(--color-ink-secondary)] font-semibold">{locale === "ar" ? dict.dashboard.admin.students.password : dict.dashboard.admin.students.password}</p>
+                                <p className="text-[var(--color-ink)] font-mono text-xs">{student.password}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Buttons */}
+                  <div className="flex gap-2 mt-6 pt-4 border-t border-[var(--color-border)]">
+                    <button
+                      onClick={closeWizard}
+                      className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-hover)]"
+                    >
+                      {locale === "ar" ? dict.dashboard.admin.students.importWizard.cancelButton : dict.dashboard.admin.students.importWizard.cancelButton}
+                    </button>
+
+                    {wizardStep > 1 && (
+                      <button
+                        onClick={() => setWizardStep(wizardStep - 1)}
+                        disabled={csvImporting}
+                        className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-hover)] disabled:opacity-50"
+                      >
+                        {locale === "ar" ? dict.dashboard.admin.students.importWizard.prevButton : dict.dashboard.admin.students.importWizard.prevButton}
+                      </button>
+                    )}
+
+                    {wizardStep < 4 ? (
+                      <button
+                        onClick={() => {
+                          if (wizardStep === 1) {
+                            handleFileUpload();
+                          } else if (wizardStep === 2) {
+                            if (validateStep2()) setWizardStep(3);
+                          } else if (wizardStep === 3) {
+                            if (validateStep3()) setWizardStep(4);
+                          }
+                        }}
+                        disabled={csvImporting || (wizardStep === 1 && !csvFile)}
+                        className="flex-1 flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {csvImporting && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {locale === "ar" ? dict.dashboard.admin.students.importWizard.nextButton : dict.dashboard.admin.students.importWizard.nextButton}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleWizardSubmit}
+                        disabled={csvImporting}
+                        className="flex-1 flex items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {csvImporting && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {locale === "ar" ? dict.dashboard.admin.students.importWizard.confirmButton : dict.dashboard.admin.students.importWizard.confirmButton}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
          </div>
        )}
      </main>
