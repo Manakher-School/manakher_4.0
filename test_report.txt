@@ -17,3 +17,10 @@ Round 2:
 - fix the alignemt of the search bar and it's content everywhere it exists.
 - when I'm in the settings page, I still can't go to other page from it.
 - when I'm in the settings page, I can edit the name of the school.
+
+
+####################################
+
+Round 3:
+- The stats section in the overview page needs some extra gap between the title and the stats cards.
+- The "add announcement" button needs to be outline; to be more visible.
