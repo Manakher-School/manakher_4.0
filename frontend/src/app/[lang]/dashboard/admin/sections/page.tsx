@@ -85,6 +85,9 @@ export default function SectionsPage() {
          section_ar: form.section_ar.trim(),
          section_en: form.section_en.trim(),
        };
+       
+       console.log("Submitting class data:", data);
+       
        if (editingId) {
          await pb.collection("class_sections").update(editingId, data);
          await alert(locale === "ar" ? "تم تحديث الفصل بنجاح" : "Class updated successfully");
@@ -101,16 +104,34 @@ export default function SectionsPage() {
          errorMsg = error.message;
          // Log to console for debugging
          console.error("Class creation error:", error);
+         console.error("Error details:", {
+           message: error.message,
+           name: error.name,
+           stack: error.stack,
+         });
        } else if (typeof error === 'object' && error !== null) {
          const err = error as any;
-         if (err.message) {
-           errorMsg = err.message;
-         } else if (err.response?.message) {
-           errorMsg = err.response.message;
+         // Try to extract PocketBase validation errors
+         if (err.data?.data) {
+           // PocketBase field validation errors
+           const fieldErrors = Object.entries(err.data.data)
+             .map(([field, detail]: [string, any]) => `${field}: ${detail?.message || detail}`)
+             .join(", ");
+           errorMsg = fieldErrors;
          } else if (err.data?.message) {
            errorMsg = err.data.message;
+         } else if (err.response?.message) {
+           errorMsg = err.response.message;
+         } else if (err.message) {
+           errorMsg = err.message;
          }
          console.error("Class creation error object:", err);
+         console.error("Full error response:", {
+           message: err.message,
+           status: err.status,
+           data: err.data,
+           response: err.response,
+         });
        }
        await alert(locale === "ar" ? `خطأ: ${errorMsg}` : `Error: ${errorMsg}`);
      } finally {
