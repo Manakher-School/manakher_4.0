@@ -276,7 +276,7 @@ export default function SubjectsExamsPage() {
       examListCrudState.setIsLoading(true);
       const data = {
         ...examFormData.state.data,
-        created_by: user.id,
+        ...(examListCrudState.state.editingId === null && { created_by: user.id }), // Only add created_by when creating
       };
 
       if (examListCrudState.state.editingId) {

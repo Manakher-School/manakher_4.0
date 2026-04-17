@@ -7,7 +7,7 @@ import pb from "@/lib/pocketbase";
 import { Plus, Trash2, Pencil, Loader2, X, ChevronDown, Search, Upload, Check, AlertCircle, RefreshCw } from "lucide-react";
 import { useCrudState, useFormState, useFilterState, useTabState } from "@/lib/hooks";
 import { parseStudentFile } from "@/lib/csv-parser";
-import { generateEmail, generatePassword, isValidEmail, isValidPassword, transliterateArabic } from "@/lib/transliteration";
+import { generateEmail, generatePassword, generateEnglishName, isValidEmail, isValidPassword, transliterateArabic } from "@/lib/transliteration";
 
 interface Teacher {
   id: string;
@@ -467,13 +467,13 @@ export default function UsersPage() {
         }
         
         // Convert to import data with auto-generated defaults
-        const importData: StudentImportData[] = rows.map(row => ({
-          name_ar: row.name_ar,
-          name_en: "",
-          email: generateEmail(row.name_ar),
-          password: generatePassword(),
-          section_id: ""
-        }));
+         const importData: StudentImportData[] = rows.map(row => ({
+           name_ar: row.name_ar,
+           name_en: generateEnglishName(row.name_ar), // Auto-generate from Arabic name
+           email: generateEmail(row.name_ar),
+           password: generatePassword(),
+           section_id: ""
+         }));
         
         setImportStudents(importData);
         setWizardStep(2);

@@ -166,3 +166,9 @@ Failed to update record.
 
 Next.js version: 16.2.1 (Turbopack)
 
+
+#####################################################################
+
+
+Round 10:
+- for the english name of the imported students, suggest a the full name based on the arabic name.

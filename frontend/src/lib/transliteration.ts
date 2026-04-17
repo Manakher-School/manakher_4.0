@@ -104,3 +104,28 @@ export function isValidEmail(email: string): boolean {
 export function isValidPassword(password: string): boolean {
   return password.length >= 8;
 }
+
+/**
+ * Generate English name from Arabic name
+ * Transliterates Arabic characters to Latin and capitalizes each word
+ * @param arabicName - Full name in Arabic
+ * @returns Generated English name
+ */
+export function generateEnglishName(arabicName: string): string {
+  const nameParts = arabicName.trim().split(/\s+/);
+  
+  if (nameParts.length === 0) {
+    return '';
+  }
+  
+  // Transliterate each part and capitalize first letter
+  const englishParts = nameParts
+    .map(part => {
+      const transliterated = transliterateArabic(part);
+      // Capitalize first letter
+      return transliterated.charAt(0).toUpperCase() + transliterated.slice(1).toLowerCase();
+    })
+    .filter(part => part.length > 0); // Remove empty parts
+  
+  return englishParts.join(' ');
+}
