@@ -607,14 +607,16 @@ export default function UsersPage() {
           ? `تم إنشاء ${created} من أصل ${importStudents.length} طالب/طالبة بنجاح${failed > 0 ? `\n\nفشل في إنشاء: ${failedNames.slice(0, 3).join(', ')}${failedNames.length > 3 ? ' وآخرين' : ''}` : ''}`
           : `Successfully created ${created} out of ${importStudents.length} students${failed > 0 ? `\n\nFailed: ${failedNames.slice(0, 3).join(', ')}${failedNames.length > 3 ? ' and others' : ''}` : ''}`;
         
-        await alert(resultMsg);
-        
-        // Reset wizard
-        setWizardStep(1);
-        setImportStudents([]);
-        setCsvFile(null);
-        setShowCsvImport(false);
-        await loadStudents();
+         await alert(resultMsg);
+         
+         // Reset wizard
+         setWizardStep(1);
+         setImportStudents([]);
+         setCsvFile(null);
+         setShowCsvImport(false);
+         await loadStudents();
+         // Switch to students tab to show newly imported students
+         setActiveTab("students");
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         setWizardError(errorMsg);
