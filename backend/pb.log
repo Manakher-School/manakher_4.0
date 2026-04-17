@@ -1,3 +1,8 @@
-2026/04/16 14:04:41 Server started at http://127.0.0.1:8090
+2026/04/16 20:46:39 Server started at http://127.0.0.1:8090
 ├─ REST API:  http://127.0.0.1:8090/api/
 └─ Dashboard: http://127.0.0.1:8090/_/
+
+(!) Launch the URL below in the browser if it hasn't been open already to create your first superuser account:
+http://127.0.0.1:8090/_/#/pbinstal/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2xsZWN0aW9uSWQiOiJwYmNfMzE0MjYzNTgyMyIsImV4cCI6MTc3NjM2MzM5OSwiaWQiOiIxMzJ4NDI0dThtM2hrNzciLCJyZWZyZXNoYWJsZSI6ZmFsc2UsInR5cGUiOiJhdXRoIn0.lMu94f-VcWie6GfzVoqkvRJXYv2G_qUQ0LHC24YlRXg
+(you can also create your first superuser by running: ./pocketbase superuser upsert EMAIL PASS)
+
