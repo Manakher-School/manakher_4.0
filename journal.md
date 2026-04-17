@@ -4244,3 +4244,48 @@ if (examListCrudState.state.editingId) {
 - [ ] Check browser console for detailed logging on both create and update operations
 
 ---
+
+## Session: Remove 'midterm' Exam Type
+
+**Date:** 2026-04-17 (continued)  
+**Issue:** User wants to remove "midterm" from exam types (keep only: month1, month2, month3, final)
+
+### Root Cause of 400 Error
+
+The exam update was failing because:
+1. Old exams in the database have `exam_type: "quiz"` or `exam_type: "midterm"` 
+2. These are no longer valid values in the schema (changed in Round 7)
+3. When trying to update an exam with invalid type, PocketBase returns 400 error
+
+### Solution Implemented
+
+**Updated exam_type schema:**
+- Removed "midterm" from allowed values
+- Final allowed values: `["month1", "month2", "month3", "final"]`
+
+**Files Modified:**
+1. `backend/pb_migrations/1774897387_created_exam_schedules.js`
+   - Updated schema enum values (lines 109-115)
+
+2. `frontend/src/app/[lang]/dashboard/admin/subjects_exams/page.tsx`
+   - Removed midterm option from select dropdown (line 638)
+   - Removed midterm case from getExamTypeLabel() function (lines 389-390)
+
+### Build Status
+✅ All 56 pages compile successfully  
+✅ Zero TypeScript errors  
+
+### Commit
+- `c961c21` - "fix: Remove 'midterm' exam type - keep only month1, month2, month3, final"
+
+### Important Note
+⚠️ **Existing exams with old types** (quiz, midterm, practical, etc.) will still cause 400 errors when updating.
+
+**To fix this:**
+You have two options:
+1. **Manual fix**: Go to each exam in PocketBase admin UI and change the type to a valid value
+2. **Delete and recreate**: Delete the old exams and create new ones with valid types
+
+Once old exams are removed/fixed, updates should work correctly.
+
+---
