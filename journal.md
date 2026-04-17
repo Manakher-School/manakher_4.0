@@ -4362,3 +4362,104 @@ You have two options:
 Once old exams are removed/fixed, updates should work correctly.
 
 ---
+
+---
+
+## Next.js Issues & Fixes Session (2026-04-17)
+
+### Iteration 3 - Fix Multiple Next.js Issues in Exam Pages
+
+**Status:** ✅ COMPLETE
+
+**What I Did:**
+
+1. **Identified and Fixed 5 Major Next.js Issues:**
+   
+   **Issue 1 - useCallback Missing Dependencies** (admin/subjects_exams)
+   - ❌ **Before:** `loadExams` useCallback only had `[user]` in dependency array
+   - ✅ **After:** Added `examListCrudState` to dependencies: `[examListCrudState, user]`
+   - **Why:** `examListCrudState.setIsLoading()` is called inside loadExams, so the hook must be in dependencies
+
+   **Issue 2 - useEffect Missing Dependencies** (admin/subjects_exams)
+   - ❌ **Before:** useEffect called `loadSubjects()` and `loadExams()` with empty dependency array `[]`
+   - ✅ **After:** Changed to `[loadSubjects, loadExams]` dependency array
+   - **Why:** Functions are now wrapped in useCallback, so they must be in the effect's dependencies
+   - **Result:** Proper re-runs when dependencies change, prevents stale closures
+
+   **Issue 3 - loadSubjects Not Wrapped in useCallback** (admin/subjects_exams)
+   - ❌ **Before:** Plain async function not wrapped
+   - ✅ **After:** Wrapped with `useCallback(async () => {...}, [subjectListCrudState])`
+   - **Why:** Function is used in useEffect dependency array and calls state setters
+
+   **Issue 4 - Invalid Exam Types in Interfaces** (4 pages)
+   - ❌ **Before:** `exam_type: "midterm" | "final" | "quiz" | "practical"`
+   - ✅ **After:** `exam_type: "month1" | "month2" | "month3" | "final"`
+   - **Pages Fixed:**
+     - admin/subjects_exams/page.tsx (2 interfaces)
+     - admin/exams/page.tsx (2 interfaces + form defaults)
+     - student/exams/page.tsx (1 interface)
+     - student/assessments/page.tsx (1 interface)
+   - **Why:** Backend only accepts valid types; invalid types cause 400 errors
+
+   **Issue 5 - Missing Exam Type Filtering** (3 pages)
+   - ❌ **Before:** All exams loaded without validation - old exams with invalid types would appear
+   - ✅ **After:** Added filter before setting state:
+     ```typescript
+     const validTypes = ["month1", "month2", "month3", "final"];
+     const validExams = examsData.filter(exam => validTypes.includes(exam.exam_type));
+     setExams(validExams);
+     ```
+   - **Pages Fixed:**
+     - admin/subjects_exams/page.tsx
+     - admin/exams/page.tsx
+     - student/exams/page.tsx
+   - **Why:** Prevents 400 errors when editing exams with old invalid types
+
+2. **Updated Function Labels:**
+   - Changed `getExamTypeLabel()` to use month1-3 labels instead of midterm/quiz/practical
+   - Updated dropdown options from hardcoded old types to new valid types
+   - Used getExamTypeLabel() function for consistent labeling
+
+3. **Build Verification:**
+   - ✅ Ran `npm run build` - all 56 pages compile successfully
+   - ✅ Zero TypeScript errors
+   - ✅ Proper React hook dependency chains established
+
+4. **Commits:**
+   - `951a0e0`: Fix Next.js issues - useCallback/useEffect dependencies, remove invalid exam types
+
+**Root Cause Analysis:**
+
+The issues stemmed from:
+1. **Data model mismatch**: Backend schema was updated to remove "midterm", but frontend still used old types
+2. **Hook dependency violations**: Functions using state setters weren't properly tracked in useCallback/useEffect
+3. **No validation**: Frontend loaded all exams without checking if types were valid
+4. **Cascading effects**: Invalid types in database → load failure → 400 error on update
+
+**What Worked Well:**
+- Comprehensive search across all pages found all affected locations
+- Consistent pattern application across multiple files
+- Build verification caught any TypeScript issues immediately
+- Filtering approach handles both new (valid) and old (invalid) exams gracefully
+
+**Issues/Lessons:**
+- None encountered - systematic approach worked smoothly
+- Filtering approach is non-destructive (hides invalid exams without deleting them)
+- User can clean up old exams manually if needed
+
+**Impact:**
+- ✅ Exam pages now conform to Next.js rules for hooks
+- ✅ No more 400 errors from invalid exam types
+- ✅ Backward compatible - doesn't delete old exams, just hides them from UI
+- ✅ All pages properly manage dependencies and side effects
+
+**Next Steps:**
+1. ✅ Next.js issues fixed - ready for testing
+2. ⏳ User should test exam operations:
+   - Create new exams (should work)
+   - Edit new exams (should work)  
+   - Update existing exams with valid types (should work)
+   - Old exams with invalid types will be hidden from UI
+3. ⏳ Optional: Clean up old exams with invalid types from PocketBase if desired
+
+---
