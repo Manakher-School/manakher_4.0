@@ -2876,6 +2876,30 @@ Comprehensive verification of all 10 Round 1 testing issues to ensure fixes are 
 
 ---
 
+## Session: M12.3 - Seed Data Cleanup (2026-04-17)
+
+### What Was Done
+**Cleaned up seed data per test_report notes:**
+- Removed teacher user (Sarah) from seed.js
+- Removed student user (Ahmed) from seed.js
+- Kept only admin user for testing purposes
+- Updated seed script to create only: subjects, sections, and admin user
+
+**Rationale:**
+From test_report.txt line 8: "no need for any user other than the admin in the seed data (which is only for testing)"
+
+**Files Changed:**
+- `backend/seed.js` - Removed teacher and student creation, kept admin only
+
+**Commit:**
+- `f938588` - "fix: Remove teacher and student from seed data - keep only admin for testing"
+
+**Pushed:** ✅ Changes pushed to remote (hussam_2.0 branch)
+
+### Status: ✅ SEED DATA CLEANUP COMPLETE
+
+---
+
 ## Session: M12.1 - Browser Testing Setup & Verification (2026-04-16 Evening)
 
 **Date:** 2026-04-16  
