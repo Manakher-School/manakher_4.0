@@ -614,8 +614,11 @@ export default function UsersPage() {
          setImportStudents([]);
          setCsvFile(null);
          setShowCsvImport(false);
+         
+         // Load students and switch to tab
          await loadStudents();
-         // Switch to students tab to show newly imported students
+         // Small delay to ensure React state updates are batched properly
+         await new Promise(resolve => setTimeout(resolve, 100));
          setActiveTab("students");
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);

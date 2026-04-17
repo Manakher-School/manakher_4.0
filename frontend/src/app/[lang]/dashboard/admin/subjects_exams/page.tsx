@@ -274,14 +274,54 @@ export default function SubjectsExamsPage() {
 
     try {
       examListCrudState.setIsLoading(true);
+      
+      // Validate required fields
+      const formData = examFormData.state.data;
+      if (!formData.title?.trim()) {
+        throw new Error(locale === "ar" ? "العنوان مطلوب" : "Title is required");
+      }
+      if (!formData.subject) {
+        throw new Error(locale === "ar" ? "المادة مطلوبة" : "Subject is required");
+      }
+      if (!formData.section) {
+        throw new Error(locale === "ar" ? "الفصل مطلوب" : "Section is required");
+      }
+      if (!formData.exam_date) {
+        throw new Error(locale === "ar" ? "تاريخ الامتحان مطلوب" : "Exam date is required");
+      }
+      if (!formData.start_time?.match(/^\d{2}:\d{2}$/)) {
+        throw new Error(locale === "ar" ? "وقت البداية مطلوب بصيغة HH:MM" : "Start time required in HH:MM format");
+      }
+      if (!formData.end_time?.match(/^\d{2}:\d{2}$/)) {
+        throw new Error(locale === "ar" ? "وقت النهاية مطلوب بصيغة HH:MM" : "End time required in HH:MM format");
+      }
+      if (!formData.exam_type) {
+        throw new Error(locale === "ar" ? "نوع الامتحان مطلوب" : "Exam type is required");
+      }
+
       const data = {
-        ...examFormData.state.data,
+        title: formData.title,
+        subject: formData.subject,
+        section: formData.section,
+        exam_date: formData.exam_date,
+        start_time: formData.start_time,
+        end_time: formData.end_time,
+        exam_type: formData.exam_type,
+        notes: formData.notes || "",
         ...(examListCrudState.state.editingId === null && { created_by: user.id }), // Only add created_by when creating
       };
 
+      console.log("Submitting exam data:", {
+        isEditing: !!examListCrudState.state.editingId,
+        editingId: examListCrudState.state.editingId,
+        data: data,
+      });
+
       if (examListCrudState.state.editingId) {
+        console.log(`Updating exam ${examListCrudState.state.editingId}...`);
         await pb.collection("exam_schedules").update(examListCrudState.state.editingId, data);
       } else {
+        console.log("Creating new exam...");
         await pb.collection("exam_schedules").create(data);
       }
 
@@ -289,7 +329,20 @@ export default function SubjectsExamsPage() {
       closeExamForm();
     } catch (err) {
       console.error("Error saving exam:", err);
-      await alert(locale === "ar" ? "حدث خطأ أثناء الحفظ" : "Error saving exam");
+      
+      // Extract detailed error information for better debugging
+      if (err instanceof Error) {
+        console.error("Error message:", err.message);
+        if (typeof err === 'object' && 'response' in err) {
+          const pbErr = err as any;
+          console.error("PocketBase response:", pbErr.response);
+          console.error("PocketBase status:", pbErr.status);
+          console.error("PocketBase data:", pbErr.data);
+        }
+      }
+      
+      const errMsg = err instanceof Error ? err.message : String(err);
+      await alert(errMsg);
     } finally {
       examListCrudState.setIsLoading(false);
     }

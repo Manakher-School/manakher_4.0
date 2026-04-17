@@ -2338,6 +2338,47 @@ npm run test:ci
 
 ---
 
+## [INPROGRESS] Round 10 & 11 Testing Issues
+
+**Status:** In Progress (2026-04-17)
+
+### Issues to Fix
+1. ✅ **Round 10**: Auto-generate English names from Arabic - ALREADY DONE (commit 9d35c3b)
+2. ⏳ **Round 11**: Imported students not visible after wizard completion
+
+### Round 10 Analysis
+- Feature has been implemented in `frontend/src/lib/transliteration.ts`
+- Function `generateEnglishName()` creates English transliteration from Arabic names
+- Integrated into import wizard at step 2 (line 1189-1195)
+- When user uploads CSV with Arabic names, English names are auto-generated
+
+### Round 11 Analysis - "Imported students not shown after wizard"
+- **Current Flow:**
+  1. User imports students via 4-step wizard
+  2. Step 4: Confirms and submits (line 564)
+  3. Creates each student in PocketBase (line 587)
+  4. Shows result dialog (line 610)
+  5. Resets wizard (line 613-616)
+  6. Calls `loadStudents()` async (line 617)
+  7. Switches to students tab (line 619)
+- **Potential Issues:**
+  - Race condition: Tab switches before student data loads?
+  - Loading spinner still showing while data loads?
+  - Data fetch not including newly created students?
+
+### Investigation Findings
+- `loadStudents()` function properly fetches with filter: `role = "student" && email != "student@school.edu"`
+- Newly created students have `role: "student"` so should be in results
+- Section assignment looks correct (line 594: `sections: [student.section_id]`)
+- `await` on line 617 ensures `loadStudents()` completes before tab switch
+
+**Next Step:** Test manually with browser to see if:
+1. Students are actually being created
+2. Loading spinner appears or students list appears
+3. Data is properly fetched after import
+
+---
+
 **Iteration 1** (2026-04-16) — Analysis & Setup:
 - **What was done:**
   - ✅ Analyzed entire project state from journal (2147 lines)
