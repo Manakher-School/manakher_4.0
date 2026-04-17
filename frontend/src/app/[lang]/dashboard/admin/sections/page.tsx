@@ -80,11 +80,15 @@ export default function SectionsPage() {
       };
       if (editingId) {
         await pb.collection("class_sections").update(editingId, data);
+        await alert(locale === "ar" ? "تم تحديث الفصل بنجاح" : "Class updated successfully");
       } else {
         await pb.collection("class_sections").create(data);
+        await alert(locale === "ar" ? "تم إضافة الفصل بنجاح" : "Class added successfully");
       }
       closeForm();
       await load();
+    } catch (error) {
+      await alert(locale === "ar" ? `خطأ: ${error instanceof Error ? error.message : "حدث خطأ ما"}` : `Error: ${error instanceof Error ? error.message : "Something went wrong"}`);
     } finally {
       setSaving(false);
     }

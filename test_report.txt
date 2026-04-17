@@ -1,10 +1,8 @@
 Round 1:
-
 - The navigation from the settings page to any other page is not working, and no response is shown.
-- In the overview section, the title is sticking to the cards, put some gap in between, apply to all users and to any similar section.
-- In the classes and sections pages, kinder garten class must have the number/order zero, but currently the order starts only from 1 (admin).
-- The exams tab in the courses and exams page must be a table view, and the columns are the values of the exam item (admin).
-- For the users page, adding students must be availabe through importing a file {csv, excel, ...etc} (admin).
-- In the search bar inside the users page has a misaligned, it must be centered.
-- In the teacher user item inside the users page has the lables of the teacher's classes must have a white text istead.
-- Layla student is still shown in the page, remove it from the UI, remove it from any hardcoded file or code or anywhere.
+- In the overview section, the title of the overview cards is sticking to the cards, put some gap in between, and apply that to all users and to any similar section.
+- In the classes and sections pages, adding or updating a class is not effective.
+- The exams tab in the courses and exams page must be a table view not cards, and the columns are the values of the exam item (admin).
+- For the users page, adding students must be availabe through importing a file {csv and excel, and any othe type of table documents} (admin).
+- In the search icon in the search of the users page has to be centered vertically.
+- Layla student is still shown in the page, remove it from the UI, remove it from any hardcoded file or code or anywhere, no need for any user other than the admin in the seed data (which is only for testing).

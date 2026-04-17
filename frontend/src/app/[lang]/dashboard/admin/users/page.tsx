@@ -520,17 +520,17 @@ export default function UsersPage() {
       {/* Teachers Tab */}
       {tab === "teachers" && (
         <div>
-           <div className="mb-4 flex items-center justify-center gap-3">
-             <div className="flex-1 max-w-md relative">
-               <Search className="absolute inset-y-0 left-3 h-4 w-4 text-[var(--color-ink-placeholder)]" />
-               <input
-                 type="text"
-                 placeholder={c.search}
-                 value={teachersFilter.state.searchTerm}
-                 onChange={e => teachersFilter.setSearchTerm(e.target.value)}
-                 className="w-full ps-10 pe-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-               />
-             </div>
+            <div className="mb-4 flex items-center justify-center gap-3">
+              <div className="flex-1 max-w-md relative">
+                <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder={c.search}
+                  value={teachersFilter.state.searchTerm}
+                  onChange={e => teachersFilter.setSearchTerm(e.target.value)}
+                  className="w-full ps-10 pe-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                />
+              </div>
              <button
                onClick={openCreateTeacher}
                 aria-label={t_teachers.add}
@@ -695,7 +695,7 @@ export default function UsersPage() {
           <div>
             <div className="mb-4 flex items-center justify-center gap-3 flex-wrap">
               <div className="flex-1 max-w-md relative">
-                <Search className="absolute inset-y-0 left-3 h-4 w-4 text-[var(--color-ink-placeholder)]" />
+                <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
                 <input
                   type="text"
                   placeholder={c.search}
