@@ -223,24 +223,29 @@ export default function UsersPage() {
     }
   }
 
-   async function loadStudents() {
-     studentsCrud.setIsLoading(true);
-     try {
-       const [studentsRes, sectionsRes] = await Promise.all([
-         pb.collection("users").getFullList<Student>({
-           filter: 'role = "student" && email != "student@school.edu"',
-           expand: "sections",
-           sort: "name_ar",
-         }),
-         pb.collection("class_sections").getFullList<ClassSection>({ sort: "grade_order,section_ar" }),
-       ]);
-       setStudentsData({ items: studentsRes, sections: sectionsRes });
-     } catch (err) {
-       studentsCrud.setError("Failed to load students");
-     } finally {
-       studentsCrud.setIsLoading(false);
-     }
-   }
+    async function loadStudents() {
+      console.log(`[LOAD_STUDENTS] Starting load...`);
+      studentsCrud.setIsLoading(true);
+      try {
+        const [studentsRes, sectionsRes] = await Promise.all([
+          pb.collection("users").getFullList<Student>({
+            filter: 'role = "student" && email != "student@school.edu"',
+            expand: "sections",
+            sort: "name_ar",
+          }),
+          pb.collection("class_sections").getFullList<ClassSection>({ sort: "grade_order,section_ar" }),
+        ]);
+        console.log(`[LOAD_STUDENTS] Fetched ${studentsRes.length} students`);
+        setStudentsData({ items: studentsRes, sections: sectionsRes });
+        console.log(`[LOAD_STUDENTS] Updated state`);
+      } catch (err) {
+        console.error(`[LOAD_STUDENTS] Error:`, err);
+        studentsCrud.setError("Failed to load students");
+      } finally {
+        studentsCrud.setIsLoading(false);
+        console.log(`[LOAD_STUDENTS] Completed`);
+      }
+    }
 
   useEffect(() => {
     loadTeachers();
@@ -572,8 +577,12 @@ export default function UsersPage() {
         let failed = 0;
         const failedNames: string[] = [];
         
+        console.log(`[WIZARD] Starting to create ${importStudents.length} students...`);
+        
         for (const student of importStudents) {
           try {
+            console.log(`[WIZARD] Creating student: ${student.name_ar} (${student.email})`);
+            
             // Check if email already exists
             const existingEmail = await pb.collection("users").getFullList({
               filter: `email = "${student.email}"`
@@ -584,7 +593,7 @@ export default function UsersPage() {
             }
             
             // Create student
-            await pb.collection("users").create({
+            const newStudent = await pb.collection("users").create({
               name_ar: student.name_ar,
               name_en: student.name_en,
               email: student.email,
@@ -594,6 +603,7 @@ export default function UsersPage() {
               sections: [student.section_id],
               emailVisibility: false,
             });
+            console.log(`[WIZARD] Successfully created student: ${newStudent.id}`);
             created++;
           } catch (err) {
             failed++;
@@ -601,6 +611,8 @@ export default function UsersPage() {
             console.error(`Failed to create student ${student.name_ar}:`, err);
           }
         }
+        
+        console.log(`[WIZARD] Created ${created} out of ${importStudents.length} students`);
         
         // Show result
         const resultMsg = locale === "ar"
@@ -615,13 +627,19 @@ export default function UsersPage() {
          setCsvFile(null);
          setShowCsvImport(false);
          
+         console.log(`[WIZARD] Calling loadStudents()...`);
          // Load students and switch to tab
          await loadStudents();
+         console.log(`[WIZARD] loadStudents() completed, students data:`, studentsData.items.length);
+         
          // Small delay to ensure React state updates are batched properly
          await new Promise(resolve => setTimeout(resolve, 100));
+         console.log(`[WIZARD] Switching to students tab...`);
          setActiveTab("students");
+         console.log(`[WIZARD] Done!`);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error(`[WIZARD] Error:`, errorMsg);
         setWizardError(errorMsg);
       } finally {
         setCsvImporting(false);
