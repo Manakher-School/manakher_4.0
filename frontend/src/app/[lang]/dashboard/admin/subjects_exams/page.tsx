@@ -232,7 +232,24 @@ export default function SubjectsExamsPage() {
         pb.collection("subjects").getFullList<ExamSubject>({ sort: "name_ar" }),
         pb.collection("class_sections").getFullList<ExamSection>({ sort: "grade_order,section_ar" }),
       ]);
-      setExams(examsData);
+      
+      // Valid exam types
+      const validTypes = ["month1", "month2", "month3", "final"];
+      
+      // Filter out exams with invalid types (old types like "quiz", "midterm", "practical")
+      const validExams = examsData.filter(exam => {
+        if (!validTypes.includes(exam.exam_type)) {
+          console.warn(`Filtering out exam "${exam.title}" with invalid type "${exam.exam_type}". Valid types are: ${validTypes.join(", ")}`);
+          return false;
+        }
+        return true;
+      });
+      
+      if (validExams.length < examsData.length) {
+        console.warn(`Filtered ${examsData.length - validExams.length} exams with invalid types`);
+      }
+      
+      setExams(validExams);
       setExamSubjects(subjs);
       setExamSections(sects);
     } catch (e) {
