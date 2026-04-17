@@ -3604,3 +3604,117 @@ From test_report.txt Round 6:
 - ⏳ Check that created students appear in students list
 - ⏳ Test with large CSV (100+ students)
 - ⏳ Test error scenarios (duplicate emails, invalid data)
+
+---
+
+## Round 7 Testing - Exam Update 400 Error Fix (2026-04-17)
+
+### Overview
+Fixed 400 Bad Request error when updating exam schedules. Root cause was schema-frontend mismatch for exam_type values.
+
+### Issue Analysis
+
+**Error Details:**
+```
+Error Type: ClientResponseError 400
+Message: Failed to update record.
+Location: subjects_exams/page.tsx:283
+Handler: handleSubmitExam()
+```
+
+### Root Cause
+
+The issue was a schema validation mismatch:
+- **Round 5 Change:** Frontend updated exam types from (midterm, final, quiz, practical) → (month1, month2, month3, midterm, final)
+- **Problem:** PocketBase schema still had old enum values
+- **Result:** When updating exam with new type values, validation failed because values weren't in allowed list
+
+Timeline:
+```
+Round 5: Frontend enum changed ✅
+        Backend schema NOT updated ❌
+Round 7: Attempted exam update → PocketBase validation fails → 400 error
+```
+
+### Solution Implemented
+
+Updated `/backend/pb_migrations/1774897387_created_exam_schedules.js` line 109-114:
+
+**Before:**
+```javascript
+"values": [
+  "midterm",
+  "final",
+  "quiz",
+  "practical"
+]
+```
+
+**After:**
+```javascript
+"values": [
+  "month1",
+  "month2",
+  "month3",
+  "midterm",
+  "final"
+]
+```
+
+This aligns the PocketBase schema with the frontend enum and validation.
+
+### Technical Details
+
+**Affected Schema Field:**
+- Collection: `exam_schedules`
+- Field: `exam_type` (select type, maxSelect: 1)
+- Required: true
+- Migration file: `1774897387_created_exam_schedules.js`
+
+**Why It Failed:**
+PocketBase enforces strict validation for select fields. When the update request contains `exam_type: "month1"` but schema only allows `["midterm", "final", "quiz", "practical"]`, validation rejects the request with HTTP 400 (Bad Request).
+
+**Why Create Might Work:**
+Initial exam creation might work if the existing data already used the old values. The error only occurs when trying to update with new values.
+
+### Files Modified
+- `/backend/pb_migrations/1774897387_created_exam_schedules.js`
+  - Updated enum values for `exam_type` select field
+  - Lines 109-114: Changed from 4 values to 5 values
+
+### Build Status
+✅ All 56 pages compile successfully
+✅ Zero TypeScript errors
+✅ Development server running
+
+### Verification
+
+**Expected Behavior After Fix:**
+1. Admin can edit existing exam
+2. Can change exam_type to any of the 5 new values
+3. Update request succeeds with HTTP 200
+4. Exam details are persisted in PocketBase
+
+**Testing Steps:**
+- [ ] Login as admin
+- [ ] Go to Subjects & Exams page
+- [ ] Click "Edit" on existing exam
+- [ ] Change exam_type to "month1", "month2", etc.
+- [ ] Click "Save"
+- [ ] Verify success (no 400 error)
+
+### Commit
+- `a75c10b` - Round 7: Fix exam update 400 error - Update exam_type schema values
+
+### Lesson Learned
+Schema and frontend enum definitions must stay in sync. When updating business logic (like exam types), remember to update:
+1. Frontend interface/enum
+2. PocketBase schema validation
+3. Dictionary/translations
+4. Any other consumers of the enum
+
+In this case, Round 5 updated frontend and translations but missed the schema update, causing the bug to manifest in Round 7.
+
+### Next Steps
+- ⏳ Browser testing to verify exam updates work
+- ⏳ Verify no other schema mismatches exist
