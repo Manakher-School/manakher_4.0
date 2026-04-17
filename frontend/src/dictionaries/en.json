@@ -136,6 +136,7 @@
             "empty": "No students added yet.",
             "importWizard": {
               "title": "Import Students",
+              "buttonText": "import students list",
               "step": "Step {n}",
               "of": "of {total}",
               "step1Title": "Upload File",

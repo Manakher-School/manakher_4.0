@@ -5,6 +5,43 @@ It contains a short and clear to-do list of milestones.
 
 ---
 
+## ⚠️ **CRITICAL RULE: CONTEXT WINDOW & CHECKPOINT MANAGEMENT** ⚠️
+
+**PERMANENT RULE - CONTEXT WINDOW PROTECTION:**
+
+🚫 **AI AGENT MUST NEVER:**
+- Continue working when token usage exceeds 100,000 tokens (~70% of 200,000 max)
+- Hallucinate or guess context from older sessions
+- Lose track of current iteration progress
+
+✅ **WHAT TO DO INSTEAD:**
+- **When approaching 100,000 tokens:**
+  1. **IMMEDIATELY STOP** all code modifications
+  2. **CREATE `checkpoint.md`** in project root with:
+     - Current iteration number and title
+     - Exact list of files being modified (with line numbers)
+     - Current state of each modification (in progress, blocked, needs review, etc.)
+     - Code snippets of incomplete changes (if any)
+     - Exact next step to resume work
+     - All git commits made in this session
+  3. **UPDATE journal.md** with session summary
+  4. **PUSH all commits** to remote
+  5. **SAVE checkpoint.md** and inform user that session is complete
+- **On next session start:**
+  1. **READ checkpoint.md** first
+  2. **VERIFY all commits were pushed**
+  3. **NEVER assume or invent context** - only use what's documented
+  4. **RESUME EXACTLY from the next step** listed in checkpoint
+
+**WHY THIS MATTERS:**
+- Token budget is limited (200K max)
+- Current session is at ~60K tokens (30% used)
+- Checkpoints prevent lost context and hallucinated progress
+- Ensures continuity across multiple sessions
+- No work is ever lost or duplicated
+
+---
+
 ## ⚠️ **CRITICAL RULE: NO LOCAL DATABASE MODIFICATIONS** ⚠️
 
 **FROM NOW ON - PERMANENT RULE:**

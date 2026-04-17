@@ -140,3 +140,29 @@ Round 8:
 - the import wizard has a small font, make it bigger.
 - the imported students still not shown on the page after importing them successfully.
 
+
+###################################################################
+
+
+Round 9:
+- the exam updating still fail.
+- ## Error Type
+Console ClientResponseError 400
+
+## Error Message
+Failed to update record.
+
+
+    at async handleSubmitExam (src/app/[lang]/dashboard/admin/subjects_exams/page.tsx:283:9)
+
+## Code Frame
+  281 |
+  282 |       if (examListCrudState.state.editingId) {
+> 283 |         await pb.collection("exam_schedules").update(examListCrudState.state.editingId, data);
+      |         ^
+  284 |       } else {
+  285 |         await pb.collection("exam_schedules").create(data);
+  286 |       }
+
+Next.js version: 16.2.1 (Turbopack)
+

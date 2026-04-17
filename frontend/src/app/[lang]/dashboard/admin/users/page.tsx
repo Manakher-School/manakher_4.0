@@ -861,14 +861,14 @@ export default function UsersPage() {
                 <Plus className="h-4 w-4" />
                 {t_students.add}
               </button>
-              <button
-                onClick={() => setShowCsvImport(true)}
-                 aria-label="Import students from CSV"
-                className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-role-admin-bold)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-              >
-                <Upload className="h-4 w-4" />
-                Import CSV
-              </button>
+               <button
+                 onClick={() => setShowCsvImport(true)}
+                  aria-label="Import students from CSV"
+                 className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-role-admin-bold)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+               >
+                 <Upload className="h-4 w-4" />
+                 {locale === "ar" ? dict.dashboard.admin.students.importWizard.buttonText : dict.dashboard.admin.students.importWizard.buttonText}
+               </button>
             </div>
 
           {studentsCrud.state.isLoading ? (
@@ -1008,79 +1008,79 @@ export default function UsersPage() {
              </div>
            )}
 
-           {/* CSV Import Modal */}
-            {showCsvImport && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-6 w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto">
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h3 className="text-lg font-bold text-[var(--color-ink)]">
-                        {locale === "ar" ? dict.dashboard.admin.students.importWizard.title : dict.dashboard.admin.students.importWizard.title}
-                      </h3>
-                      <p className="text-xs text-[var(--color-ink-secondary)] mt-1">
-                        {locale === "ar" ? `الخطوة ${wizardStep} من 4` : `Step ${wizardStep} of 4`}
-                      </p>
-                    </div>
-                    <button
-                      onClick={closeWizard}
-                      className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
+            {/* CSV Import Modal */}
+             {showCsvImport && (
+               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                 <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-6 w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto">
+                   {/* Header */}
+                   <div className="flex items-center justify-between mb-6">
+                     <div>
+                       <h3 className="text-2xl font-bold text-[var(--color-ink)]">
+                         {locale === "ar" ? dict.dashboard.admin.students.importWizard.title : dict.dashboard.admin.students.importWizard.title}
+                       </h3>
+                       <p className="text-sm text-[var(--color-ink-secondary)] mt-1">
+                         {locale === "ar" ? `الخطوة ${wizardStep} من 4` : `Step ${wizardStep} of 4`}
+                       </p>
+                     </div>
+                     <button
+                       onClick={closeWizard}
+                       className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
+                     >
+                       <X className="h-5 w-5" />
+                     </button>
+                   </div>
 
-                  {/* Step Indicator */}
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between">
-                      {[1, 2, 3, 4].map((step) => (
-                        <div key={step} className="flex items-center flex-1">
-                          <div
-                            className={`flex items-center justify-center w-8 h-8 rounded-full font-semibold text-sm ${
-                              step < wizardStep
-                                ? 'bg-[var(--color-accent)] text-white'
-                                : step === wizardStep
-                                ? 'bg-[var(--color-accent)] text-white'
-                                : 'bg-[var(--color-surface-sunken)] text-[var(--color-ink-secondary)]'
-                            }`}
-                          >
-                            {step < wizardStep ? <Check className="h-4 w-4" /> : step}
-                          </div>
-                          {step < 4 && (
-                            <div
-                              className={`flex-1 h-0.5 mx-2 ${
-                                step < wizardStep ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-border)]'
-                              }`}
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                   {/* Step Indicator */}
+                   <div className="mb-6">
+                     <div className="flex items-center justify-between">
+                       {[1, 2, 3, 4].map((step) => (
+                         <div key={step} className="flex items-center flex-1">
+                           <div
+                             className={`flex items-center justify-center w-8 h-8 rounded-full font-semibold text-sm ${
+                               step < wizardStep
+                                 ? 'bg-[var(--color-accent)] text-white'
+                                 : step === wizardStep
+                                 ? 'bg-[var(--color-accent)] text-white'
+                                 : 'bg-[var(--color-surface-sunken)] text-[var(--color-ink-secondary)]'
+                             }`}
+                           >
+                             {step < wizardStep ? <Check className="h-4 w-4" /> : step}
+                           </div>
+                           {step < 4 && (
+                             <div
+                               className={`flex-1 h-0.5 mx-2 ${
+                                 step < wizardStep ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-border)]'
+                               }`}
+                             />
+                           )}
+                         </div>
+                       ))}
+                     </div>
+                   </div>
 
-                  {/* Error message */}
-                  {wizardError && (
-                    <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                      <span>{wizardError}</span>
-                    </div>
-                  )}
+                   {/* Error message */}
+                   {wizardError && (
+                     <div className="mb-4 rounded-lg bg-red-50 p-3 text-base text-red-700 flex items-start gap-2">
+                       <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+                       <span>{wizardError}</span>
+                     </div>
+                   )}
 
-                  {/* Step 1: File Upload */}
-                  {wizardStep === 1 && (
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold text-[var(--color-ink)] mb-1">
-                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step1Title : dict.dashboard.admin.students.importWizard.step1Title}
-                        </h4>
-                        <p className="text-xs text-[var(--color-ink-secondary)]">
-                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step1Desc : dict.dashboard.admin.students.importWizard.step1Desc}
-                        </p>
-                      </div>
+                   {/* Step 1: File Upload */}
+                   {wizardStep === 1 && (
+                     <div className="space-y-4">
+                       <div>
+                         <h4 className="font-semibold text-[var(--color-ink)] mb-1 text-lg">
+                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step1Title : dict.dashboard.admin.students.importWizard.step1Title}
+                         </h4>
+                         <p className="text-sm text-[var(--color-ink-secondary)]">
+                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step1Desc : dict.dashboard.admin.students.importWizard.step1Desc}
+                         </p>
+                       </div>
 
-                      <div className="text-sm text-[var(--color-ink-secondary)]">
-                        <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "تنسيقات مقبولة:" : "Accepted formats:"}</p>
-                        <ul className="list-disc list-inside space-y-1 text-xs mb-3">
+                       <div className="text-base text-[var(--color-ink-secondary)]">
+                         <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "تنسيقات مقبولة:" : "Accepted formats:"}</p>
+                         <ul className="list-disc list-inside space-y-1 text-sm mb-3">
                           <li>CSV (.csv)</li>
                           <li>Excel (.xlsx, .xls)</li>
                           <li>ODS (.ods)</li>
@@ -1137,56 +1137,56 @@ export default function UsersPage() {
                   )}
 
                   {/* Step 2: Student Details */}
-                  {wizardStep === 2 && (
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold text-[var(--color-ink)] mb-1">
-                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step2Title : dict.dashboard.admin.students.importWizard.step2Title}
-                        </h4>
-                        <p className="text-xs text-[var(--color-ink-secondary)]">
-                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step2Desc : dict.dashboard.admin.students.importWizard.step2Desc}
-                        </p>
-                      </div>
+                   {wizardStep === 2 && (
+                     <div className="space-y-4">
+                       <div>
+                         <h4 className="font-semibold text-[var(--color-ink)] mb-1 text-lg">
+                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step2Title : dict.dashboard.admin.students.importWizard.step2Title}
+                         </h4>
+                         <p className="text-sm text-[var(--color-ink-secondary)]">
+                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step2Desc : dict.dashboard.admin.students.importWizard.step2Desc}
+                         </p>
+                       </div>
 
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {importStudents.map((student, idx) => (
-                          <div key={idx} className="border border-[var(--color-border)] rounded-lg p-3 space-y-2">
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="text-xs font-semibold text-[var(--color-ink)]">#{idx + 1}</p>
-                              <p className="text-xs text-[var(--color-ink-secondary)]">{student.name_ar}</p>
-                            </div>
+                       <div className="space-y-3 max-h-96 overflow-y-auto">
+                         {importStudents.map((student, idx) => (
+                           <div key={idx} className="border border-[var(--color-border)] rounded-lg p-3 space-y-2">
+                             <div className="flex items-center justify-between mb-2">
+                               <p className="text-sm font-semibold text-[var(--color-ink)]">#{idx + 1}</p>
+                               <p className="text-sm text-[var(--color-ink-secondary)]">{student.name_ar}</p>
+                             </div>
 
-                            {/* Email field */}
-                            <div>
-                              <label className="text-xs font-semibold text-[var(--color-ink-secondary)] block mb-1">
-                                {locale === "ar" ? dict.dashboard.admin.students.email : dict.dashboard.admin.students.email}
-                              </label>
-                              <div className="flex gap-1">
-                                <input
-                                  type="email"
-                                  value={student.email}
-                                  onChange={(e) => updateStudent(idx, { email: e.target.value })}
-                                  className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => regenerateEmail(idx)}
-                                  className="px-2 py-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors"
-                                  title={locale === "ar" ? "توليد تلقائي" : "Auto-generate"}
-                                >
-                                  <RefreshCw className="h-3.5 w-3.5 text-[var(--color-ink-secondary)]" />
-                                </button>
-                              </div>
-                            </div>
+                             {/* Email field */}
+                             <div>
+                               <label className="text-sm font-semibold text-[var(--color-ink-secondary)] block mb-1">
+                                 {locale === "ar" ? dict.dashboard.admin.students.email : dict.dashboard.admin.students.email}
+                               </label>
+                               <div className="flex gap-1">
+                                 <input
+                                   type="email"
+                                   value={student.email}
+                                   onChange={(e) => updateStudent(idx, { email: e.target.value })}
+                                   className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                                 />
+                                 <button
+                                   type="button"
+                                   onClick={() => regenerateEmail(idx)}
+                                   className="px-2 py-1.5 rounded-[var(--radius-md)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors"
+                                   title={locale === "ar" ? "توليد تلقائي" : "Auto-generate"}
+                                 >
+                                   <RefreshCw className="h-4 w-4 text-[var(--color-ink-secondary)]" />
+                                 </button>
+                               </div>
+                             </div>
 
-                            {/* English name field */}
-                            <div>
-                              <label className="text-xs font-semibold text-[var(--color-ink-secondary)] block mb-1">
-                                {locale === "ar" ? dict.dashboard.admin.students.nameEn : dict.dashboard.admin.students.nameEn}
-                              </label>
-                              <input
-                                type="text"
-                                value={student.name_en}
+                             {/* English name field */}
+                             <div>
+                               <label className="text-sm font-semibold text-[var(--color-ink-secondary)] block mb-1">
+                                 {locale === "ar" ? dict.dashboard.admin.students.nameEn : dict.dashboard.admin.students.nameEn}
+                               </label>
+                               <input
+                                 type="text"
+                                 value={student.name_en}
                                 onChange={(e) => updateStudent(idx, { name_en: e.target.value })}
                                 placeholder={locale === "ar" ? "e.g. Noura Khalid" : "e.g. Noura Khalid"}
                                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
@@ -1222,82 +1222,82 @@ export default function UsersPage() {
                   )}
 
                   {/* Step 3: Section Assignment */}
-                  {wizardStep === 3 && (
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold text-[var(--color-ink)] mb-1">
-                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step3Title : dict.dashboard.admin.students.importWizard.step3Title}
-                        </h4>
-                        <p className="text-xs text-[var(--color-ink-secondary)]">
-                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step3Desc : dict.dashboard.admin.students.importWizard.step3Desc}
-                        </p>
+                   {wizardStep === 3 && (
+                     <div className="space-y-4">
+                       <div>
+                         <h4 className="font-semibold text-[var(--color-ink)] mb-1 text-lg">
+                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step3Title : dict.dashboard.admin.students.importWizard.step3Title}
+                         </h4>
+                         <p className="text-sm text-[var(--color-ink-secondary)]">
+                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step3Desc : dict.dashboard.admin.students.importWizard.step3Desc}
+                         </p>
+                       </div>
+
+                       <div>
+                         <label className="text-sm font-semibold text-[var(--color-ink-secondary)] block mb-2">
+                           {locale === "ar" ? dict.dashboard.admin.students.assignedSection : dict.dashboard.admin.students.assignedSection}
+                         </label>
+                         <select
+                           value={importStudents[0]?.section_id || ""}
+                           onChange={(e) => {
+                             const sectionId = e.target.value;
+                             setImportStudents(prev => prev.map(s => ({ ...s, section_id: sectionId })));
+                           }}
+                           className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                         >
+                           <option value="">{locale === "ar" ? dict.dashboard.admin.students.importWizard.selectSection : dict.dashboard.admin.students.importWizard.selectSection}</option>
+                           {studentsData.sections.map(section => (
+                             <option key={section.id} value={section.id}>
+                               {section.grade_en} - {section.section_en}
+                             </option>
+                           ))}
+                         </select>
+                       </div>
+
+                       <p className="text-sm text-[var(--color-ink-secondary)] bg-[var(--color-surface-sunken)] p-3 rounded-lg">
+                         {locale === "ar" 
+                           ? `سيتم تعيين جميع الـ ${importStudents.length} طالب/ة للفصل المحدد`
+                           : `All ${importStudents.length} students will be assigned to the selected section`}
+                       </p>
+                     </div>
+                   )}
+
+                   {/* Step 4: Review & Confirm */}
+                   {wizardStep === 4 && (
+                     <div className="space-y-4">
+                       <div>
+                         <h4 className="font-semibold text-[var(--color-ink)] mb-1 text-lg">
+                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step4Title : dict.dashboard.admin.students.importWizard.step4Title}
+                         </h4>
+                         <p className="text-sm text-[var(--color-ink-secondary)]">
+                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step4Desc : dict.dashboard.admin.students.importWizard.step4Desc}
+                         </p>
                       </div>
 
-                      <div>
-                        <label className="text-xs font-semibold text-[var(--color-ink-secondary)] block mb-2">
-                          {locale === "ar" ? dict.dashboard.admin.students.assignedSection : dict.dashboard.admin.students.assignedSection}
-                        </label>
-                        <select
-                          value={importStudents[0]?.section_id || ""}
-                          onChange={(e) => {
-                            const sectionId = e.target.value;
-                            setImportStudents(prev => prev.map(s => ({ ...s, section_id: sectionId })));
-                          }}
-                          className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                        >
-                          <option value="">{locale === "ar" ? dict.dashboard.admin.students.importWizard.selectSection : dict.dashboard.admin.students.importWizard.selectSection}</option>
-                          {studentsData.sections.map(section => (
-                            <option key={section.id} value={section.id}>
-                              {section.grade_en} - {section.section_en}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <p className="text-xs text-[var(--color-ink-secondary)] bg-[var(--color-surface-sunken)] p-3 rounded-lg">
-                        {locale === "ar" 
-                          ? `سيتم تعيين جميع الـ ${importStudents.length} طالب/ة للفصل المحدد`
-                          : `All ${importStudents.length} students will be assigned to the selected section`}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Step 4: Review & Confirm */}
-                  {wizardStep === 4 && (
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-semibold text-[var(--color-ink)] mb-1">
-                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step4Title : dict.dashboard.admin.students.importWizard.step4Title}
-                        </h4>
-                        <p className="text-xs text-[var(--color-ink-secondary)]">
-                          {locale === "ar" ? dict.dashboard.admin.students.importWizard.step4Desc : dict.dashboard.admin.students.importWizard.step4Desc}
-                        </p>
-                      </div>
-
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {importStudents.map((student, idx) => (
-                          <div key={idx} className="border border-[var(--color-border)] rounded-lg p-3">
-                            <div className="grid grid-cols-2 gap-2 text-xs">
-                              <div>
-                                <p className="text-[var(--color-ink-secondary)] font-semibold">#{idx + 1}</p>
-                                <p className="text-[var(--color-ink)] font-medium">{student.name_ar}</p>
-                              </div>
-                              <div>
-                                <p className="text-[var(--color-ink-secondary)] font-semibold">{locale === "ar" ? "English" : "English"}</p>
-                                <p className="text-[var(--color-ink)]">{student.name_en}</p>
-                              </div>
-                              <div>
-                                <p className="text-[var(--color-ink-secondary)] font-semibold">{locale === "ar" ? dict.dashboard.admin.students.email : dict.dashboard.admin.students.email}</p>
-                                <p className="text-[var(--color-ink)] break-all">{student.email}</p>
-                              </div>
-                              <div>
-                                <p className="text-[var(--color-ink-secondary)] font-semibold">{locale === "ar" ? dict.dashboard.admin.students.password : dict.dashboard.admin.students.password}</p>
-                                <p className="text-[var(--color-ink)] font-mono text-xs">{student.password}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                       <div className="space-y-3 max-h-96 overflow-y-auto">
+                         {importStudents.map((student, idx) => (
+                           <div key={idx} className="border border-[var(--color-border)] rounded-lg p-3">
+                             <div className="grid grid-cols-2 gap-2 text-sm">
+                               <div>
+                                 <p className="text-[var(--color-ink-secondary)] font-semibold">#{idx + 1}</p>
+                                 <p className="text-[var(--color-ink)] font-medium">{student.name_ar}</p>
+                               </div>
+                               <div>
+                                 <p className="text-[var(--color-ink-secondary)] font-semibold">{locale === "ar" ? "English" : "English"}</p>
+                                 <p className="text-[var(--color-ink)]">{student.name_en}</p>
+                               </div>
+                               <div>
+                                 <p className="text-[var(--color-ink-secondary)] font-semibold">{locale === "ar" ? dict.dashboard.admin.students.email : dict.dashboard.admin.students.email}</p>
+                                 <p className="text-[var(--color-ink)] break-all text-sm">{student.email}</p>
+                               </div>
+                               <div>
+                                 <p className="text-[var(--color-ink-secondary)] font-semibold">{locale === "ar" ? dict.dashboard.admin.students.password : dict.dashboard.admin.students.password}</p>
+                                 <p className="text-[var(--color-ink)] font-mono text-xs">{student.password}</p>
+                               </div>
+                             </div>
+                           </div>
+                         ))}
+                       </div>
                     </div>
                   )}
 

@@ -38,7 +38,7 @@ export function transliterateArabic(arabicText: string): string {
 
 /**
  * Generate email from Arabic name
- * Format: firstname.lastname@school.edu
+ * Format: firstname.lastname@manakher.edu.jo
  * @param arabicName - Full name in Arabic
  * @returns Generated email address
  */
@@ -71,7 +71,7 @@ export function generateEmail(arabicName: string): string {
     throw new Error('Could not generate valid email from name');
   }
   
-  return `${emailBase}@school.edu`;
+  return `${emailBase}@manakher.edu.jo`;
 }
 
 /**
