@@ -336,20 +336,20 @@ export default function TeachersPage() {
          </button>
        </div>
 
-       {/* Search bar */}
-       {teachers.length > 0 && (
-         <div className="relative">
-           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-ink-secondary)]" />
-           <input
-             type="text"
-             placeholder={locale === "ar" ? "ابحث عن مدرس..." : "Search teachers..."}
-             aria-label={locale === "ar" ? "ابحث عن مدرس" : "Search teachers"}
-             value={searchQuery}
-             onChange={e => setSearchQuery(e.target.value)}
-             className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] ps-10 pe-3 py-2 text-sm placeholder:text-[var(--color-ink-placeholder)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-           />
-         </div>
-       )}
+        {/* Search bar */}
+        {teachers.length > 0 && (
+          <div className="relative">
+            <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
+            <input
+              type="text"
+              placeholder={locale === "ar" ? "ابحث عن مدرس..." : "Search teachers..."}
+              aria-label={locale === "ar" ? "ابحث عن مدرس" : "Search teachers"}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] ps-10 pe-3 py-2 text-sm placeholder:text-[var(--color-ink-placeholder)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+            />
+          </div>
+        )}
 
        {/* Create / Edit form */}
       {showForm && (

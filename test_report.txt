@@ -6,3 +6,14 @@ Round 1:
 - For the users page, adding students must be availabe through importing a file {csv and excel, and any othe type of table documents} (admin).
 - In the search icon in the search of the users page has to be centered vertically.
 - Layla student is still shown in the page, remove it from the UI, remove it from any hardcoded file or code or anywhere, no need for any user other than the admin in the seed data (which is only for testing).
+
+
+####################################
+
+
+Round 2:
+- creating a class record fails with and alert "faild to create record".
+- importing students is supposed to accept excel, csv, google sheets only! and never reject a file due to a missing field, instead preview and accept if all good, all you need to take from the file is this column "الاسم" which is the name in arabic.
+- fix the alignemt of the search bar and it's content everywhere it exists.
+- when I'm in the settings page, I still can't go to other page from it.
+- when I'm in the settings page, I can edit the name of the school.

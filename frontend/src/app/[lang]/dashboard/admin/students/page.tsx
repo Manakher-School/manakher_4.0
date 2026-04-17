@@ -377,8 +377,7 @@ export default function StudentsPage() {
             {/* Per-section search — only when not in global mode */}
             {showLocalSearch && allStudents.length > 0 && (
               <div className="px-4 pt-3 pb-2 relative">
-                <Search className="absolute top-1/2 mt-0.5 -translate-y-1/2 h-3.5 w-3.5 text-[var(--color-ink-placeholder)]"
-                  style={{ insetInlineStart: "1.25rem" }} />
+                <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
                 <input
                   type="search"
                   value={localQuery}
@@ -488,10 +487,7 @@ export default function StudentsPage() {
         <>
           {/* Global search */}
           <div className="relative">
-            <Search
-              className="absolute top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-ink-placeholder)]"
-              style={{ insetInlineStart: "0.875rem" }}
-            />
+            <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
             <input
               type="search"
               value={globalQuery}
