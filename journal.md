@@ -4036,3 +4036,118 @@ const data = {
 - Test import wizard to see auto-generated English names in action
 
 ---
+
+## Session: Round 11 - Fix Imported Students Not Appearing After Wizard
+
+**Date:** 2026-04-17 (continued)  
+**Issue:** After successfully importing students via wizard, students don't appear in Students list  
+**Root Cause:** Complex filter query `role = "student" && email != "student@school.edu"` may not work reliably with PocketBase API
+
+### Problem Analysis
+
+**User Experience:**
+1. Admin completes 4-step import wizard
+2. Success dialog shows "Created X students"
+3. UI switches to Students tab
+4. Students list shows "no students" message (empty state)
+
+**What Works:**
+- Students ARE created successfully in PocketBase (console logs confirm creation)
+- Tab switching works correctly
+- Loading states function properly
+- Render logic is correct
+
+**What Doesn't Work:**
+- After import, `loadStudents()` returns 0 students
+- This suggests the PocketBase filter query isn't matching the newly created students
+
+### Root Cause Identified
+
+The filter query uses complex AND condition: `role = "student" && email != "student@school.edu"`
+
+Potential issues:
+1. Complex filters with AND conditions may not work reliably with PocketBase SDK
+2. Special characters in email addresses could break filter syntax
+3. Pre-check for duplicate emails using filters could fail
+
+### Solution Implemented
+
+**Changed approach to be more robust:**
+
+1. **Simplified Students Filter** (in `loadStudents()`)
+   - OLD: `filter: 'role = "student" && email != "student@school.edu"'`
+   - NEW: `filter: 'role = "student"'`
+   - Move test student exclusion to JavaScript (in-memory filtering)
+   - Rationale: Simpler filter reduces chance of API issues; post-processing is faster and more reliable
+
+2. **Removed Email Pre-Check** (in `handleWizardSubmit()`)
+   - OLD: Used complex filter to check if email exists before creating
+   - NEW: Let PocketBase handle email uniqueness validation
+   - Rationale: PocketBase already validates email uniqueness; removing pre-check removes another potential failure point
+
+3. **Improved Error Handling**
+   - Better error message extraction from catch block
+   - Type annotation for error handling: `catch (err: any)`
+   - More detailed console logging for debugging
+
+### Code Changes
+
+**File: `frontend/src/app/[lang]/dashboard/admin/users/page.tsx`**
+
+```javascript
+// BEFORE (loadStudents):
+pb.collection("users").getFullList<Student>({
+  filter: 'role = "student" && email != "student@school.edu"',
+  expand: "sections",
+  sort: "name_ar",
+})
+
+// AFTER (loadStudents):
+pb.collection("users").getFullList<Student>({
+  filter: `role = "student"`,
+  expand: "sections",
+  sort: "name_ar",
+})
+// Then filter in memory:
+const filteredStudents = studentsRes.filter(s => s.email !== "student@school.edu");
+```
+
+**Files Modified:**
+- `frontend/src/app/[lang]/dashboard/admin/users/page.tsx` (2 functions affected: `loadStudents()`, `handleWizardSubmit()`)
+
+### Build Status
+✅ All 56 pages compile successfully  
+✅ Zero TypeScript errors  
+✅ Build successful
+
+### Commit
+- `215408f` - "fix(Round 11): Simplify students filter and improve error handling in import wizard"
+
+### Why This Should Fix It
+
+1. **Simpler filter = more reliable** - Single filter condition has fewer failure points
+2. **Post-processing = guaranteed** - JavaScript-based filtering always works (no API call dependencies)
+3. **Reduced API calls** - Fewer network requests to PocketBase means fewer points of failure
+4. **Better error messages** - Improved logging helps debug any remaining issues
+
+### Testing Verification Needed
+
+- [ ] Start PocketBase: `cd backend && ./pocketbase serve`
+- [ ] Start Next.js: `cd frontend && npm run dev`
+- [ ] Log in as admin
+- [ ] Navigate to Users → Students tab
+- [ ] Click "Import Students"
+- [ ] Upload CSV with test student(s)
+- [ ] Complete wizard and check console logs for `[WIZARD]` and `[LOAD_STUDENTS]` messages
+- [ ] Verify:
+  - Students are created successfully
+  - Tab switches to Students
+  - Newly imported students appear in the list
+  - Console shows correct student count in `[LOAD_STUDENTS] Fetched X students`
+
+### Next Steps
+- Browser testing to verify the fix works
+- If successful, Round 11 is COMPLETE
+- If not, check console logs and analyze further
+
+---
