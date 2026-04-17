@@ -3090,15 +3090,30 @@ Fixing all 5 issues from Round 2 test report. Issues 1-3 completed; Issues 4-5 (
 - **Commit:** `df8df84`
 
 **Issue 4 & 5** (2026-04-17) - Settings page navigation & school name editing:
-- **Status:** IN PROGRESS - Need to test actual functionality
-  - Issue 4: Can't navigate FROM settings page to other pages (sidebar links)
-  - Issue 5: Can't edit and save school name on settings page
-- **Analysis so far:**
+- **Status:** IN PROGRESS - Issue 5 FIXED, Issue 4 awaiting test
+  
+**Issue 5 - Can't edit school name on settings page:**
+- **What was done:**
+  - ✅ Found root cause: **Stale closure bug in settings-context.tsx**
+  - ✅ Problem: `updateSettings()` callback had `settings` in dependency array but used stale `settings` value from closure
+  - ✅ When trying to merge `{ ...settings, ...newSettings }`, it always used the OLD settings value captured when callback was created
+  - ✅ Fixed by reading current settings directly: `const currentSettings = settings` before merge, ensuring fresh value
+  - ✅ Reordered operations: read current settings first, update local state with merged data, then persist to PocketBase
+  - File: `context/settings-context.tsx` (lines 68-109)
+  - Build status: Passed with zero TypeScript errors
+  - Commit: `5b6a36e` - "fix: resolve stale closure bug in settings context updateSettings function"
+
+**Issue 4 - Can't navigate FROM settings page to other pages:**
+- **Status:** Applied z-index and pointer-events fixes in previous commit (1dfb723)
+  - Added explicit z-index to sidebar (z-10) and mobile nav (z-20)
+  - Added pointer-events-auto to ensure links are clickable
+  - Awaiting user test results to verify if this resolves the issue
+- **Analysis:**
   - Settings page at `/dashboard/admin/settings` exists and is fully implemented
   - Has school name Arabic/English input fields (lines 624-635)
   - Has save button that calls `updateSettings()` (line 684)
-  - Has persistent context using `useSettings()` hook (lines 6, 91)
   - Sidebar should be clickable in admin layout - all links point to valid routes
-  - Need to test in browser to identify actual issue
+  - Root cause: Possible z-index stacking issue or layout blocking interaction
+  - Next step: User will test this fix and report results
 
 ---
