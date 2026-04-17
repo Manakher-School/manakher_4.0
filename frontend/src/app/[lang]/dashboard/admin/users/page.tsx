@@ -229,15 +229,17 @@ export default function UsersPage() {
       try {
         const [studentsRes, sectionsRes] = await Promise.all([
           pb.collection("users").getFullList<Student>({
-            filter: 'role = "student" && email != "student@school.edu"',
+            filter: `role = "student"`,
             expand: "sections",
             sort: "name_ar",
           }),
           pb.collection("class_sections").getFullList<ClassSection>({ sort: "grade_order,section_ar" }),
         ]);
         console.log(`[LOAD_STUDENTS] Fetched ${studentsRes.length} students`);
-        setStudentsData({ items: studentsRes, sections: sectionsRes });
-        console.log(`[LOAD_STUDENTS] Updated state`);
+        // Filter out the test student in memory (don't rely on PocketBase filter)
+        const filteredStudents = studentsRes.filter(s => s.email !== "student@school.edu");
+        setStudentsData({ items: filteredStudents, sections: sectionsRes });
+        console.log(`[LOAD_STUDENTS] Updated state with ${filteredStudents.length} students after filtering test student`);
       } catch (err) {
         console.error(`[LOAD_STUDENTS] Error:`, err);
         studentsCrud.setError("Failed to load students");
@@ -579,38 +581,30 @@ export default function UsersPage() {
         
         console.log(`[WIZARD] Starting to create ${importStudents.length} students...`);
         
-        for (const student of importStudents) {
-          try {
-            console.log(`[WIZARD] Creating student: ${student.name_ar} (${student.email})`);
-            
-            // Check if email already exists
-            const existingEmail = await pb.collection("users").getFullList({
-              filter: `email = "${student.email}"`
-            });
-            
-            if (existingEmail.length > 0) {
-              throw new Error(`${locale === "ar" ? "البريد الإلكتروني موجود بالفعل" : "Email already exists"}: ${student.email}`);
-            }
-            
-            // Create student
-            const newStudent = await pb.collection("users").create({
-              name_ar: student.name_ar,
-              name_en: student.name_en,
-              email: student.email,
-              password: student.password,
-              passwordConfirm: student.password,
-              role: "student",
-              sections: [student.section_id],
-              emailVisibility: false,
-            });
-            console.log(`[WIZARD] Successfully created student: ${newStudent.id}`);
-            created++;
-          } catch (err) {
-            failed++;
-            failedNames.push(student.name_ar);
-            console.error(`Failed to create student ${student.name_ar}:`, err);
-          }
-        }
+         for (const student of importStudents) {
+           try {
+             console.log(`[WIZARD] Creating student: ${student.name_ar} (${student.email})`);
+             
+             // Create student (PocketBase will validate email uniqueness)
+             const newStudent = await pb.collection("users").create({
+               name_ar: student.name_ar,
+               name_en: student.name_en,
+               email: student.email,
+               password: student.password,
+               passwordConfirm: student.password,
+               role: "student",
+               sections: [student.section_id],
+               emailVisibility: false,
+             });
+             console.log(`[WIZARD] Successfully created student: ${newStudent.id}`);
+             created++;
+           } catch (err: any) {
+             failed++;
+             failedNames.push(student.name_ar);
+             const errorMsg = err?.message || String(err);
+             console.error(`[WIZARD] Failed to create student ${student.name_ar}:`, errorMsg);
+           }
+         }
         
         console.log(`[WIZARD] Created ${created} out of ${importStudents.length} students`);
         

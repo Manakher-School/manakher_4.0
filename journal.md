@@ -10,7 +10,7 @@ It contains a short and clear to-do list of milestones.
 **PERMANENT RULE - CONTEXT WINDOW PROTECTION:**
 
 🚫 **AI AGENT MUST NEVER:**
-- Continue working when token usage exceeds 100,000 tokens (~70% of 200,000 max)
+- Continue working when token usage exceeds 100,000 tokens (when the context window is ~70%)
 - Hallucinate or guess context from older sessions
 - Lose track of current iteration progress
 
