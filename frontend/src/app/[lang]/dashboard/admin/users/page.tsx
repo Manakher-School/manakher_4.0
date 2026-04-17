@@ -435,53 +435,82 @@ export default function UsersPage() {
      }
    }
 
-   async function handleCsvImport() {
-     if (!csvFile) return;
-     setCsvImporting(true);
-     setCsvError(null);
-     try {
-       const csvContent = await readFileAsText(csvFile);
-       const rows = parseStudentCSV(csvContent);
-       
-       // Validate all section_ids exist
-       const validSectionIds = studentsData.sections.map(s => s.id);
-       for (const row of rows) {
-         if (!validSectionIds.includes(row.section_id)) {
-           throw new Error(`Invalid section ID in row: ${row.section_id}`);
-         }
-       }
-       
-       // Create students
-       let created = 0;
-       for (const row of rows) {
-         try {
-           await pb.collection("users").create({
-             name_ar: row.name_ar,
-             name_en: row.name_en,
-             email: row.email,
-             password: row.password,
-             passwordConfirm: row.password,
-             role: "student",
-             sections: [row.section_id],
-             emailVisibility: true,
-           });
-           created++;
-         } catch (err) {
-           console.error(`Failed to create student ${row.email}:`, err);
-         }
-       }
-       
-       await alert(`Successfully imported ${created} out of ${rows.length} students`);
-       setCsvFile(null);
-       setShowCsvImport(false);
-       await loadStudents();
-     } catch (err) {
-       const errorMsg = err instanceof Error ? err.message : String(err);
-       setCsvError(errorMsg);
-     } finally {
-       setCsvImporting(false);
-     }
-   }
+    async function handleCsvImport() {
+      if (!csvFile) return;
+      setCsvImporting(true);
+      setCsvError(null);
+      try {
+        const csvContent = await readFileAsText(csvFile);
+        const rows = parseStudentCSV(csvContent);
+        
+        // Validate we have data
+        if (!rows || rows.length === 0) {
+          throw new Error(locale === "ar" ? "لا توجد بيانات صحيحة في الملف" : "No valid data found in file");
+        }
+
+        // Show preview and allow user to confirm
+        const previewCount = Math.min(rows.length, 5);
+        const previewList = rows.slice(0, previewCount)
+          .map((r, i) => `${i + 1}. ${r.name_ar}`)
+          .join('\n');
+        
+        const confirmMsg = locale === "ar" 
+          ? `سيتم إنشاء ${rows.length} طالب/طالبة جديد/جديدة:\n\n${previewList}${rows.length > 5 ? `\n... و ${rows.length - 5} آخرين` : ''}\n\nهل تريد المتابعة؟`
+          : `Will create ${rows.length} new students:\n\n${previewList}${rows.length > 5 ? `\n... and ${rows.length - 5} more` : ''}\n\nContinue?`;
+        
+        if (!(await confirm(confirmMsg))) {
+          setCsvImporting(false);
+          return;
+        }
+
+        // Create students - use auto-generated email and password
+        let created = 0;
+        let failed = 0;
+        const failedNames: string[] = [];
+        
+        for (const row of rows) {
+          try {
+            // Generate email from name
+            const sanitizedName = row.name_ar
+              .replace(/\s+/g, '_')
+              .replace(/[^\u0600-\u06FF\w_]/g, '')
+              .toLowerCase();
+            const email = `${sanitizedName}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}@school.local`;
+            const password = Math.random().toString(36).slice(-8);
+            
+            await pb.collection("users").create({
+              name_ar: row.name_ar,
+              name_en: row.name_ar, // Use Arabic name as fallback for English
+              email: email,
+              password: password,
+              passwordConfirm: password,
+              role: "student",
+              sections: studentsData.sections.length > 0 ? [studentsData.sections[0].id] : [],
+              emailVisibility: false,
+            });
+            created++;
+          } catch (err) {
+            failed++;
+            failedNames.push(row.name_ar);
+            console.error(`Failed to create student ${row.name_ar}:`, err);
+          }
+        }
+        
+        const resultMsg = locale === "ar"
+          ? `تم إنشاء ${created} من أصل ${rows.length} طالب/طالبة بنجاح${failed > 0 ? `\n\nفشل في إنشاء: ${failedNames.slice(0, 3).join(', ')}${failedNames.length > 3 ? ' وآخرين' : ''}` : ''}`
+          : `Successfully created ${created} out of ${rows.length} students${failed > 0 ? `\n\nFailed: ${failedNames.slice(0, 3).join(', ')}${failedNames.length > 3 ? ' and others' : ''}` : ''}`;
+        
+        await alert(resultMsg);
+        setCsvFile(null);
+        setShowCsvImport(false);
+        await loadStudents();
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        setCsvError(errorMsg);
+      } finally {
+        setCsvImporting(false);
+      }
+    }
 
   const filteredTeachers = teachersData.items.filter(t =>
     `${t.name_ar} ${t.name_en} ${t.email}`.toLowerCase().includes(teachersFilter.state.searchTerm.toLowerCase())
@@ -877,42 +906,63 @@ export default function UsersPage() {
                    </button>
                  </div>
 
-                 <div className="space-y-4">
-                   <div className="text-sm text-[var(--color-ink-secondary)]">
-                     <p className="mb-2">Required CSV columns:</p>
-                     <ul className="list-disc list-inside space-y-1 text-xs">
-                       <li><code>name_ar</code> - Arabic name</li>
-                       <li><code>name_en</code> - English name</li>
-                       <li><code>email</code> - Email address</li>
-                       <li><code>password</code> - Initial password</li>
-                       <li><code>section_id</code> - PocketBase section ID</li>
-                     </ul>
-                   </div>
+                  <div className="space-y-4">
+                    <div className="text-sm text-[var(--color-ink-secondary)]">
+                      <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "تنسيقات مقبولة:" : "Accepted formats:"}</p>
+                      <ul className="list-disc list-inside space-y-1 text-xs mb-3">
+                        <li>CSV (.csv)</li>
+                        <li>Excel (.xlsx, .xls)</li>
+                        <li>Google Sheets (exported as CSV)</li>
+                      </ul>
+                      <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "العمود المطلوب:" : "Required column:"}</p>
+                      <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li><code>الاسم</code> {locale === "ar" ? "- الاسم بالعربية" : "- Arabic name"}</li>
+                      </ul>
+                      <p className="mt-3 text-xs text-[var(--color-ink-secondary)]">{locale === "ar" ? "سيتم استخراج الأسماء من العمود 'الاسم' فقط وتخطي أي أعمدة أخرى." : "Only the 'الاسم' column will be extracted. Other columns are ignored."}</p>
+                    </div>
 
-                   <div className="rounded-lg border-2 border-dashed border-[var(--color-border)] p-4 text-center cursor-pointer hover:border-[var(--color-accent)]"
-                     onClick={() => {
-                       const input = document.createElement('input');
-                       input.type = 'file';
-                       input.accept = '.csv';
-                       input.onchange = (e) => {
-                         const file = (e.target as HTMLInputElement).files?.[0];
-                         if (file) setCsvFile(file);
-                       };
-                       input.click();
-                     }}
-                   >
-                     {csvFile ? (
-                       <div>
-                         <p className="text-sm font-semibold text-[var(--color-accent)]">{csvFile.name}</p>
-                         <p className="text-xs text-[var(--color-ink-secondary)]">Click to change</p>
-                       </div>
-                     ) : (
-                       <div>
-                         <p className="text-sm font-semibold text-[var(--color-ink)]">Click to select CSV file</p>
-                         <p className="text-xs text-[var(--color-ink-secondary)]">or drag & drop</p>
-                       </div>
-                     )}
-                   </div>
+                    <div className="rounded-lg border-2 border-dashed border-[var(--color-border)] p-4 text-center cursor-pointer hover:border-[var(--color-accent)]"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = '.csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv';
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (file) {
+                            // Validate file type
+                            const validTypes = ['.csv', '.xlsx', '.xls'];
+                            const validMimes = [
+                              'text/csv',
+                              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                              'application/vnd.ms-excel'
+                            ];
+                            const fileName = file.name.toLowerCase();
+                            const isValidType = validTypes.some(ext => fileName.endsWith(ext)) || 
+                                               validMimes.includes(file.type);
+                            
+                            if (!isValidType) {
+                              setCsvError(locale === "ar" ? "نوع الملف غير مدعوم. يرجى استخدام CSV أو Excel." : "Unsupported file type. Please use CSV or Excel.");
+                              return;
+                            }
+                            setCsvFile(file);
+                            setCsvError(null);
+                          }
+                        };
+                        input.click();
+                      }}
+                    >
+                      {csvFile ? (
+                        <div>
+                          <p className="text-sm font-semibold text-[var(--color-accent)]">{csvFile.name}</p>
+                          <p className="text-xs text-[var(--color-ink-secondary)]">{locale === "ar" ? "اضغط لتغيير" : "Click to change"}</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-sm font-semibold text-[var(--color-ink)]">{locale === "ar" ? "اختر ملف CSV أو Excel" : "Select CSV or Excel file"}</p>
+                          <p className="text-xs text-[var(--color-ink-secondary)]">{locale === "ar" ? "أو اسحب وأفلت" : "or drag & drop"}</p>
+                        </div>
+                      )}
+                    </div>
 
                    {csvError && (
                      <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
