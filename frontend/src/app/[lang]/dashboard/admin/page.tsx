@@ -51,16 +51,16 @@ export default function AdminDashboard() {
       }
     }
     
-    // Load announcements
+    // Load announcements (paginated - max 50 to avoid memory bloat)
     async function loadAnnouncements() {
       if (!user) return;
       try {
-        // Admin can see all announcements
-        const allAnns = await pb.collection("announcements").getFullList<{id: string; title: string; body: string; created: string}>({
+        // Admin can see all announcements - fetch only first 50 sorted by date
+        const allAnns = await pb.collection("announcements").getList<{id: string; title: string; body: string; created: string}>(1, 50, {
           sort: "-created",
           expand: "author"
         });
-        setAnnouncements(allAnns);
+        setAnnouncements(allAnns.items);
       } catch (e) {
         console.error(e);
         setAnnouncements([]);
@@ -104,12 +104,12 @@ export default function AdminDashboard() {
        setAnnouncementForm({title: "", body: ""});
        setShowAnnouncementForm(false);
        
-       // Reload announcements
-       const allAnns = await pb.collection("announcements").getFullList<{id: string; title: string; body: string; created: string}>({
-         sort: "-created",
-         expand: "author"
-       });
-       setAnnouncements(allAnns);
+        // Reload announcements (paginated - max 50 to avoid memory bloat)
+        const allAnns = await pb.collection("announcements").getList<{id: string; title: string; body: string; created: string}>(1, 50, {
+          sort: "-created",
+          expand: "author"
+        });
+        setAnnouncements(allAnns.items);
      } catch (e) {
        console.error(e);
        await alert(locale === "ar" ? "فشل الحفظ. يرجى المحاولة مرة أخرى." : "Save failed. Please try again.");
@@ -128,12 +128,12 @@ export default function AdminDashboard() {
     if (!(await confirm(dict.dashboard.admin.announcements.confirmDelete))) return;
     await pb.collection("announcements").delete(id);
     
-    // Reload announcements
-    const allAnns = await pb.collection("announcements").getFullList<{id: string; title: string; body: string; created: string}>({
+    // Reload announcements (paginated - max 50 to avoid memory bloat)
+    const allAnns = await pb.collection("announcements").getList<{id: string; title: string; body: string; created: string}>(1, 50, {
       sort: "-created",
       expand: "author"
     });
-    setAnnouncements(allAnns);
+    setAnnouncements(allAnns.items);
   };
 
   return (

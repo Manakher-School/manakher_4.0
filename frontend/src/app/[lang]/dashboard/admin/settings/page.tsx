@@ -241,7 +241,8 @@ export default function SettingsPage() {
 
       const quizAttempts = await pb.collection("quiz_attempts").getList(1, 1);
       const avgScore = quizAttempts.totalItems > 0
-        ? (await pb.collection("quiz_attempts").getFullList()).reduce((sum: number, a: any) => sum + (a.score || 0), 0) / quizAttempts.totalItems
+        ? (await pb.collection("quiz_attempts").getList(1, 500, { sort: "-created" }))
+            .items.reduce((sum: number, a: any) => sum + (a.score || 0), 0) / quizAttempts.totalItems
         : 0;
 
       setMetrics({
