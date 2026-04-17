@@ -71,12 +71,19 @@ export default function SectionsPage() {
     e.preventDefault();
     setSaving(true);
     try {
+      // Validate required fields
+      if (!form.grade_ar.trim() || !form.grade_en.trim() || !form.grade_order || !form.section_ar.trim() || !form.section_en.trim()) {
+        await alert(locale === "ar" ? "يرجى ملء جميع الحقول" : "Please fill in all fields");
+        setSaving(false);
+        return;
+      }
+
       const data = {
-        grade_ar: form.grade_ar,
-        grade_en: form.grade_en,
+        grade_ar: form.grade_ar.trim(),
+        grade_en: form.grade_en.trim(),
         grade_order: Number(form.grade_order),
-        section_ar: form.section_ar,
-        section_en: form.section_en,
+        section_ar: form.section_ar.trim(),
+        section_en: form.section_en.trim(),
       };
       if (editingId) {
         await pb.collection("class_sections").update(editingId, data);
@@ -88,7 +95,21 @@ export default function SectionsPage() {
       closeForm();
       await load();
     } catch (error) {
-      await alert(locale === "ar" ? `خطأ: ${error instanceof Error ? error.message : "حدث خطأ ما"}` : `Error: ${error instanceof Error ? error.message : "Something went wrong"}`);
+      // Extract detailed error message from PocketBase error
+      let errorMsg = locale === "ar" ? "حدث خطأ ما" : "Something went wrong";
+      if (error instanceof Error) {
+        errorMsg = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        const err = error as any;
+        if (err.message) {
+          errorMsg = err.message;
+        } else if (err.response?.message) {
+          errorMsg = err.response.message;
+        } else if (err.data?.message) {
+          errorMsg = err.data.message;
+        }
+      }
+      await alert(locale === "ar" ? `خطأ: ${errorMsg}` : `Error: ${errorMsg}`);
     } finally {
       setSaving(false);
     }
