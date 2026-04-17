@@ -67,53 +67,56 @@ export default function SectionsPage() {
     setForm(EMPTY_FORM);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      // Validate required fields
-      if (!form.grade_ar.trim() || !form.grade_en.trim() || !form.grade_order || !form.section_ar.trim() || !form.section_en.trim()) {
-        await alert(locale === "ar" ? "يرجى ملء جميع الحقول" : "Please fill in all fields");
-        setSaving(false);
-        return;
-      }
+   async function handleSubmit(e: React.FormEvent) {
+     e.preventDefault();
+     setSaving(true);
+     try {
+       // Validate required fields (grade_order of 0 is valid)
+       if (!form.grade_ar.trim() || !form.grade_en.trim() || form.grade_order === "" || !form.section_ar.trim() || !form.section_en.trim()) {
+         await alert(locale === "ar" ? "يرجى ملء جميع الحقول" : "Please fill in all fields");
+         setSaving(false);
+         return;
+       }
 
-      const data = {
-        grade_ar: form.grade_ar.trim(),
-        grade_en: form.grade_en.trim(),
-        grade_order: Number(form.grade_order),
-        section_ar: form.section_ar.trim(),
-        section_en: form.section_en.trim(),
-      };
-      if (editingId) {
-        await pb.collection("class_sections").update(editingId, data);
-        await alert(locale === "ar" ? "تم تحديث الفصل بنجاح" : "Class updated successfully");
-      } else {
-        await pb.collection("class_sections").create(data);
-        await alert(locale === "ar" ? "تم إضافة الفصل بنجاح" : "Class added successfully");
-      }
-      closeForm();
-      await load();
-    } catch (error) {
-      // Extract detailed error message from PocketBase error
-      let errorMsg = locale === "ar" ? "حدث خطأ ما" : "Something went wrong";
-      if (error instanceof Error) {
-        errorMsg = error.message;
-      } else if (typeof error === 'object' && error !== null) {
-        const err = error as any;
-        if (err.message) {
-          errorMsg = err.message;
-        } else if (err.response?.message) {
-          errorMsg = err.response.message;
-        } else if (err.data?.message) {
-          errorMsg = err.data.message;
-        }
-      }
-      await alert(locale === "ar" ? `خطأ: ${errorMsg}` : `Error: ${errorMsg}`);
-    } finally {
-      setSaving(false);
-    }
-  }
+       const data = {
+         grade_ar: form.grade_ar.trim(),
+         grade_en: form.grade_en.trim(),
+         grade_order: Number(form.grade_order),
+         section_ar: form.section_ar.trim(),
+         section_en: form.section_en.trim(),
+       };
+       if (editingId) {
+         await pb.collection("class_sections").update(editingId, data);
+         await alert(locale === "ar" ? "تم تحديث الفصل بنجاح" : "Class updated successfully");
+       } else {
+         await pb.collection("class_sections").create(data);
+         await alert(locale === "ar" ? "تم إضافة الفصل بنجاح" : "Class added successfully");
+       }
+       closeForm();
+       await load();
+     } catch (error) {
+       // Extract detailed error message from PocketBase error
+       let errorMsg = locale === "ar" ? "حدث خطأ ما" : "Something went wrong";
+       if (error instanceof Error) {
+         errorMsg = error.message;
+         // Log to console for debugging
+         console.error("Class creation error:", error);
+       } else if (typeof error === 'object' && error !== null) {
+         const err = error as any;
+         if (err.message) {
+           errorMsg = err.message;
+         } else if (err.response?.message) {
+           errorMsg = err.response.message;
+         } else if (err.data?.message) {
+           errorMsg = err.data.message;
+         }
+         console.error("Class creation error object:", err);
+       }
+       await alert(locale === "ar" ? `خطأ: ${errorMsg}` : `Error: ${errorMsg}`);
+     } finally {
+       setSaving(false);
+     }
+   }
 
   async function handleDelete(id: string) {
     // Enhanced confirmation for cascade delete
