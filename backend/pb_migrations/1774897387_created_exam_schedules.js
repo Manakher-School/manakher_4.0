@@ -97,23 +97,22 @@ migrate((app) => {
         "system": false,
         "type": "text"
       },
-       {
-         "hidden": false,
-         "id": "select_exam_type",
-         "maxSelect": 1,
-         "name": "exam_type",
-         "presentable": false,
-         "required": true,
-         "system": false,
-         "type": "select",
-         "values": [
-           "month1",
-           "month2",
-           "month3",
-           "midterm",
-           "final"
-         ]
-       },
+        {
+          "hidden": false,
+          "id": "select_exam_type",
+          "maxSelect": 1,
+          "name": "exam_type",
+          "presentable": false,
+          "required": true,
+          "system": false,
+          "type": "select",
+          "values": [
+            "month1",
+            "month2",
+            "month3",
+            "final"
+          ]
+        },
       {
         "autogeneratePattern": "",
         "hidden": false,

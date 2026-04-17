@@ -386,8 +386,6 @@ export default function SubjectsExamsPage() {
         return t.exams?.typeMonth2 || "2nd Month";
       case "month3":
         return t.exams?.typeMonth3 || "3rd Month";
-      case "midterm":
-        return t.exams?.typeMidterm || "Mid Term";
       case "final":
         return t.exams?.typeFinal || "Final";
       default:
@@ -635,7 +633,6 @@ export default function SubjectsExamsPage() {
                       <option value="month1">{getExamTypeLabel("month1")}</option>
                       <option value="month2">{getExamTypeLabel("month2")}</option>
                       <option value="month3">{getExamTypeLabel("month3")}</option>
-                      <option value="midterm">{getExamTypeLabel("midterm")}</option>
                       <option value="final">{getExamTypeLabel("final")}</option>
                     </select>
                   </div>
