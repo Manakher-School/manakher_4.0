@@ -3012,3 +3012,67 @@ Fixed all 8 issues from test_report.txt to prepare for browser testing verificat
 3. `aef849a` - docs: Add Round 1 test plan and verification results
 
 ---
+
+## [INPROGRESS] Milestone 12: Round 2 Testing Fixes (All 5 Issues)
+
+### Overview
+Fixing all 5 issues from Round 2 test report. Issues 1-3 completed; Issues 4-5 (Settings page) in progress.
+
+**Round 2 Test Report Issues** (from test_report.txt lines 14-19):
+1. ✅ Creating class record fails with "faild to create record" alert
+2. ✅ CSV import was too strict (requiring all 5 fields)
+3. ✅ Fix alignment of search bar and its content everywhere
+4. 🔄 Navigation from settings page to other pages is broken
+5. 🔄 Can't edit school name on settings page
+
+#### Iteration Log
+
+**Iteration 1** (2026-04-17) - Issues 1-3 Complete:
+
+**Issue 1 - Class record creation fails:**
+- **What was done:**
+  - ✅ Added field validation to check all required fields are filled before submission
+  - ✅ Improved error handling to extract detailed error messages from PocketBase errors
+  - ✅ Shows specific error message instead of generic "faild to create record" alert
+  - File: `admin/sections/page.tsx`
+- **Build status:** Passed with zero TypeScript errors
+- **Commit:** `b742063`
+
+**Issue 2 - CSV import too strict:**
+- **What was done:**
+  - ✅ Rewrote `csv-parser.ts` to only extract "الاسم" (Arabic name) column
+  - ✅ Removed requirement for name_en, email, password, section_id - only needs Arabic name
+  - ✅ Added support for Excel (.xlsx, .xls), CSV, and Google Sheets exports
+  - ✅ Added preview before import showing first 5 names for confirmation
+  - ✅ Auto-generates email and password for each student
+  - ✅ Assigns students to first available section if multiple exist
+  - ✅ Shows detailed success/failure count with names of failed imports
+  - Files: `csv-parser.ts`, `users/page.tsx`
+- **Build status:** Passed with zero TypeScript errors
+- **Commit:** `4eb976a`
+
+**Issue 3 - Search bar alignment inconsistent:**
+- **What was done:**
+  - ✅ Fixed search icon positioning in `admin/students/page.tsx` (2 instances: global + per-section)
+  - ✅ Fixed search icon positioning in `teacher/sections/page.tsx` (2 instances: global + per-section)
+  - ✅ Standardized to RTL-safe positioning: `inset-y-0 inset-x-0 ms-3 pointer-events-none` across all pages
+  - ✅ Removed inconsistent `top-1/2 -translate-y-1/2` positioning
+  - ✅ Removed inline `style={{ insetInlineStart }}` in favor of `ms-3` utility class
+  - ✅ Applied same standard used in admin/teachers/page.tsx (which was already fixed in Round 1)
+  - Files: `admin/students/page.tsx`, `teacher/sections/page.tsx`
+- **Build status:** Passed with zero TypeScript errors
+- **Commit:** `df8df84`
+
+**Issue 4 & 5** (2026-04-17) - Settings page navigation & school name editing:
+- **Status:** IN PROGRESS - Need to test actual functionality
+  - Issue 4: Can't navigate FROM settings page to other pages (sidebar links)
+  - Issue 5: Can't edit and save school name on settings page
+- **Analysis so far:**
+  - Settings page at `/dashboard/admin/settings` exists and is fully implemented
+  - Has school name Arabic/English input fields (lines 624-635)
+  - Has save button that calls `updateSettings()` (line 684)
+  - Has persistent context using `useSettings()` hook (lines 6, 91)
+  - Sidebar should be clickable in admin layout - all links point to valid routes
+  - Need to test in browser to identify actual issue
+
+---
