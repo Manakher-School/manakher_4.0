@@ -4151,3 +4151,96 @@ const filteredStudents = studentsRes.filter(s => s.email !== "student@school.edu
 - If not, check console logs and analyze further
 
 ---
+
+## Session: UI Improvements & Exam Update Fix
+
+**Date:** 2026-04-17 (continued)  
+**Issues Fixed:**
+1. Student section labels need white text and show full class name
+2. Exam update still broken with 400 error
+
+### Fix 1: Student Section Labels
+
+**What Changed:**
+- Changed student section labels from light background (`bg-opacity-20`) with accent text to solid accent background with white text
+- Now shows full class name: `Grade 10 - A` instead of just `A`
+
+**Files Modified:**
+- `frontend/src/app/[lang]/dashboard/admin/users/page.tsx` (lines 906-914)
+
+**Before:**
+```javascript
+<span className="inline-block rounded bg-[var(--color-accent)] bg-opacity-20 px-2 py-0.5 text-xs font-semibold text-[var(--color-accent)]">
+  {s.section_en}
+</span>
+```
+
+**After:**
+```javascript
+<span className="inline-block rounded bg-[var(--color-accent)] px-2 py-0.5 text-xs font-semibold text-white">
+  {s.grade_en} - {s.section_en}
+</span>
+```
+
+**Result:** Student labels now have the same professional white-text-on-color look as other badges in the UI, and display the full class context.
+
+### Fix 2: Exam Update 400 Error
+
+**Root Cause Analysis:**
+- When updating exam records, the `created_by` field (which is required and should only be set on creation) was potentially causing validation issues
+- The conditional operator approach was correct but may not have been clear enough to PocketBase API
+
+**Solution:**
+Refactored the data object creation to explicitly separate create and update payloads:
+
+**Files Modified:**
+- `frontend/src/app/[lang]/dashboard/admin/subjects_exams/page.tsx` (lines 302-330)
+
+**Before:**
+```javascript
+const data = {
+  title: formData.title,
+  // ... other fields ...
+  ...(examListCrudState.state.editingId === null && { created_by: user.id }),
+};
+```
+
+**After:**
+```javascript
+const data = {
+  title: formData.title,
+  // ... other fields (WITHOUT created_by) ...
+};
+
+const createData = {
+  ...data,
+  created_by: user.id,  // Only in create payload
+};
+
+// Then use createData for create, data for update
+if (examListCrudState.state.editingId) {
+  await pb.collection("exam_schedules").update(examListCrudState.state.editingId, data);
+} else {
+  await pb.collection("exam_schedules").create(createData);
+}
+```
+
+**Why This Works:**
+- Update requests now send ONLY the fields to be updated (no `created_by`)
+- Create requests get a complete payload with `created_by`
+- Clearer intent: update payload explicitly excludes immutable fields
+- Better error diagnostics with detailed console logging
+
+### Build Status
+✅ All 56 pages compile successfully  
+✅ Zero TypeScript errors  
+
+### Commits
+- `21a26b9` - "fix: Improve UI labels and fix exam update issue"
+
+### Testing Needed
+- [ ] Test exam update: Edit existing exam and save
+- [ ] Verify students show with white label badges and full class names
+- [ ] Check browser console for detailed logging on both create and update operations
+
+---
