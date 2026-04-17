@@ -3877,3 +3877,46 @@ This properly allows `grade_order` of `0` as a valid value.
 ### Testing
 User can now create 'التمهيدي' (Kindergarten) class with `grade_order: 0` successfully.
 
+
+---
+
+## Session: Round 8 Completion - Imported Students Visibility Fix
+
+**Date:** 2026-04-17  
+**Task:** Fix Round 8 Issue 4 - Imported students not showing after successful import
+
+### Problem Analysis
+**Issue:** After successfully importing students via the wizard, the imported students were not visible on the Students list.
+
+**Root Cause:** 
+- Students WERE being created successfully in the database
+- `loadStudents()` was being called to refresh the list
+- BUT the UI remained on the "Teachers" tab
+- User had to manually click the "Students" tab to see the newly imported students
+
+### Solution Implemented
+**What was fixed:**
+- Added `setActiveTab("students")` after `loadStudents()` call in `handleWizardSubmit()` function
+- File: `frontend/src/app/[lang]/dashboard/admin/users/page.tsx` (line 618)
+- Now automatically switches to Students tab after successful import
+- Users immediately see their newly imported students without manual tab switching
+
+### Build & Verification
+✅ All 56 pages compile successfully  
+✅ Zero TypeScript errors  
+✅ Build successful
+
+### Commit
+- `e97919a` - "fix: Auto-switch to Students tab after successful import to show newly imported students"
+
+### Round 8 Final Status
+**ALL 4 ISSUES FIXED ✅**
+1. ✅ Import button text - "import students list" / "تحميل كشف الأسماء"
+2. ✅ Email format - @manakher.edu.jo (changed from @school.edu)
+3. ✅ Wizard font sizes - Increased for readability
+4. ✅ Imported students visibility - Auto-switch to Students tab after import
+
+### Next Steps
+- Continue testing subsequent rounds (Round 9+) if any issues remain
+- Verify all CRUD operations work correctly with new imported students
+
