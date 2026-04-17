@@ -160,7 +160,7 @@ export default function AdminDashboard() {
 
        {/* ── Stat cards ────────────────────────────────────────────── */}
        <div>
-         <h3 className="text-base font-black text-[var(--color-ink)] mb-6" style={{ letterSpacing: "-0.2px" }}>
+         <h3 className="text-base font-black text-[var(--color-ink)] mb-8" style={{ letterSpacing: "-0.2px" }}>
            {t.nav.overview}
          </h3>
          <div className="stat-card-group grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -177,18 +177,18 @@ export default function AdminDashboard() {
            <h3 className="text-xl font-black text-[var(--color-ink)]" style={{ letterSpacing: "-0.2px" }}>
              {dict.dashboard.admin.announcements.title}
            </h3>
-           <button 
-             onClick={() => {
-               setAnnouncementForm({title: "", body: ""});
-               setEditingAnnouncementId(null);
-               setShowAnnouncementForm(true);
-             }}
-             className="flex items-center gap-2 text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1"
-             aria-label={dict.dashboard.admin.announcements.add}
-           >
-             <Plus className="h-4 w-4" />
-             <span>{dict.dashboard.admin.announcements.add}</span>
-           </button>
+            <button 
+              onClick={() => {
+                setAnnouncementForm({title: "", body: ""});
+                setEditingAnnouncementId(null);
+                setShowAnnouncementForm(true);
+              }}
+              className="flex items-center gap-2 px-3 py-2 border-2 border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md transition-colors"
+              aria-label={dict.dashboard.admin.announcements.add}
+            >
+              <Plus className="h-4 w-4" />
+              <span>{dict.dashboard.admin.announcements.add}</span>
+            </button>
          </div>
          
          {/* Announcements Form */}

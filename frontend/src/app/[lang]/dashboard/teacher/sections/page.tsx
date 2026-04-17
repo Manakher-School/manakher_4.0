@@ -154,7 +154,7 @@ export default function TeacherSectionsPage() {
         <>
           {/* ── Global search ── */}
           <div className="relative">
-            <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
+            <Search className="absolute top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" style={{ insetInlineStart: "0.75rem" }} />
             <input
               type="search"
               value={globalQuery}
@@ -222,7 +222,7 @@ export default function TeacherSectionsPage() {
                       {/* Per-section search — only shown when NOT in global mode */}
                       {!globalActive && students.length > 0 && (
                         <div className="px-4 pt-3 pb-2 relative">
-                          <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
+                          <Search className="absolute top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" style={{ insetInlineStart: "1.25rem" }} />
                           <input
                             type="search"
                             value={localQuery}

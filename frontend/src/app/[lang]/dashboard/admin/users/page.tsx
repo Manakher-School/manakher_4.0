@@ -6,7 +6,7 @@ import { useDialog } from "@/context/dialog-context";
 import pb from "@/lib/pocketbase";
 import { Plus, Trash2, Pencil, Loader2, X, ChevronDown, Search, Upload } from "lucide-react";
 import { useCrudState, useFormState, useFilterState, useTabState } from "@/lib/hooks";
-import { parseStudentCSV, readFileAsText } from "@/lib/csv-parser";
+import { parseStudentFile } from "@/lib/csv-parser";
 
 interface Teacher {
   id: string;
@@ -440,8 +440,7 @@ export default function UsersPage() {
       setCsvImporting(true);
       setCsvError(null);
       try {
-        const csvContent = await readFileAsText(csvFile);
-        const rows = parseStudentCSV(csvContent);
+        const rows = await parseStudentFile(csvFile);
         
         // Validate we have data
         if (!rows || rows.length === 0) {
