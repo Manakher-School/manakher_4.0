@@ -199,6 +199,8 @@ export default function UsersPage() {
   }
   const [importStudents, setImportStudents] = useState<StudentImportData[]>([]);
   const [wizardError, setWizardError] = useState<string | null>(null);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const t_teachers = dict.dashboard.admin.teachers;
   const t_students = dict.dashboard.admin.students;
@@ -429,31 +431,84 @@ export default function UsersPage() {
     }
   }
 
-  async function handleStudentDelete(id: string) {
-    if (!(await confirm(t_students.confirmDelete))) return;
-    studentsCrud.setEditingId(id);
-    try {
-      // Cascade delete for student
-      const [submissions, attempts, comments, reactions] = await Promise.all([
-        pb.collection("submissions").getFullList({ filter: `student = "${id}"` }).catch(() => []),
-        pb.collection("quiz_attempts").getFullList({ filter: `student = "${id}"` }).catch(() => []),
-        pb.collection("comments").getFullList({ filter: `author = "${id}"` }).catch(() => []),
-        pb.collection("reactions").getFullList({ filter: `user = "${id}"` }).catch(() => []),
-      ]);
+   async function handleStudentDelete(id: string) {
+     if (!(await confirm(t_students.confirmDelete))) return;
+     studentsCrud.setEditingId(id);
+     try {
+       // Cascade delete for student
+       const [submissions, attempts, comments, reactions] = await Promise.all([
+         pb.collection("submissions").getFullList({ filter: `student = "${id}"` }).catch(() => []),
+         pb.collection("quiz_attempts").getFullList({ filter: `student = "${id}"` }).catch(() => []),
+         pb.collection("comments").getFullList({ filter: `author = "${id}"` }).catch(() => []),
+         pb.collection("reactions").getFullList({ filter: `user = "${id}"` }).catch(() => []),
+       ]);
 
-      for (const s of submissions) { try { await pb.collection("submissions").delete(s.id); } catch {} }
-      for (const a of attempts) { try { await pb.collection("quiz_attempts").delete(a.id); } catch {} }
-      for (const c of comments) { try { await pb.collection("comments").delete(c.id); } catch {} }
-      for (const r of reactions) { try { await pb.collection("reactions").delete(r.id); } catch {} }
+       for (const s of submissions) { try { await pb.collection("submissions").delete(s.id); } catch {} }
+       for (const a of attempts) { try { await pb.collection("quiz_attempts").delete(a.id); } catch {} }
+       for (const c of comments) { try { await pb.collection("comments").delete(c.id); } catch {} }
+       for (const r of reactions) { try { await pb.collection("reactions").delete(r.id); } catch {} }
 
-      await pb.collection("users").delete(id);
-       await loadStudents();
-     } catch (err) {
-       studentsCrud.setError(`Failed to delete student: ${err}`);
-     } finally {
-       studentsCrud.setEditingId(null);
-     }
-   }
+       await pb.collection("users").delete(id);
+        await loadStudents();
+      } catch (err) {
+        studentsCrud.setError(`Failed to delete student: ${err}`);
+      } finally {
+        studentsCrud.setEditingId(null);
+      }
+    }
+
+    async function handleBulkDeleteStudents() {
+      if (selectedStudentIds.size === 0) return;
+      const msg = locale === "ar" 
+        ? `هل تريد حذف ${selectedStudentIds.size} طالب/طالبة؟ سيتم أيضًا حذف جميع بيانات المرتبطة بهم.`
+        : `Delete ${selectedStudentIds.size} student(s)? All related data will also be deleted.`;
+      
+      if (!(await confirm(msg))) return;
+      
+      setIsDeleting(true);
+      try {
+        let deleted = 0;
+        let failed = 0;
+        
+        for (const id of selectedStudentIds) {
+          try {
+            // Cascade delete for each student
+            const [submissions, attempts, comments, reactions] = await Promise.all([
+              pb.collection("submissions").getFullList({ filter: `student = "${id}"` }).catch(() => []),
+              pb.collection("quiz_attempts").getFullList({ filter: `student = "${id}"` }).catch(() => []),
+              pb.collection("comments").getFullList({ filter: `author = "${id}"` }).catch(() => []),
+              pb.collection("reactions").getFullList({ filter: `user = "${id}"` }).catch(() => []),
+            ]);
+
+            for (const s of submissions) { try { await pb.collection("submissions").delete(s.id); } catch {} }
+            for (const a of attempts) { try { await pb.collection("quiz_attempts").delete(a.id); } catch {} }
+            for (const c of comments) { try { await pb.collection("comments").delete(c.id); } catch {} }
+            for (const r of reactions) { try { await pb.collection("reactions").delete(r.id); } catch {} }
+
+            await pb.collection("users").delete(id);
+            deleted++;
+          } catch (err) {
+            failed++;
+            console.error(`Failed to delete student ${id}:`, err);
+          }
+        }
+
+        await loadStudents();
+        setSelectedStudentIds(new Set());
+        
+        const resultMsg = locale === "ar"
+          ? `تم حذف ${deleted} طالب/طالبة بنجاح${failed > 0 ? ` (فشل ${failed})` : ""}`
+          : `Successfully deleted ${deleted} student(s)${failed > 0 ? ` (${failed} failed)` : ""}`;
+        
+        await alert(resultMsg);
+      } catch (err) {
+        console.error("Bulk delete error:", err);
+        await alert(locale === "ar" ? "خطأ في الحذف الجماعي" : "Bulk delete failed");
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+
 
     // Wizard Step 1: File upload
     async function handleFileUpload() {
@@ -888,53 +943,119 @@ export default function UsersPage() {
                </button>
             </div>
 
-          {studentsCrud.state.isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" />
-            </div>
-          ) : filteredStudents.length === 0 ? (
-            <p className="text-center py-8 text-[var(--color-ink-secondary)]">{t_students.empty}</p>
-          ) : (
-            <div className="space-y-3">
-              {filteredStudents.map(student => (
-                <div key={student.id} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{student.name_en}</h3>
-                      <p className="text-sm text-[var(--color-ink-secondary)]">{student.name_ar}</p>
-                       <p className="text-xs text-[var(--color-ink-placeholder)] mt-1">{student.email}</p>
-                       {student.expand?.sections?.length ? (
-                         <div className="mt-2 flex flex-wrap gap-1">
-                           {student.expand.sections.map(s => (
-                             <span key={s.id} className="inline-block rounded bg-[var(--color-accent)] px-2 py-0.5 text-xs font-semibold text-white">
-                               {s.grade_en} - {s.section_en}
-                             </span>
-                           ))}
+           {studentsCrud.state.isLoading ? (
+             <div className="flex items-center justify-center py-12">
+               <Loader2 className="h-6 w-6 animate-spin text-[var(--color-accent)]" />
+             </div>
+           ) : filteredStudents.length === 0 ? (
+             <p className="text-center py-8 text-[var(--color-ink-secondary)]">{t_students.empty}</p>
+           ) : (
+             <>
+               {/* Bulk Delete Toolbar */}
+               {selectedStudentIds.size > 0 && (
+                 <div className="mb-4 flex items-center justify-between gap-3 rounded-[var(--radius-md)] bg-[var(--color-surface-hover)] p-4 border border-[var(--color-border)]">
+                   <div className="text-sm font-semibold">
+                     {locale === "ar" 
+                       ? `تم تحديد ${selectedStudentIds.size} طالب/طالبة`
+                       : `${selectedStudentIds.size} student(s) selected`}
+                   </div>
+                   <div className="flex gap-2">
+                     <button
+                       onClick={() => setSelectedStudentIds(new Set())}
+                       className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-3 py-2 text-sm font-semibold text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-sunken)]"
+                     >
+                       {locale === "ar" ? "إلغاء" : "Deselect All"}
+                     </button>
+                     <button
+                       onClick={handleBulkDeleteStudents}
+                       disabled={isDeleting}
+                       className="flex items-center gap-2 rounded-[var(--radius-md)] bg-red-500 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+                     >
+                       {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
+                       {locale === "ar" ? "حذف المحددين" : "Delete Selected"}
+                     </button>
+                   </div>
+                 </div>
+               )}
+
+               <div className="space-y-3">
+                 {/* Select All Button */}
+                 {filteredStudents.length > 0 && (
+                   <div className="flex items-center gap-2 px-2">
+                     <input
+                       type="checkbox"
+                       checked={selectedStudentIds.size === filteredStudents.length && filteredStudents.length > 0}
+                       onChange={e => {
+                         if (e.target.checked) {
+                           setSelectedStudentIds(new Set(filteredStudents.map(s => s.id)));
+                         } else {
+                           setSelectedStudentIds(new Set());
+                         }
+                       }}
+                       className="h-4 w-4 cursor-pointer rounded border border-[var(--color-border)] accent-[var(--color-accent)]"
+                     />
+                     <label className="text-sm font-semibold text-[var(--color-ink)] cursor-pointer">
+                       {locale === "ar" ? "تحديد الكل" : "Select All"}
+                     </label>
+                   </div>
+                 )}
+
+                 {filteredStudents.map(student => (
+                   <div key={student.id} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-4">
+                     <div className="flex items-start justify-between gap-4">
+                       <div className="flex items-start gap-3 flex-1">
+                         <input
+                           type="checkbox"
+                           checked={selectedStudentIds.has(student.id)}
+                           onChange={e => {
+                             const newSet = new Set(selectedStudentIds);
+                             if (e.target.checked) {
+                               newSet.add(student.id);
+                             } else {
+                               newSet.delete(student.id);
+                             }
+                             setSelectedStudentIds(newSet);
+                           }}
+                           className="h-4 w-4 cursor-pointer rounded border border-[var(--color-border)] accent-[var(--color-accent)] mt-1 flex-shrink-0"
+                         />
+                         <div className="flex-1">
+                           <h3 className="font-semibold">{student.name_en}</h3>
+                           <p className="text-sm text-[var(--color-ink-secondary)]">{student.name_ar}</p>
+                            <p className="text-xs text-[var(--color-ink-placeholder)] mt-1">{student.email}</p>
+                            {student.expand?.sections?.length ? (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {student.expand.sections.map(s => (
+                                  <span key={s.id} className="inline-block rounded bg-[var(--color-accent)] px-2 py-0.5 text-xs font-semibold text-white">
+                                    {s.grade_en} - {s.section_en}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : null}
                          </div>
-                       ) : null}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openEditStudent(student)}
-                        className="rounded bg-[var(--color-accent)] p-2 text-white transition-opacity hover:opacity-80"
-                        title={c.edit}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleStudentDelete(student.id)}
-                        disabled={studentsCrud.state.editingId === student.id}
-                        className="rounded bg-red-500 p-2 text-white transition-opacity hover:opacity-80 disabled:opacity-50"
-                        title={c.delete}
-                      >
-                        {studentsCrud.state.editingId === student.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                       </div>
+                       <div className="flex gap-2 flex-shrink-0">
+                         <button
+                           onClick={() => openEditStudent(student)}
+                           className="rounded bg-[var(--color-accent)] p-2 text-white transition-opacity hover:opacity-80"
+                           title={c.edit}
+                         >
+                           <Pencil className="h-4 w-4" />
+                         </button>
+                         <button
+                           onClick={() => handleStudentDelete(student.id)}
+                           disabled={studentsCrud.state.editingId === student.id}
+                           className="rounded bg-red-500 p-2 text-white transition-opacity hover:opacity-80 disabled:opacity-50"
+                           title={c.delete}
+                         >
+                           {studentsCrud.state.editingId === student.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                         </button>
+                       </div>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             </>
+           )}
 
           {/* Student Form Modal */}
           {studentsCrud.state.showCreate && (
