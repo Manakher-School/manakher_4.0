@@ -33,7 +33,7 @@ async function seed() {
     ]);
     console.log(`✓ Created ${sections.length} class sections\n`);
     
-    // Create admin user
+    // Create admin user only (for testing purposes)
     console.log('Creating admin user...');
     const admin = await pb.collection('users').create({
       email: 'admin@manakher.edu.jo',
@@ -46,39 +46,9 @@ async function seed() {
     });
     console.log(`✓ Created admin user: ${admin.email}\n`);
     
-    // Create teacher user
-    console.log('Creating teacher user...');
-    const teacher = await pb.collection('users').create({
-      email: 'teacher@manakher.edu.jo',
-      password: 'Teacher123!',
-      passwordConfirm: 'Teacher123!',
-      name_ar: 'المعلمة سارة',
-      name_en: 'Sarah',
-      role: 'teacher',
-      verified: true,
-      subjects: [subjects[0].id, subjects[1].id] // Math and Science
-    });
-    console.log(`✓ Created teacher user: ${teacher.email}\n`);
-    
-     // Create student user
-     console.log('Creating student user...');
-     const student = await pb.collection('users').create({
-       email: 'student@manakher.edu.jo',
-       password: 'Student123!',
-       passwordConfirm: 'Student123!',
-       name_ar: 'الطالب أحمد',
-       name_en: 'Ahmed',
-       role: 'student',
-       verified: true,
-       sections: [sections[0].id] // 1st Grade A
-     });
-     console.log(`✓ Created student user: ${student.email}\n`);
-    
     console.log('✅ Database seeding complete!\n');
     console.log('=== Login Credentials ===');
-    console.log('Admin:   admin@manakher.edu.jo / Admin123!');
-    console.log('Teacher: teacher@manakher.edu.jo / Teacher123!');
-    console.log('Student: student@manakher.edu.jo / Student123!');
+    console.log('Admin: admin@manakher.edu.jo / Admin123!');
     console.log('');
     
   } catch (error) {
