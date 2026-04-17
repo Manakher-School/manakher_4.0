@@ -124,16 +124,20 @@ export default function SettingsPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
 
-  // ─── Initialize Settings ────────────────────────────────────────
+  // ─── Initialize Settings (once on mount) ────────────────────────────────────────
   useEffect(() => {
-    formState.setData({
-      schoolNameAr: settings.schoolNameAr,
-      schoolNameEn: settings.schoolNameEn,
-      enableComments: settings.enableComments,
-      enableReactions: settings.enableReactions,
-      enableQuizzes: settings.enableQuizzes,
-    });
-  }, [settings.schoolNameAr, settings.schoolNameEn, settings.enableComments, settings.enableReactions, settings.enableQuizzes]);
+    // Only sync from settings context on first load if form is empty
+    // This prevents infinite loops from continuous syncing
+    if (!formState.state.data.schoolNameAr && settings.schoolNameAr) {
+      formState.setData({
+        schoolNameAr: settings.schoolNameAr,
+        schoolNameEn: settings.schoolNameEn,
+        enableComments: settings.enableComments,
+        enableReactions: settings.enableReactions,
+        enableQuizzes: settings.enableQuizzes,
+      });
+    }
+  }, []); // Empty dependency array - only runs once on component mount
 
   // ─── Load Moderation Data ───────────────────────────────────────────
   useEffect(() => {
