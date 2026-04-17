@@ -129,3 +129,14 @@ Failed to update record.
 Next.js version: 16.2.1 (Turbopack)
 
 }
+
+
+###################################################################
+
+
+Round 8:
+- the import button text should be {ENG: "import students list", ARABIC: "تحميل كشف الأسماء"}.
+- the email should be in this format: first.last@manakher.edu.jo
+- the import wizard has a small font, make it bigger.
+- the imported students still not shown on the page after importing them successfully.
+
