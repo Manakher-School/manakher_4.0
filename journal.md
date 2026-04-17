@@ -3142,6 +3142,26 @@ Fixed all 5 issues from Round 2 test report + critical infinite loop bug discove
 - ✅ Issue 5: School name editing - FIXED (includes stale closure + infinite loop bugs)
 - ✅ Round 3 console errors - FIXED (infinite loop eliminated)
 
+**Iteration 4** (2026-04-17) - Round 3 Testing Fixes:
+- **What was done:**
+  - ✅ **Stats section gap:** Increased margin between title and stat cards (mb-6 → mb-8 in admin, teacher, student overviews)
+  - ✅ **Add announcement button:** Changed from plain text button to outlined button with border-2, hover effects, better visibility
+  - ✅ **CSV import ODS support:** 
+    - Installed `xlsx` library for multi-format support
+    - Rewrote `csv-parser.ts` with `parseExcelFile()` for .xlsx/.xls/.ods files
+    - Added `parseStudentFile()` function that auto-detects file type and calls appropriate parser
+    - Now accepts: CSV, Excel (.xlsx, .xls), ODS, Google Sheets exports
+  - ✅ **Search bar alignment:** Fixed icon positioning across all pages
+    - Problem: Using `inset-x-0` (stretches icon horizontally) + `ms-3` was misaligned
+    - Solution: Changed to `top-1/2 -translate-y-1/2` with `inset-inline-start` style only
+    - Applied fix to: admin/students/page.tsx (global + per-section), teacher/sections/page.tsx (global + per-section)
+  - Files modified: `admin/page.tsx`, `csv-parser.ts`, `admin/users/page.tsx`, `admin/students/page.tsx`, `teacher/sections/page.tsx`
+  - Build status: Passed with zero TypeScript errors
+  - Commit: `26b5e24`
+
+**Known Issues:**
+- "Creating a class still fails" - Still investigating. May be PocketBase API rules issue. Need user feedback on specific error message.
+
 **Next:** Await Round 4+ testing feedback
 
 ---
