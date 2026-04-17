@@ -36,46 +36,46 @@ interface ExamSubject {
 }
 
 interface ExamSchedule {
-  id: string;
-  title: string;
-  subject: string;
-  section: string;
-  exam_date: string;
-  start_time: string;
-  end_time: string;
-  exam_type: "midterm" | "final" | "quiz" | "practical";
-  notes?: string;
-  created_by: string;
-  expand?: {
-    subject?: ExamSubject;
-    section?: ExamSection;
-  };
+   id: string;
+   title: string;
+   subject: string;
+   section: string;
+   exam_date: string;
+   start_time: string;
+   end_time: string;
+   exam_type: "month1" | "month2" | "month3" | "midterm" | "final";
+   notes?: string;
+   created_by: string;
+   expand?: {
+     subject?: ExamSubject;
+     section?: ExamSection;
+   };
 }
 
 interface ExamFormData {
-  title: string;
-  subject: string;
-  section: string;
-  exam_date: string;
-  start_time: string;
-  end_time: string;
-  exam_type: "midterm" | "final" | "quiz" | "practical";
-  notes: string;
-}
+   title: string;
+   subject: string;
+   section: string;
+   exam_date: string;
+   start_time: string;
+   end_time: string;
+   exam_type: "month1" | "month2" | "month3" | "midterm" | "final";
+   notes: string;
+ }
 
 type TabType = "subjects" | "exams";
 
 const EMPTY_SUBJECT_FORM = { name_ar: "", name_en: "", code: "" };
 const EMPTY_EXAM_FORM: ExamFormData = {
-  title: "",
-  subject: "",
-  section: "",
-  exam_date: "",
-  start_time: "",
-  end_time: "",
-  exam_type: "midterm",
-  notes: "",
-};
+   title: "",
+   subject: "",
+   section: "",
+   exam_date: "",
+   start_time: "",
+   end_time: "",
+   exam_type: "month1",
+   notes: "",
+ };
 
 export default function SubjectsExamsPage() {
   const { user } = useAuth();
@@ -322,14 +322,16 @@ export default function SubjectsExamsPage() {
 
   const getExamTypeLabel = (type: string) => {
     switch (type) {
+      case "month1":
+        return t.exams?.typeMonth1 || "1st Month";
+      case "month2":
+        return t.exams?.typeMonth2 || "2nd Month";
+      case "month3":
+        return t.exams?.typeMonth3 || "3rd Month";
       case "midterm":
-        return t.exams?.typeMidterm || "Midterm";
+        return t.exams?.typeMidterm || "Mid Term";
       case "final":
         return t.exams?.typeFinal || "Final";
-      case "quiz":
-        return t.exams?.typeQuiz || "Quiz";
-      case "practical":
-        return t.exams?.typePractical || "Practical";
       default:
         return type;
     }
@@ -572,10 +574,11 @@ export default function SubjectsExamsPage() {
                       required
                       className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                     >
+                      <option value="month1">{getExamTypeLabel("month1")}</option>
+                      <option value="month2">{getExamTypeLabel("month2")}</option>
+                      <option value="month3">{getExamTypeLabel("month3")}</option>
                       <option value="midterm">{getExamTypeLabel("midterm")}</option>
                       <option value="final">{getExamTypeLabel("final")}</option>
-                      <option value="quiz">{getExamTypeLabel("quiz")}</option>
-                      <option value="practical">{getExamTypeLabel("practical")}</option>
                     </select>
                   </div>
 

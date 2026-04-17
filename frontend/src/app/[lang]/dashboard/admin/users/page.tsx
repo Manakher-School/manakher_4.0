@@ -210,24 +210,24 @@ export default function UsersPage() {
     }
   }
 
-  async function loadStudents() {
-    studentsCrud.setIsLoading(true);
-    try {
-      const [studentsRes, sectionsRes] = await Promise.all([
-        pb.collection("users").getFullList<Student>({
-          filter: 'role = "student"',
-          expand: "sections",
-          sort: "name_ar",
-        }),
-        pb.collection("class_sections").getFullList<ClassSection>({ sort: "grade_order,section_ar" }),
-      ]);
-      setStudentsData({ items: studentsRes, sections: sectionsRes });
-    } catch (err) {
-      studentsCrud.setError("Failed to load students");
-    } finally {
-      studentsCrud.setIsLoading(false);
-    }
-  }
+   async function loadStudents() {
+     studentsCrud.setIsLoading(true);
+     try {
+       const [studentsRes, sectionsRes] = await Promise.all([
+         pb.collection("users").getFullList<Student>({
+           filter: 'role = "student" && email != "student@school.edu"',
+           expand: "sections",
+           sort: "name_ar",
+         }),
+         pb.collection("class_sections").getFullList<ClassSection>({ sort: "grade_order,section_ar" }),
+       ]);
+       setStudentsData({ items: studentsRes, sections: sectionsRes });
+     } catch (err) {
+       studentsCrud.setError("Failed to load students");
+     } finally {
+       studentsCrud.setIsLoading(false);
+     }
+   }
 
   useEffect(() => {
     loadTeachers();
@@ -906,41 +906,43 @@ export default function UsersPage() {
                  </div>
 
                   <div className="space-y-4">
-                    <div className="text-sm text-[var(--color-ink-secondary)]">
-                      <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "تنسيقات مقبولة:" : "Accepted formats:"}</p>
-                      <ul className="list-disc list-inside space-y-1 text-xs mb-3">
-                        <li>CSV (.csv)</li>
-                        <li>Excel (.xlsx, .xls)</li>
-                        <li>Google Sheets (exported as CSV)</li>
-                      </ul>
-                      <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "العمود المطلوب:" : "Required column:"}</p>
-                      <ul className="list-disc list-inside space-y-1 text-xs">
-                        <li><code>الاسم</code> {locale === "ar" ? "- الاسم بالعربية" : "- Arabic name"}</li>
-                      </ul>
-                      <p className="mt-3 text-xs text-[var(--color-ink-secondary)]">{locale === "ar" ? "سيتم استخراج الأسماء من العمود 'الاسم' فقط وتخطي أي أعمدة أخرى." : "Only the 'الاسم' column will be extracted. Other columns are ignored."}</p>
-                    </div>
+                     <div className="text-sm text-[var(--color-ink-secondary)]">
+                       <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "تنسيقات مقبولة:" : "Accepted formats:"}</p>
+                       <ul className="list-disc list-inside space-y-1 text-xs mb-3">
+                         <li>CSV (.csv)</li>
+                         <li>Excel (.xlsx, .xls)</li>
+                         <li>ODS (.ods)</li>
+                         <li>Google Sheets (exported as CSV)</li>
+                       </ul>
+                       <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "العمود المطلوب:" : "Required column:"}</p>
+                       <ul className="list-disc list-inside space-y-1 text-xs">
+                         <li><code>الاسم</code> {locale === "ar" ? "- الاسم بالعربية" : "- Arabic name"}</li>
+                       </ul>
+                       <p className="mt-3 text-xs text-[var(--color-ink-secondary)]">{locale === "ar" ? "سيتم استخراج الأسماء من العمود 'الاسم' فقط وتخطي أي أعمدة أخرى." : "Only the 'الاسم' column will be extracted. Other columns are ignored."}</p>
+                     </div>
 
                     <div className="rounded-lg border-2 border-dashed border-[var(--color-border)] p-4 text-center cursor-pointer hover:border-[var(--color-accent)]"
                       onClick={() => {
                         const input = document.createElement('input');
                         input.type = 'file';
-                        input.accept = '.csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv';
+                        input.accept = '.csv,.xlsx,.xls,.ods,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/vnd.oasis.opendocument.spreadsheet';
                         input.onchange = (e) => {
                           const file = (e.target as HTMLInputElement).files?.[0];
                           if (file) {
                             // Validate file type
-                            const validTypes = ['.csv', '.xlsx', '.xls'];
+                            const validTypes = ['.csv', '.xlsx', '.xls', '.ods'];
                             const validMimes = [
                               'text/csv',
                               'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                              'application/vnd.ms-excel'
+                              'application/vnd.ms-excel',
+                              'application/vnd.oasis.opendocument.spreadsheet'
                             ];
                             const fileName = file.name.toLowerCase();
                             const isValidType = validTypes.some(ext => fileName.endsWith(ext)) || 
                                                validMimes.includes(file.type);
                             
                             if (!isValidType) {
-                              setCsvError(locale === "ar" ? "نوع الملف غير مدعوم. يرجى استخدام CSV أو Excel." : "Unsupported file type. Please use CSV or Excel.");
+                              setCsvError(locale === "ar" ? "نوع الملف غير مدعوم. يرجى استخدام CSV أو Excel أو ODS." : "Unsupported file type. Please use CSV, Excel, or ODS.");
                               return;
                             }
                             setCsvFile(file);

@@ -160,7 +160,7 @@ export default function AdminDashboard() {
 
        {/* ── Stat cards ────────────────────────────────────────────── */}
        <div>
-         <h3 className="text-base font-black text-[var(--color-ink)] mb-8" style={{ letterSpacing: "-0.2px" }}>
+         <h3 className="text-base font-black text-[var(--color-ink)] mb-12" style={{ letterSpacing: "-0.2px" }}>
            {t.nav.overview}
          </h3>
          <div className="stat-card-group grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

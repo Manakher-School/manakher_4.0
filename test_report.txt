@@ -55,7 +55,7 @@ Next.js version: 16.2.1 (Turbopack)
 
 
 Round 4:
-- Edit the name of the school still fails, I can't write anything in the text fields, even though the field state tells it's editable.
+- Edit the name of the school still fails, I can't write anything in the text fields, even though the field state tells it's editable (fix in round 3, thank you).
 - ## Error Type
 Console Error
 
@@ -76,4 +76,14 @@ Maximum update depth exceeded. This can happen when a component calls setState i
   56 |     }));
 
 Next.js version: 16.2.1 (Turbopack)
+
+
+################################################################
+
+
+Round 5:
+- There is a student visible in the students list, please remove them.
+- I still can't import .ods files yet.
+- The gap I requested still not visible.
+- Exam types must be {ENG: (1st month, 2nd month, 3rd month, mid term, final), ARABIC: (شهر أول، شهر ثاني، شهر ثالث،، منتصف الفصل، نهائي)}.
 - 
