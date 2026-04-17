@@ -70,21 +70,20 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const pb = getPocketBase();
 
       try {
-        // First, update local state immediately for optimistic update
-        setSettings((prev) => ({
-          ...prev,
+        // Get current settings to merge with new ones (don't use stale closure)
+        const currentSettings = settings;
+        const settingsData = {
+          ...currentSettings,
           ...newSettings,
-        }));
+        };
+
+        // First, update local state immediately for optimistic update
+        setSettings(settingsData);
 
         // Then persist to PocketBase
         const records = await pb.collection("platform_settings").getFullList({
           filter: `key = "school_info"`,
         });
-
-        const settingsData = {
-          ...settings,
-          ...newSettings,
-        };
 
         if (records.length > 0) {
           // Update existing record
