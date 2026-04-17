@@ -3840,3 +3840,40 @@ Added comprehensive checkpoint rule to handle context window management:
 - **Build Status:** All 56 pages compile, 0 errors
 - **Commits Pushed:** 1 major commit
 
+
+---
+
+## [COMPLETED] Critical Fix: Allow grade_order 0 for Class Creation (2026-04-17)
+
+### Issue
+User reported: "Adding a class still giving me the failed to create record, it happens when I try to create 'التمهيدي' class."
+
+**Root Cause:** The validation on line 75 of `sections/page.tsx` used `!form.grade_order` which treats `0` (zero) as falsy, preventing users from creating classes with `grade_order: 0` (Kindergarten).
+
+### Fix Applied
+Changed validation from:
+```javascript
+if (!form.grade_ar.trim() || !form.grade_en.trim() || !form.grade_order || !form.section_ar.trim() || !form.section_en.trim())
+```
+
+To:
+```javascript
+if (!form.grade_ar.trim() || !form.grade_en.trim() || form.grade_order === "" || !form.section_ar.trim() || !form.section_en.trim())
+```
+
+This properly allows `grade_order` of `0` as a valid value.
+
+### Additional Improvements
+- Added `console.error()` logging for better error debugging
+- Improved error object inspection to capture all PocketBase error formats
+- Better distinction between frontend validation and backend errors
+
+### Build Status
+✅ All 56 pages compile, 0 TypeScript errors
+
+### Commit
+- `b70ca26` - fix: Allow grade_order 0 in class creation and improve error reporting
+
+### Testing
+User can now create 'التمهيدي' (Kindergarten) class with `grade_order: 0` successfully.
+
