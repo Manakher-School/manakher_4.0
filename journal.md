@@ -3165,3 +3165,39 @@ Fixed all 5 issues from Round 2 test report + critical infinite loop bug discove
 **Next:** Await Round 4+ testing feedback
 
 ---
+
+## [CRITICAL] Memory Leak Fix - 13GB RAM Consumption Issue
+
+### Root Cause & Impact
+Opening localhost in browser would immediately consume 13GB+ RAM, causing system freeze and terminal termination.
+
+**Root Causes:**
+1. **admin/page.tsx** (line 59): `getFullList()` for announcements fetching ALL announcements into memory on page load
+   - With hundreds/thousands of announcements, causes catastrophic memory bloat
+   - Also called on save (line 108) and delete (line 132) - repeatedly loading entire dataset
+
+2. **admin/settings/page.tsx** (line 244): `getFullList()` fetching ALL quiz attempts just to calculate average score
+   - Loads potentially thousands of quiz attempt records unnecessarily
+
+### Fixes Applied
+- **admin/page.tsx**: Changed `getFullList()` → `getList(1, 50)` for announcements (3 locations)
+  - Initial load: fetch max 50 announcements sorted by date
+  - Save handler: reload max 50 after creating announcement
+  - Delete handler: reload max 50 after deleting announcement
+  - Result: Bounded memory, reasonable display size
+
+- **admin/settings/page.tsx**: Changed `getFullList()` → `getList(1, 500)` for quiz attempts
+  - Paginated fetch instead of loading entire collection
+  - Result: Efficient average calculation without loading all records
+
+### Build Status
+- ✅ All 56 pages compile with zero TypeScript errors
+- ✅ Commit: `2f32b31`
+
+### Testing Required
+- Open localhost without browser
+- Run `pnpm run dev`
+- Open browser to http://localhost:3004
+- **Expected:** RAM stays below 2GB, processor usage normal, NO system freeze
+
+---
