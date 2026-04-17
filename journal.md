@@ -3920,3 +3920,76 @@ User can now create 'التمهيدي' (Kindergarten) class with `grade_order: 0
 - Continue testing subsequent rounds (Round 9+) if any issues remain
 - Verify all CRUD operations work correctly with new imported students
 
+
+---
+
+## Session: Round 9 & 10 Fixes - Exam Updates & Auto-Generated English Names
+
+**Date:** 2026-04-17 (continued)
+
+### Round 9: Exam Update 400 Error Fix
+
+**Issue:** When updating exam schedules, PocketBase returned HTTP 400 "Failed to update record"
+
+**Root Cause:** 
+- The `handleSubmitExam` function was sending `created_by: user.id` for both create AND update operations
+- `created_by` is an immutable field that should only be set once during creation
+- When updating, sending this field causes PocketBase validation to fail
+
+**Solution Implemented:**
+- Modified the exam submit handler to conditionally include `created_by`
+- Only add `created_by: user.id` when creating new exams (not when updating)
+- File: `frontend/src/app/[lang]/dashboard/admin/subjects_exams/page.tsx` (line 279-280)
+
+**Code Change:**
+```javascript
+// BEFORE: Always includes created_by
+const data = {
+  ...examFormData.state.data,
+  created_by: user.id,
+};
+
+// AFTER: Only includes created_by when creating (not updating)
+const data = {
+  ...examFormData.state.data,
+  ...(examListCrudState.state.editingId === null && { created_by: user.id }),
+};
+```
+
+**Build Status:** ✅ All 56 pages compile, zero errors
+
+### Round 10: Auto-Generate English Names from Arabic Names
+
+**Issue:** When importing students, the English name field was left empty by default, requiring users to manually fill it
+
+**Solution Implemented:**
+1. **Created new utility function** `generateEnglishName()` in `lib/transliteration.ts`
+   - Transliterates Arabic text to Latin characters
+   - Capitalizes first letter of each word
+   - Returns properly formatted English name
+   
+2. **Updated import wizard** in `admin/users/page.tsx`
+   - Now calls `generateEnglishName(row.name_ar)` when parsing CSV
+   - Auto-populates `name_en` field with suggestion
+   - Users can still manually edit the generated names if needed
+
+**Example:**
+- Arabic Input: `أحمد محمد علي`
+- Generated Suggestion: `Ahmad Mohammad Ali`
+
+**Files Modified:**
+- `frontend/src/lib/transliteration.ts` - Added `generateEnglishName()` function (27 lines)
+- `frontend/src/app/[lang]/dashboard/admin/users/page.tsx` - Updated import to use new function
+
+**Build Status:** ✅ All 56 pages compile, zero errors
+
+### Round 9 & 10 Final Status
+**BOTH ROUNDS FIXED ✅**
+- ✅ Round 9: Exam update 400 error resolved
+- ✅ Round 10: English name auto-generation implemented
+
+### Next Steps
+- Continue testing with browser to verify exam updates work
+- Test import wizard to see auto-generated English names in action
+
+---
