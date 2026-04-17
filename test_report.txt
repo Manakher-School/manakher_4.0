@@ -24,3 +24,77 @@ Round 2:
 Round 3:
 - The stats section in the overview page needs some extra gap between the title and the stats cards.
 - The "add announcement" button needs to be outline; to be more visible.
+- Creating a class stil fails.
+- Update importing student to accept ".ods" and any other excel sheets fromat for Linux, Mac, and Widows.
+- The content of the search bar is still not align well.
+- Navigation issue still there:
+1- ## Error Type
+Console Error
+
+## Error Message
+Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+
+
+    at useFormState.useCallback[setData] [as setData] (src/lib/hooks/useFormState.ts:53:5)
+    at SettingsPage.useEffect (src/app/[lang]/dashboard/admin/settings/page.tsx:129:15)
+
+## Code Frame
+  51 |
+  52 |   const setData = useCallback((data: Partial<T>) => {
+> 53 |     setState((prev) => ({
+     |     ^
+  54 |       ...prev,
+  55 |       data: { ...prev.data, ...data },
+  56 |     }));
+
+Next.js version: 16.2.1 (Turbopack)
+2- ## Error Type
+Console Error
+
+## Error Message
+Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+
+
+    at a (<anonymous>:null:null)
+    at <unknown> (src/app/[lang]/dashboard/admin/layout.tsx:51:13)
+    at Array.map (<anonymous>:null:null)
+    at AdminLayout (src/app/[lang]/dashboard/admin/layout.tsx:46:19)
+
+## Code Frame
+  49 |             : pathname.startsWith(href);
+  50 |           return (
+> 51 |             <Link
+     |             ^
+  52 |               key={key}
+  53 |               href={href}
+  54 |               aria-label={t[key]}
+
+Next.js version: 16.2.1 (Turbopack)
+
+
+################################################################
+
+
+Round 4:
+- Edit the name of the school still fails, I can't write anything in the text fields, even though the field state tells it's editable.
+- ## Error Type
+Console Error
+
+## Error Message
+Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+
+
+    at useFormState.useCallback[setData] [as setData] (src/lib/hooks/useFormState.ts:53:5)
+    at SettingsPage.useEffect (src/app/[lang]/dashboard/admin/settings/page.tsx:129:15)
+
+## Code Frame
+  51 |
+  52 |   const setData = useCallback((data: Partial<T>) => {
+> 53 |     setState((prev) => ({
+     |     ^
+  54 |       ...prev,
+  55 |       data: { ...prev.data, ...data },
+  56 |     }));
+
+Next.js version: 16.2.1 (Turbopack)
+- 

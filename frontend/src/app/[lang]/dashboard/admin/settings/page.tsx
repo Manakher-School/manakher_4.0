@@ -133,7 +133,7 @@ export default function SettingsPage() {
       enableReactions: settings.enableReactions,
       enableQuizzes: settings.enableQuizzes,
     });
-  }, [settings, formState]);
+  }, [settings.schoolNameAr, settings.schoolNameEn, settings.enableComments, settings.enableReactions, settings.enableQuizzes, formState.setData]);
 
   // ─── Load Moderation Data ───────────────────────────────────────────
   useEffect(() => {
