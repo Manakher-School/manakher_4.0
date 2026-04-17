@@ -3,6 +3,32 @@
 This document is the SINGLE SOURCE OF TRUTH for project progress. 
 It contains a short and clear to-do list of milestones.
 
+---
+
+## ⚠️ **CRITICAL RULE: NO LOCAL DATABASE MODIFICATIONS** ⚠️
+
+**FROM NOW ON - PERMANENT RULE:**
+
+🚫 **AI AGENT MUST NEVER:**
+- Modify local PocketBase database
+- Run seed scripts on local database
+- Create/delete/update records in local PocketBase
+- Make any database changes without explicit user request
+
+✅ **WHAT TO DO INSTEAD:**
+- IF database changes are needed: **ASK THE USER FIRST**
+- Wait for user to decide if they want to update PocketBase
+- User will provide explicit command/approval before any DB changes
+- ALL database modifications are USER-INITIATED ONLY
+
+**WHY THIS MATTERS:**
+- User has full control over their local database state
+- Prevents unwanted data loss or corruption
+- Ensures predictable, reproducible testing environment
+- User decides when/if to seed data, migrate, or reset DB
+
+---
+
 **Available Statuses:** `PLANNING` | `INPROGRESS` | `NOT_STARTED` | `HANDOFF` | `NOT_STARTED`
 
 ---
