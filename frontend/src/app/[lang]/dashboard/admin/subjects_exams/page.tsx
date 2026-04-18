@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
@@ -78,11 +78,12 @@ const EMPTY_EXAM_FORM: ExamFormData = {
  };
 
 export default function SubjectsExamsPage() {
-  const { user } = useAuth();
-  const { dict, locale } = useLocale();
-  const { alert, confirm } = useDialog();
-  const c = dict.common;
-  const t = dict.dashboard.admin;
+   const { user } = useAuth();
+   const { dict, locale } = useLocale();
+   const { alert, confirm } = useDialog();
+   const c = dict.common;
+   const t = dict.dashboard.admin;
+   const initRef = useRef(false);
 
   // ============ ACTIVE TAB STATE ============
   const tabState = useTabState("subjects" as TabType);
@@ -410,11 +411,14 @@ export default function SubjectsExamsPage() {
     }
   };
 
-  // ============ INITIAL LOAD ============
-  useEffect(() => {
-    loadSubjects();
-    loadExams();
-  }, [loadSubjects, loadExams]);
+   // ============ INITIAL LOAD ============
+   useEffect(() => {
+     if (initRef.current) return; // Only run once
+     initRef.current = true;
+     
+     loadSubjects();
+     loadExams();
+   }, [loadSubjects, loadExams]);
 
   const inputCls = "w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm placeholder:text-[var(--color-ink-placeholder)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]";
 
