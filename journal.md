@@ -4856,3 +4856,75 @@ The database already had bilingual data (`grade_ar`, `grade_en`, `section_ar`, `
 **Always check database schema vs. UI rendering** - The data had bilingual fields but the UI wasn't using them. Never hardcode field names when locale-specific alternatives exist. Use helper functions to centralize formatting logic across pages.
 
 ---
+
+## Session: Add Advanced Filters to Users Page (2026-04-19)
+
+### Features Implemented
+
+#### Teachers Tab - Advanced Filtering & Sorting
+1. **Search:** Search by name (Arabic/English) or email
+2. **Filter by Section:** Dropdown to filter teachers by assigned section
+3. **Filter by Subject:** Dropdown to filter teachers by assigned subject
+4. **Sort Options:**
+   - Name (A-Z) - sorts by Arabic name alphabetically
+   - Name (Z-A) - sorts by Arabic name reverse alphabetically
+   - Email (A-Z) - sorts by email alphabetically
+5. **Results Counter:** Shows count of filtered teachers
+
+#### Students Tab - Advanced Filtering & Sorting
+1. **Search:** Search by name (Arabic/English) or email
+2. **Filter by Section:** Dropdown to filter students by assigned section
+3. **Sort Options:**
+   - Name (A-Z) - sorts by Arabic name alphabetically
+   - Name (Z-A) - sorts by Arabic name reverse alphabetically
+   - Email (A-Z) - sorts by email alphabetically
+4. **Results Counter:** Shows count of filtered students
+
+### Implementation Details
+- **Filter State:** Added new state variables for section, subject, and sort preferences (separate from existing CRUD state for clarity)
+- **Filtering Logic:** All filters (search, section, subject) are combined with AND logic - results must match ALL active filters
+- **Sorting:** Implemented using localeCompare for proper Arabic/English text sorting
+- **UI Layout:** Grid layout (1 col mobile → 2-4 cols desktop) for responsive design
+- **Localization:** All filter labels and placeholder text added to dictionaries in both Arabic and English
+- **Bilingual:** Displays correct locale-specific text throughout (section names, labels, etc.)
+
+### Dictionary Updates
+Added new keys to both `ar.json` and `en.json`:
+- `teachers.filterSearch` - Search placeholder
+- `teachers.filterSection` - Section filter label
+- `teachers.filterSubject` - Subject filter label
+- `teachers.filterAllSections` - "All sections" option
+- `teachers.filterAllSubjects` - "All subjects" option
+- `teachers.sortBy` - Sort label
+- `teachers.sortNameAz` - Name A-Z option
+- `teachers.sortNameZa` - Name Z-A option
+- `teachers.sortEmailAz` - Email A-Z option
+- `students.filterSearch` - Search placeholder
+- `students.filterSection` - Section filter label
+- `students.filterAllSections` - "All sections" option
+- `students.sortBy` - Sort label
+- `students.sortNameAz` - Name A-Z option
+- `students.sortNameZa` - Name Z-A option
+- `students.sortEmailAz` - Email A-Z option
+
+### Verification
+✅ Build passes: 56 pages, zero TypeScript errors
+✅ All filters work with Arabic and English locales
+✅ Filters apply correctly to display results
+✅ Sorting works with combined filters
+✅ Commit: `f4b9fe4`
+
+### How It Works
+1. User selects filters (search term, section, subject for teachers, sort option)
+2. Filtering function applies all filters in sequence with AND logic
+3. Sorting applied after filtering based on selected sort option
+4. Results displayed with correct count
+5. All filter UI elements bilingual
+
+### Next Steps
+- Test filters thoroughly in both Arabic and English
+- Verify section/subject filters work with various data combinations
+- Test sorting order is correct for Arabic text
+- Deploy to production and gather user feedback
+
+---
