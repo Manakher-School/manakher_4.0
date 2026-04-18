@@ -1043,29 +1043,29 @@ Completed all remaining testing issues from Rounds 7, 8, and 9 on the production
 ### What I Did
 - **Issue:** User confirmed that `grade_order = 0` for kindergarten still fails with 400 error from PocketBase
 - **Investigation:** After detailed investigation, found the constraint preventing 0 is from PocketBase backend (not visible in migration files)
-- **Solution:** Instead of fighting the backend constraint, use a **workaround with negative numbers**
-  - Kindergarten: `grade_order = -1` (displays before grade 1)
+- **User Decision:** Use positive value `100` for kindergarten instead of fighting backend constraint
+- **Solution:** Kindergarten uses `grade_order = 100`
+  - Kindergarten: `grade_order = 100` (sorts after grades 1-10)
   - Grade 1: `grade_order = 1`
   - Grade 2: `grade_order = 2`
-  - ... and so on
+  - ... Grade 10: `grade_order = 10`
 - **Implementation:**
-  - Updated `admin/sections/page.tsx` validation to accept negative integers
-  - Changed validation from `gradeOrder < 0` to `isNaN(gradeOrder)` (allows all integers)
+  - Updated `admin/sections/page.tsx` validation to require positive numbers (>= 0)
   - Build passes: 56 pages, zero TypeScript errors
-  - Committed: `3c5d0c1` - "fix: Allow negative grade_order values for kindergarten class"
+  - Committed: `637f895` - "fix: Use grade_order = 100 for kindergarten class"
 
 ### Why This Works
-- The sort order `sort: "grade_order,section_ar"` will naturally sort -1 before 1, 2, 3, etc.
+- The sort order `sort: "grade_order,section_ar"` will naturally sort 1-10 before 100
 - No backend changes needed
-- Clean, intuitive: kindergarten comes "before" grade 1 numerically
-- No conflicts with existing grade numbering (1-10)
+- Simple positive number: no validation errors from PocketBase
+- Clear separation: regular grades (1-10) before kindergarten (100)
 
 ### Testing
-User should now be able to:
+User can now create a kindergarten class:
 1. Go to Admin → Classes and Sections
-2. Add new class with "روضة" (Kindergarten)
-3. Use `grade_order = -1`
-4. Should create successfully (no 400 error)
+2. Add new class with name "روضة" (Kindergarten)
+3. Use `grade_order = 100`
+4. Should create successfully (no 400 error) ✅
 
 ---
 

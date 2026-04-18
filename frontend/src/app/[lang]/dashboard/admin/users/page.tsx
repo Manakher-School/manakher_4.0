@@ -689,29 +689,42 @@ export default function UsersPage() {
         console.log(`[WIZARD] Starting to create ${importStudents.length} students...`);
         
          for (const student of importStudents) {
-           try {
-             console.log(`[WIZARD] Creating student: ${student.name_ar} (${student.email})`);
-             
-             // Create student (PocketBase will validate email uniqueness)
-             const newStudent = await pb.collection("users").create({
-               name_ar: student.name_ar,
-               name_en: student.name_en,
-               email: student.email,
-               password: student.password,
-               passwordConfirm: student.password,
-               role: "student",
-               sections: [student.section_id],
-               emailVisibility: false,
-             });
-             console.log(`[WIZARD] Successfully created student: ${newStudent.id}`);
-             created++;
-           } catch (err: any) {
-             failed++;
-             failedNames.push(student.name_ar);
-             const errorMsg = err?.message || String(err);
-             console.error(`[WIZARD] Failed to create student ${student.name_ar}:`, errorMsg);
-           }
-         }
+            try {
+              console.log(`[WIZARD] Creating student: ${student.name_ar} (${student.email})`);
+              
+              // Create student (PocketBase will validate email uniqueness)
+              const newStudent = await pb.collection("users").create({
+                name_ar: student.name_ar,
+                name_en: student.name_en,
+                email: student.email,
+                password: student.password,
+                passwordConfirm: student.password,
+                role: "student",
+                sections: [student.section_id],
+                emailVisibility: false,
+              });
+              console.log(`[WIZARD] Successfully created student: ${newStudent.id}`);
+              created++;
+            } catch (err: any) {
+              failed++;
+              failedNames.push(student.name_ar);
+              
+              // Extract detailed error message
+              let errorMsg = err?.message || String(err);
+              if (err?.data?.data) {
+                // PocketBase field validation errors
+                const fieldErrors = Object.entries(err.data.data)
+                  .map(([field, detail]: [string, any]) => `${field}: ${detail?.message || detail}`)
+                  .join(", ");
+                errorMsg = fieldErrors;
+              } else if (err?.response?.status === 400 && err?.data?.message) {
+                errorMsg = err.data.message;
+              }
+              
+              console.error(`[WIZARD] Failed to create student ${student.name_ar}:`, errorMsg);
+              console.error(`[WIZARD] Full error:`, err);
+            }
+          }
         
         console.log(`[WIZARD] Created ${created} out of ${importStudents.length} students`);
         
