@@ -178,6 +178,11 @@ export default function UsersPage() {
   const teachersForm = useFormState(EMPTY_TEACHER_FORM);
   const teachersFilter = useFilterState({ searchTerm: "", page: 1, perPage: 999 });
 
+  // Teachers filter state
+  const [teachersSectionFilter, setTeachersSectionFilter] = useState<string>("");
+  const [teachersSubjectFilter, setTeachersSubjectFilter] = useState<string>("");
+  const [teachersSortBy, setTeachersSortBy] = useState<"name-az" | "name-za" | "email-az">("name-az");
+
   // Teachers data state
   const [teachersData, setTeachersData] = useState<{ items: Teacher[]; sections: ClassSection[]; subjects: Subject[] }>({ items: [], sections: [], subjects: [] });
 
@@ -185,6 +190,10 @@ export default function UsersPage() {
   const studentsCrud = useCrudState();
   const studentsForm = useFormState(EMPTY_STUDENT_FORM);
   const studentsFilter = useFilterState({ searchTerm: "", page: 1, perPage: 999 });
+
+  // Students filter state
+  const [studentsSectionFilter, setStudentsSectionFilter] = useState<string>("");
+  const [studentsSortBy, setStudentsSortBy] = useState<"name-az" | "name-za" | "email-az">("name-az");
 
   // Students data state
   const [studentsData, setStudentsData] = useState<{ items: Student[]; sections: ClassSection[] }>({ items: [], sections: [] });
@@ -747,13 +756,56 @@ export default function UsersPage() {
       setWizardError(null);
     }
 
-  const filteredTeachers = teachersData.items.filter(t =>
-    `${t.name_ar} ${t.name_en} ${t.email}`.toLowerCase().includes(teachersFilter.state.searchTerm.toLowerCase())
-  );
+  const filteredTeachers = teachersData.items
+    .filter(t => {
+      // Search filter
+      const searchMatch = `${t.name_ar} ${t.name_en} ${t.email}`.toLowerCase().includes(teachersFilter.state.searchTerm.toLowerCase());
+      
+      // Section filter
+      const sectionMatch = !teachersSectionFilter || t.sections.includes(teachersSectionFilter);
+      
+      // Subject filter
+      const subjectMatch = !teachersSubjectFilter || t.subjects.includes(teachersSubjectFilter);
+      
+      return searchMatch && sectionMatch && subjectMatch;
+    })
+    .sort((a, b) => {
+      // Sort by selected option
+      switch (teachersSortBy) {
+        case "name-az":
+          return a.name_ar.localeCompare(b.name_ar);
+        case "name-za":
+          return b.name_ar.localeCompare(a.name_ar);
+        case "email-az":
+          return a.email.localeCompare(b.email);
+        default:
+          return 0;
+      }
+    });
 
-  const filteredStudents = studentsData.items.filter(s =>
-    `${s.name_ar} ${s.name_en} ${s.email}`.toLowerCase().includes(studentsFilter.state.searchTerm.toLowerCase())
-  );
+  const filteredStudents = studentsData.items
+    .filter(s => {
+      // Search filter
+      const searchMatch = `${s.name_ar} ${s.name_en} ${s.email}`.toLowerCase().includes(studentsFilter.state.searchTerm.toLowerCase());
+      
+      // Section filter
+      const sectionMatch = !studentsSectionFilter || s.sections.includes(studentsSectionFilter);
+      
+      return searchMatch && sectionMatch;
+    })
+    .sort((a, b) => {
+      // Sort by selected option
+      switch (studentsSortBy) {
+        case "name-az":
+          return a.name_ar.localeCompare(b.name_ar);
+        case "name-za":
+          return b.name_ar.localeCompare(a.name_ar);
+        case "email-az":
+          return a.email.localeCompare(b.email);
+        default:
+          return 0;
+      }
+    });
 
   return (
     <main className="flex-1 overflow-y-auto pb-24 px-6 pt-6">
@@ -781,29 +833,93 @@ export default function UsersPage() {
         </button>
       </div>
 
-      {/* Teachers Tab */}
-      {tab === "teachers" && (
-        <div>
-            <div className="mb-4 flex items-center justify-center gap-3">
-              <div className="flex-1 max-w-md relative">
-                <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder={c.search}
-                  value={teachersFilter.state.searchTerm}
-                  onChange={e => teachersFilter.setSearchTerm(e.target.value)}
-                  className="w-full ps-10 pe-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                />
+       {/* Teachers Tab */}
+       {tab === "teachers" && (
+         <div>
+             <div className="mb-4 flex items-center justify-center gap-3">
+               <div className="flex-1 max-w-md relative">
+                 <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
+                 <input
+                   type="text"
+                   placeholder={t_teachers.filterSearch}
+                   value={teachersFilter.state.searchTerm}
+                   onChange={e => teachersFilter.setSearchTerm(e.target.value)}
+                   className="w-full ps-10 pe-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                 />
+               </div>
+              <button
+                onClick={openCreateTeacher}
+                 aria-label={t_teachers.add}
+                className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+              >
+                <Plus className="h-4 w-4" />
+                {t_teachers.add}
+              </button>
+            </div>
+
+            {/* Teachers Filters */}
+            <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Section Filter */}
+              <div>
+                <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">
+                  {t_teachers.filterSection}
+                </label>
+                <select
+                  value={teachersSectionFilter}
+                  onChange={(e) => setTeachersSectionFilter(e.target.value)}
+                  className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                >
+                  <option value="">{t_teachers.filterAllSections}</option>
+                  {teachersData.sections.map(section => (
+                    <option key={section.id} value={section.id}>
+                      {formatSection(section, locale)}
+                    </option>
+                  ))}
+                </select>
               </div>
-             <button
-               onClick={openCreateTeacher}
-                aria-label={t_teachers.add}
-               className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-             >
-               <Plus className="h-4 w-4" />
-               {t_teachers.add}
-             </button>
-           </div>
+
+              {/* Subject Filter */}
+              <div>
+                <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">
+                  {t_teachers.filterSubject}
+                </label>
+                <select
+                  value={teachersSubjectFilter}
+                  onChange={(e) => setTeachersSubjectFilter(e.target.value)}
+                  className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                >
+                  <option value="">{t_teachers.filterAllSubjects}</option>
+                  {teachersData.subjects.map(subject => (
+                    <option key={subject.id} value={subject.id}>
+                      {locale === "ar" ? subject.name_ar : subject.name_en}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sort By */}
+              <div>
+                <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">
+                  {t_teachers.sortBy}
+                </label>
+                <select
+                  value={teachersSortBy}
+                  onChange={(e) => setTeachersSortBy(e.target.value as "name-az" | "name-za" | "email-az")}
+                  className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                >
+                  <option value="name-az">{t_teachers.sortNameAz}</option>
+                  <option value="name-za">{t_teachers.sortNameZa}</option>
+                  <option value="email-az">{t_teachers.sortEmailAz}</option>
+                </select>
+              </div>
+
+              {/* Results count */}
+              <div className="flex items-end">
+                <div className="text-xs text-[var(--color-ink-secondary)]">
+                  {filteredTeachers.length} {t_teachers.title}
+                </div>
+              </div>
+            </div>
 
           {teachersCrud.state.isLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -955,36 +1071,81 @@ export default function UsersPage() {
       )}
 
        {/* Students Tab */}
-       {tab === "students" && (
-          <div>
-            <div className="mb-4 flex items-center justify-center gap-3 flex-wrap">
-              <div className="flex-1 max-w-md relative">
-                <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder={c.search}
-                  value={studentsFilter.state.searchTerm}
-                  onChange={e => studentsFilter.setSearchTerm(e.target.value)}
-                  className="w-full ps-10 pe-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                />
-              </div>
-              <button
-                onClick={openCreateStudent}
-                 aria-label={t_students.add}
-                className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-              >
-                <Plus className="h-4 w-4" />
-                {t_students.add}
-              </button>
+        {tab === "students" && (
+           <div>
+             <div className="mb-4 flex items-center justify-center gap-3 flex-wrap">
+               <div className="flex-1 max-w-md relative">
+                 <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
+                 <input
+                   type="text"
+                   placeholder={t_students.filterSearch}
+                   value={studentsFilter.state.searchTerm}
+                   onChange={e => studentsFilter.setSearchTerm(e.target.value)}
+                   className="w-full ps-10 pe-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                 />
+               </div>
                <button
-                 onClick={() => setShowCsvImport(true)}
-                  aria-label="Import students from CSV"
-                 className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-role-admin-bold)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                 onClick={openCreateStudent}
+                  aria-label={t_students.add}
+                 className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-accent)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                >
-                  <Upload className="h-4 w-4" />
-                  {dict.dashboard.admin.students.importWizard.buttonText}
+                 <Plus className="h-4 w-4" />
+                 {t_students.add}
                </button>
-            </div>
+                <button
+                  onClick={() => setShowCsvImport(true)}
+                   aria-label="Import students from CSV"
+                  className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-role-admin-bold)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                >
+                   <Upload className="h-4 w-4" />
+                   {dict.dashboard.admin.students.importWizard.buttonText}
+                </button>
+             </div>
+
+             {/* Students Filters */}
+             <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+               {/* Section Filter */}
+               <div>
+                 <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">
+                   {t_students.filterSection}
+                 </label>
+                 <select
+                   value={studentsSectionFilter}
+                   onChange={(e) => setStudentsSectionFilter(e.target.value)}
+                   className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                 >
+                   <option value="">{t_students.filterAllSections}</option>
+                   {studentsData.sections.map(section => (
+                     <option key={section.id} value={section.id}>
+                       {formatSection(section, locale)}
+                     </option>
+                   ))}
+                 </select>
+               </div>
+
+               {/* Sort By */}
+               <div>
+                 <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">
+                   {t_students.sortBy}
+                 </label>
+                 <select
+                   value={studentsSortBy}
+                   onChange={(e) => setStudentsSortBy(e.target.value as "name-az" | "name-za" | "email-az")}
+                   className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                 >
+                   <option value="name-az">{t_students.sortNameAz}</option>
+                   <option value="name-za">{t_students.sortNameZa}</option>
+                   <option value="email-az">{t_students.sortEmailAz}</option>
+                 </select>
+               </div>
+
+               {/* Results count */}
+               <div className="flex items-end">
+                 <div className="text-xs text-[var(--color-ink-secondary)]">
+                   {filteredStudents.length} {t_students.title}
+                 </div>
+               </div>
+             </div>
 
            {studentsCrud.state.isLoading ? (
              <div className="flex items-center justify-center py-12">
