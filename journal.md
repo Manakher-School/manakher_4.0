@@ -4928,3 +4928,43 @@ Added new keys to both `ar.json` and `en.json`:
 - Deploy to production and gather user feedback
 
 ---
+
+## Testing Issue: Kindergarten Class Creation with grade_order = 0 (2026-04-19)
+
+### Issue Reported
+User attempted to create a kindergarten class ("روضة") with grade_order = 0 but received a PocketBase 400 error: "Failed to create record"
+
+### Investigation
+The 400 error suggests a backend validation issue. Possible causes:
+1. PocketBase `class_sections` collection has a minimum value constraint on `grade_order` (requires > 0)
+2. A unique constraint is failing on the combination of fields
+3. Backend validation rule rejecting the record
+
+### Frontend Improvements Applied
+Added enhanced validation to the sections form:
+1. **Grade Order Validation:** Ensures grade_order is a non-negative number (including 0 for kindergarten)
+2. **Duplicate Check:** Validates no duplicate sections exist (same grade + section)
+3. **Better Error Messages:** Displays specific validation errors to users
+4. **Console Logging:** Enhanced error logging for debugging
+
+### Code Changes
+**File:** `frontend/src/app/[lang]/dashboard/admin/sections/page.tsx`
+- Added validation to check if grade_order is NaN or negative
+- Added check for duplicate sections before submission
+- Improved error extraction from PocketBase errors
+- Better user feedback for validation failures
+
+### Verification
+✅ Build passes: 56 pages, zero TypeScript errors
+✅ Commit: `3a34bd0`
+
+### Remaining Issue
+The underlying PocketBase 400 error likely requires backend investigation:
+- **Possible Fix 1:** Check if grade_order field has a minimum value constraint and update to allow 0
+- **Possible Fix 2:** Check if there's a unique constraint on field combinations causing conflicts
+- **Possible Fix 3:** Verify API rules aren't blocking the creation
+
+### Recommendation
+User should test again with improved error messages. If 400 still occurs, check PocketBase collection schema validation rules on `grade_order` field and field constraints.
+
+---
