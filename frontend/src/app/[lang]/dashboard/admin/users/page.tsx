@@ -562,13 +562,16 @@ export default function UsersPage() {
         }
         
         // Convert to import data with auto-generated defaults
-         const importData: StudentImportData[] = rows.map(row => ({
-           name_ar: row.name_ar,
-           name_en: generateEnglishName(row.name_ar), // Auto-generate from Arabic name
-           email: generateEmail(row.name_ar),
-           password: generatePassword(),
-           section_id: ""
-         }));
+         const importData: StudentImportData[] = rows.map(row => {
+            const email = generateEmail(row.name_ar);
+            return {
+              name_ar: row.name_ar,
+              name_en: generateEnglishName(row.name_ar), // Auto-generate from Arabic name
+              email: email,
+              password: email, // Use email as default password
+              section_id: ""
+            };
+          });
         
         setImportStudents(importData);
         setWizardStep(2);
