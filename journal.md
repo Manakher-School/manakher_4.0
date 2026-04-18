@@ -4755,3 +4755,62 @@ curl -X POST "/.../api/collections/users/auth-with-password" \
 4. **Token validity**: Auth tokens expire after 24 hours, fresh login required after expiry
 
 ---
+
+## Session: Fix Bulk Delete Bug - One Student Remained (2026-04-19)
+
+### Problem
+User deleted full students list using bulk delete UI, but one student ("Layla") remained in the database
+
+### Root Cause
+**Cascade delete was incomplete**: The `handleBulkDeleteStudents` function attempted to delete related records (submissions, quiz attempts, comments, reactions) but silently failed when reactions couldn't be deleted. The try-catch blocks swallowed these errors, so:
+
+1. Code queried for Layla's reactions (3 found)
+2. Attempted to delete each reaction, but errors were silently caught (`catch {}`)
+3. Reactions remained undeleted
+4. When trying to delete the user record, PocketBase threw: "Failed to delete record. Make sure that the record is not part of a required relation reference"
+5. This error was also caught, `failed++` was incremented, and deletion was skipped
+6. Layla remained in database with 3 orphaned reaction records
+
+### Solution Implemented
+1. **Manually deleted** 3 orphaned reactions using superuser auth
+2. **Successfully deleted** Layla
+3. **Improved error handling** in the code:
+   - Added detailed console.error logging for each deletion step (submissions, attempts, comments, reactions)
+   - Made reaction deletion failures throw an explicit error (not silently ignored)
+   - Now if ANY reaction fails to delete, the entire student deletion fails and reports it
+
+### Code Changes
+**File**: `frontend/src/app/[lang]/dashboard/admin/users/page.tsx`
+
+Changed from:
+```typescript
+for (const r of reactions) { try { await pb.collection("reactions").delete(r.id); } catch {} }
+```
+
+To:
+```typescript
+for (const r of reactions) { 
+  try { 
+    await pb.collection("reactions").delete(r.id); 
+  } catch (e) { 
+    console.error(`Failed to delete reaction ${r.id}:`, e);
+    throw new Error(`Cannot delete reactions - user has required relations`);
+  } 
+}
+```
+
+Also added console.error logging for submissions, attempts, and comments deletions.
+
+### Verification
+✅ Manual deletion confirmed - Layla successfully deleted
+✅ Build passes: 56 pages, zero TypeScript errors
+✅ Commit: `b5a90e8`
+
+### Lesson Learned
+**Never silently catch errors in cascade delete operations**. If a cascade step fails, it should:
+1. Log the specific error
+2. Throw or propagate to parent error handler
+3. Report to user which record failed and why
+4. Prevent the parent record from being deleted
+
+---
