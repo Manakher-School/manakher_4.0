@@ -49,6 +49,13 @@ interface Subject {
   code: string;
 }
 
+// Helper function to format section display based on locale
+const formatSection = (section: ClassSection, locale: string): string => {
+  const grade = locale === "ar" ? section.grade_ar : section.grade_en;
+  const sectionName = locale === "ar" ? section.section_ar : section.section_en;
+  return `${grade} - ${sectionName}`;
+};
+
 const EMPTY_TEACHER_FORM = { name_ar: "", name_en: "", email: "", password: "", sections: [] as string[], subjects: [] as string[] };
 const EMPTY_STUDENT_FORM = { name_ar: "", name_en: "", email: "", password: "", sections: [] as string[] };
 
@@ -814,14 +821,14 @@ export default function UsersPage() {
                       <p className="text-sm text-[var(--color-ink-secondary)]">{teacher.name_ar}</p>
                       <p className="text-xs text-[var(--color-ink-placeholder)] mt-1">{teacher.email}</p>
                        {teacher.expand?.sections?.length ? (
-                         <div className="mt-2 flex flex-wrap gap-1">
-                           {teacher.expand.sections.map(s => (
-                             <span key={s.id} className="inline-block rounded bg-[var(--color-accent)] bg-opacity-20 px-2 py-0.5 text-xs font-semibold text-white">
-                               {s.section_en}
-                             </span>
-                           ))}
-                         </div>
-                       ) : null}
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {teacher.expand.sections.map(s => (
+                              <span key={s.id} className="inline-block rounded bg-[var(--color-accent)] bg-opacity-20 px-2 py-0.5 text-xs font-semibold text-white">
+                                {locale === "ar" ? s.section_ar : s.section_en}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -903,13 +910,13 @@ export default function UsersPage() {
                       className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                     />
                   </div>
-                  <MultiSelect
-                    label={t_teachers.assignedSections}
-                    options={teachersData.sections.map(s => ({ id: s.id, label: `${s.grade_en} ${s.section_en}` }))}
-                    selected={teachersForm.state.data.sections}
-                    getLabel={id => {
-                      const s = teachersData.sections.find(x => x.id === id);
-                      return s ? `${s.grade_en} ${s.section_en}` : id;
+                   <MultiSelect
+                     label={t_teachers.assignedSections}
+                     options={teachersData.sections.map(s => ({ id: s.id, label: formatSection(s, locale) }))}
+                     selected={teachersForm.state.data.sections}
+                     getLabel={id => {
+                       const s = teachersData.sections.find(x => x.id === id);
+                       return s ? formatSection(s, locale) : id;
                     }}
                     onChange={sections => teachersForm.setFieldValue("sections", sections)}
                   />
@@ -974,8 +981,8 @@ export default function UsersPage() {
                   aria-label="Import students from CSV"
                  className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-role-admin-bold)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--color-accent-hover)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                >
-                 <Upload className="h-4 w-4" />
-                 {locale === "ar" ? dict.dashboard.admin.students.importWizard.buttonText : dict.dashboard.admin.students.importWizard.buttonText}
+                  <Upload className="h-4 w-4" />
+                  {dict.dashboard.admin.students.importWizard.buttonText}
                </button>
             </div>
 
@@ -1058,13 +1065,14 @@ export default function UsersPage() {
                            <h3 className="font-semibold">{student.name_en}</h3>
                            <p className="text-sm text-[var(--color-ink-secondary)]">{student.name_ar}</p>
                             <p className="text-xs text-[var(--color-ink-placeholder)] mt-1">{student.email}</p>
-                            {student.expand?.sections?.length ? (
-                              <div className="mt-2 flex flex-wrap gap-1">
-                                {student.expand.sections.map(s => (
-                                  <span key={s.id} className="inline-block rounded bg-[var(--color-accent)] px-2 py-0.5 text-xs font-semibold text-white">
-                                    {s.grade_en} - {s.section_en}
-                                  </span>
-                                ))}
+                             {student.expand?.sections?.length ? (
+                               <div className="mt-2 flex flex-wrap gap-1">
+                                 {student.expand.sections.map(s => (
+                                   <span key={s.id} className="inline-block rounded bg-[var(--color-accent)] px-2 py-0.5 text-xs font-semibold text-white">
+                                     {formatSection(s, locale)}
+                                   </span>
+                                 ))}
+
                               </div>
                             ) : null}
                          </div>
@@ -1150,16 +1158,16 @@ export default function UsersPage() {
                       className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                     />
                   </div>
-                  <SingleSelect
-                    label={t_students.assignedSection}
-                    options={studentsData.sections.map(s => ({ id: s.id, label: `${s.grade_en} ${s.section_en}` }))}
-                    selected={studentsForm.state.data.sections[0] || ""}
-                    getLabel={id => {
-                      const s = studentsData.sections.find(x => x.id === id);
-                      return s ? `${s.grade_en} ${s.section_en}` : id;
-                    }}
-                    onChange={section => studentsForm.setFieldValue("sections", [section])}
-                  />
+                   <SingleSelect
+                     label={t_students.assignedSection}
+                     options={studentsData.sections.map(s => ({ id: s.id, label: formatSection(s, locale) }))}
+                     selected={studentsForm.state.data.sections[0] || ""}
+                     getLabel={id => {
+                       const s = studentsData.sections.find(x => x.id === id);
+                       return s ? formatSection(s, locale) : id;
+                     }}
+                     onChange={section => studentsForm.setFieldValue("sections", [section])}
+                   />
                   <div className="flex gap-2 pt-4">
                     <button
                       type="button"
@@ -1187,15 +1195,15 @@ export default function UsersPage() {
                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                  <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-6 w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto">
                    {/* Header */}
-                   <div className="flex items-center justify-between mb-6">
-                     <div>
-                       <h3 className="text-2xl font-bold text-[var(--color-ink)]">
-                         {locale === "ar" ? dict.dashboard.admin.students.importWizard.title : dict.dashboard.admin.students.importWizard.title}
-                       </h3>
-                       <p className="text-sm text-[var(--color-ink-secondary)] mt-1">
-                         {locale === "ar" ? `الخطوة ${wizardStep} من 4` : `Step ${wizardStep} of 4`}
-                       </p>
-                     </div>
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h3 className="text-2xl font-bold text-[var(--color-ink)]">
+                          {dict.dashboard.admin.students.importWizard.title}
+                        </h3>
+                        <p className="text-sm text-[var(--color-ink-secondary)] mt-1">
+                          {locale === "ar" ? `الخطوة ${wizardStep} من 4` : `Step ${wizardStep} of 4`}
+                        </p>
+                      </div>
                      <button
                        onClick={closeWizard}
                        className="text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
@@ -1243,14 +1251,14 @@ export default function UsersPage() {
                    {/* Step 1: File Upload */}
                    {wizardStep === 1 && (
                      <div className="space-y-4">
-                       <div>
-                         <h4 className="font-semibold text-[var(--color-ink)] mb-1 text-lg">
-                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step1Title : dict.dashboard.admin.students.importWizard.step1Title}
-                         </h4>
-                         <p className="text-sm text-[var(--color-ink-secondary)]">
-                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step1Desc : dict.dashboard.admin.students.importWizard.step1Desc}
-                         </p>
-                       </div>
+                        <div>
+                          <h4 className="font-semibold text-[var(--color-ink)] mb-1 text-lg">
+                            {dict.dashboard.admin.students.importWizard.step1Title}
+                          </h4>
+                          <p className="text-sm text-[var(--color-ink-secondary)]">
+                            {dict.dashboard.admin.students.importWizard.step1Desc}
+                          </p>
+                        </div>
 
                        <div className="text-base text-[var(--color-ink-secondary)]">
                          <p className="mb-2 font-semibold text-[var(--color-ink)]">{locale === "ar" ? "تنسيقات مقبولة:" : "Accepted formats:"}</p>
@@ -1313,14 +1321,14 @@ export default function UsersPage() {
                   {/* Step 2: Student Details */}
                    {wizardStep === 2 && (
                      <div className="space-y-4">
-                       <div>
-                         <h4 className="font-semibold text-[var(--color-ink)] mb-1 text-lg">
-                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step2Title : dict.dashboard.admin.students.importWizard.step2Title}
-                         </h4>
-                         <p className="text-sm text-[var(--color-ink-secondary)]">
-                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step2Desc : dict.dashboard.admin.students.importWizard.step2Desc}
-                         </p>
-                       </div>
+                        <div>
+                          <h4 className="font-semibold text-[var(--color-ink)] mb-1 text-lg">
+                            {dict.dashboard.admin.students.importWizard.step2Title}
+                          </h4>
+                          <p className="text-sm text-[var(--color-ink-secondary)]">
+                            {dict.dashboard.admin.students.importWizard.step2Desc}
+                          </p>
+                        </div>
 
                        <div className="space-y-3 max-h-96 overflow-y-auto">
                          {importStudents.map((student, idx) => (
@@ -1398,19 +1406,19 @@ export default function UsersPage() {
                   {/* Step 3: Section Assignment */}
                    {wizardStep === 3 && (
                      <div className="space-y-4">
-                       <div>
-                         <h4 className="font-semibold text-[var(--color-ink)] mb-1 text-lg">
-                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step3Title : dict.dashboard.admin.students.importWizard.step3Title}
-                         </h4>
-                         <p className="text-sm text-[var(--color-ink-secondary)]">
-                           {locale === "ar" ? dict.dashboard.admin.students.importWizard.step3Desc : dict.dashboard.admin.students.importWizard.step3Desc}
-                         </p>
-                       </div>
+                        <div>
+                          <h4 className="font-semibold text-[var(--color-ink)] mb-1 text-lg">
+                            {dict.dashboard.admin.students.importWizard.step3Title}
+                          </h4>
+                          <p className="text-sm text-[var(--color-ink-secondary)]">
+                            {dict.dashboard.admin.students.importWizard.step3Desc}
+                          </p>
+                        </div>
 
-                       <div>
-                         <label className="text-sm font-semibold text-[var(--color-ink-secondary)] block mb-2">
-                           {locale === "ar" ? dict.dashboard.admin.students.assignedSection : dict.dashboard.admin.students.assignedSection}
-                         </label>
+                        <div>
+                          <label className="text-sm font-semibold text-[var(--color-ink-secondary)] block mb-2">
+                            {dict.dashboard.admin.students.assignedSection}
+                          </label>
                          <select
                            value={importStudents[0]?.section_id || ""}
                            onChange={(e) => {
@@ -1418,12 +1426,12 @@ export default function UsersPage() {
                              setImportStudents(prev => prev.map(s => ({ ...s, section_id: sectionId })));
                            }}
                            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                         >
-                           <option value="">{locale === "ar" ? dict.dashboard.admin.students.importWizard.selectSection : dict.dashboard.admin.students.importWizard.selectSection}</option>
-                           {studentsData.sections.map(section => (
-                             <option key={section.id} value={section.id}>
-                               {section.grade_en} - {section.section_en}
-                             </option>
+                          >
+                            <option value="">{dict.dashboard.admin.students.importWizard.selectSection}</option>
+                            {studentsData.sections.map(section => (
+                              <option key={section.id} value={section.id}>
+                                {formatSection(section, locale)}
+                              </option>
                            ))}
                          </select>
                        </div>
