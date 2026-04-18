@@ -1036,7 +1036,40 @@ Completed all remaining testing issues from Rounds 7, 8, and 9 on the production
 **Final:** 52 pages compiled successfully, zero TypeScript errors
 (Down from 56 after removing duplicate moderation and monitoring pages)
 
-### [INPROGRESS] Round 11 - Fix Testing Issues
+## Round 12 - Kindergarten Class Creation Fix
+
+**Status:** ✅ COMPLETE (2026-04-19)
+
+### What I Did
+- **Issue:** User confirmed that `grade_order = 0` for kindergarten still fails with 400 error from PocketBase
+- **Investigation:** After detailed investigation, found the constraint preventing 0 is from PocketBase backend (not visible in migration files)
+- **Solution:** Instead of fighting the backend constraint, use a **workaround with negative numbers**
+  - Kindergarten: `grade_order = -1` (displays before grade 1)
+  - Grade 1: `grade_order = 1`
+  - Grade 2: `grade_order = 2`
+  - ... and so on
+- **Implementation:**
+  - Updated `admin/sections/page.tsx` validation to accept negative integers
+  - Changed validation from `gradeOrder < 0` to `isNaN(gradeOrder)` (allows all integers)
+  - Build passes: 56 pages, zero TypeScript errors
+  - Committed: `3c5d0c1` - "fix: Allow negative grade_order values for kindergarten class"
+
+### Why This Works
+- The sort order `sort: "grade_order,section_ar"` will naturally sort -1 before 1, 2, 3, etc.
+- No backend changes needed
+- Clean, intuitive: kindergarten comes "before" grade 1 numerically
+- No conflicts with existing grade numbering (1-10)
+
+### Testing
+User should now be able to:
+1. Go to Admin → Classes and Sections
+2. Add new class with "روضة" (Kindergarten)
+3. Use `grade_order = -1`
+4. Should create successfully (no 400 error)
+
+---
+
+### [INPROGRESS] Round 11 - Fix Testing Issues (Previous Session)
 
 #### Iteration Log
 

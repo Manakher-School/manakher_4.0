@@ -78,10 +78,10 @@ export default function SectionsPage() {
           return;
         }
 
-         // Validate grade_order is a valid number
+         // Validate grade_order is a valid positive number
          const gradeOrder = Number(form.grade_order);
-         if (isNaN(gradeOrder)) {
-           await alert(locale === "ar" ? "رقم الصف يجب أن يكون رقماً صحيحاً" : "Grade order must be a valid number");
+         if (isNaN(gradeOrder) || gradeOrder < 0) {
+           await alert(locale === "ar" ? "رقم الصف يجب أن يكون رقماً موجباً" : "Grade order must be a positive number");
            setSaving(false);
            return;
          }
