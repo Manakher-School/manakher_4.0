@@ -4814,3 +4814,45 @@ Also added console.error logging for submissions, attempts, and comments deletio
 4. Prevent the parent record from being deleted
 
 ---
+
+## Session: Fix Import Wizard Bilingual Support - Grades & Sections (2026-04-19)
+
+### Problem
+**CRITICAL BUG:** When selecting a class/section in the import wizard and user management pages, the dropdown and selector showed ONLY ENGLISH grades and sections, even when the app was in Arabic mode. Example: "Grade 1 - أ" instead of "الصف الأول - أ".
+
+### Root Cause
+All section/grade displays were hardcoded to use `grade_en` and `section_en` fields:
+- **Line 827** (teacher section list): `{s.section_en}`
+- **Line 915** (teacher MultiSelect): `${s.grade_en} ${s.section_en}`
+- **Line 1072** (student section list): `{s.grade_en} - {s.section_en}`
+- **Line 1163** (student SingleSelect): `${s.grade_en} ${s.section_en}`
+- **Line 1433** (import wizard section selector): `{section.grade_en} - {section.section_en}`
+
+The database already had bilingual data (`grade_ar`, `grade_en`, `section_ar`, `section_en`), but the UI only used the English fields.
+
+### Solution Implemented
+1. **Created `formatSection()` helper function** to centralize section formatting:
+   ```typescript
+   const formatSection = (section: ClassSection, locale: string): string => {
+     const grade = locale === "ar" ? section.grade_ar : section.grade_en;
+     const sectionName = locale === "ar" ? section.section_ar : section.section_en;
+     return `${grade} - ${sectionName}`;
+   };
+   ```
+
+2. **Updated all 5 locations to use the helper:**
+   - Teacher section display in user list: `{locale === "ar" ? s.section_ar : s.section_en}`
+   - Teacher MultiSelect options: `formatSection(s, locale)`
+   - Student section display in user list: `{formatSection(s, locale)}`
+   - Student SingleSelect options: `formatSection(s, locale)`
+   - Import wizard section selector: `{formatSection(section, locale)}`
+
+### Verification
+✅ Build passes: 56 pages, zero TypeScript errors
+✅ All section/grade displays now bilingual
+✅ Commit: `95be5ba`
+
+### Lesson Learned
+**Always check database schema vs. UI rendering** - The data had bilingual fields but the UI wasn't using them. Never hardcode field names when locale-specific alternatives exist. Use helper functions to centralize formatting logic across pages.
+
+---
