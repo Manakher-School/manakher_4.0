@@ -4609,3 +4609,62 @@ async function loadSettings() {
 3. Report any issues
 
 ---
+
+---
+
+## Session: PocketBase Superuser Recovery via Railway SSH (2026-04-19)
+
+### Issue Resolved: ✅ Superuser Password Reset
+
+**Problem:**
+- Superuser credentials lost (email: super_admin@manakher.com, password forgotten)
+- Could not access hosted PocketBase admin panel (https://pocketbase-production-882e.up.railway.app/_/)
+- Production data locked behind login
+
+**Root Cause:**
+- No email recovery option (super_admin@manakher.com has no inbox)
+- No direct Railway shell access initially
+- Database password not stored in environment variables
+
+**Solution Implemented:**
+
+1. **Installed Railway CLI on PopOS/Linux**
+   ```bash
+   curl -fsSL https://railway.app/install.sh | bash
+   ```
+
+2. **Connected via Railway SSH**
+   ```bash
+   railway login              # Authenticated to Railway account
+   railway link               # Linked to "virtuous-healing" project
+   railway ssh                # Opened SSH shell to PocketBase container
+   ```
+
+3. **Fixed Password Reset**
+   - Located PocketBase binary at `/usr/local/bin/pocketbase`
+   - Discovered PocketBase running with `--dir=/data` flag (custom directory)
+   - Ran: `/usr/local/bin/pocketbase superuser upsert --dir=/data "super_admin@manakher.com" "Admin@2025"`
+   - Successfully reset superuser password
+
+**Critical Learning:**
+- PocketBase was running with custom `--dir=/data` flag, not the default `/usr/local/bin/pb_data`
+- Initial password reset attempts failed because they targeted the default/inactive directory
+- Solution: Always check `ps aux | grep pocketbase` to find the active `--dir` parameter
+- Use matching `--dir` parameter when running `pocketbase superuser` commands
+
+**Credentials Recovered:**
+- Email: super_admin@manakher.com
+- Password: Admin@2025
+
+**Verification:**
+✅ Successfully logged into PocketBase admin panel at https://pocketbase-production-882e.up.railway.app/_/
+✅ Can now manage collections, users, and all production data
+✅ No data loss during recovery process
+
+### Impact
+- ✅ Hosted PocketBase now fully accessible
+- ✅ Can verify and fix user accounts in production
+- ✅ Ready to diagnose frontend login issue (http://192.168.1.19:3001)
+- ✅ Next: Check why frontend can't connect to hosted PocketBase
+
+---
