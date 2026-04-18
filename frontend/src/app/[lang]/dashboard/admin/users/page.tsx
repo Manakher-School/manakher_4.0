@@ -470,28 +470,61 @@ export default function UsersPage() {
         let deleted = 0;
         let failed = 0;
         
-        for (const id of selectedStudentIds) {
-          try {
-            // Cascade delete for each student
-            const [submissions, attempts, comments, reactions] = await Promise.all([
-              pb.collection("submissions").getFullList({ filter: `student = "${id}"` }).catch(() => []),
-              pb.collection("quiz_attempts").getFullList({ filter: `student = "${id}"` }).catch(() => []),
-              pb.collection("comments").getFullList({ filter: `author = "${id}"` }).catch(() => []),
-              pb.collection("reactions").getFullList({ filter: `user = "${id}"` }).catch(() => []),
-            ]);
+         for (const id of selectedStudentIds) {
+           try {
+             // Cascade delete for each student
+             const [submissions, attempts, comments, reactions] = await Promise.all([
+               pb.collection("submissions").getFullList({ filter: `student = "${id}"` }).catch(() => []),
+               pb.collection("quiz_attempts").getFullList({ filter: `student = "${id}"` }).catch(() => []),
+               pb.collection("comments").getFullList({ filter: `author = "${id}"` }).catch(() => []),
+               pb.collection("reactions").getFullList({ filter: `user = "${id}"` }).catch(() => []),
+             ]);
 
-            for (const s of submissions) { try { await pb.collection("submissions").delete(s.id); } catch {} }
-            for (const a of attempts) { try { await pb.collection("quiz_attempts").delete(a.id); } catch {} }
-            for (const c of comments) { try { await pb.collection("comments").delete(c.id); } catch {} }
-            for (const r of reactions) { try { await pb.collection("reactions").delete(r.id); } catch {} }
+             // Delete submissions
+             for (const s of submissions) { 
+               try { 
+                 await pb.collection("submissions").delete(s.id); 
+               } catch (e) { 
+                 console.error(`Failed to delete submission ${s.id}:`, e);
+               } 
+             }
+             
+             // Delete quiz attempts
+             for (const a of attempts) { 
+               try { 
+                 await pb.collection("quiz_attempts").delete(a.id); 
+               } catch (e) { 
+                 console.error(`Failed to delete quiz_attempt ${a.id}:`, e);
+               } 
+             }
+             
+             // Delete comments
+             for (const c of comments) { 
+               try { 
+                 await pb.collection("comments").delete(c.id); 
+               } catch (e) { 
+                 console.error(`Failed to delete comment ${c.id}:`, e);
+               } 
+             }
+             
+             // Delete reactions (critical - must delete before user)
+             for (const r of reactions) { 
+               try { 
+                 await pb.collection("reactions").delete(r.id); 
+               } catch (e) { 
+                 console.error(`Failed to delete reaction ${r.id}:`, e);
+                 throw new Error(`Cannot delete reactions - user has required relations`);
+               } 
+             }
 
-            await pb.collection("users").delete(id);
-            deleted++;
-          } catch (err) {
-            failed++;
-            console.error(`Failed to delete student ${id}:`, err);
-          }
-        }
+             // Finally delete the user
+             await pb.collection("users").delete(id);
+             deleted++;
+           } catch (err) {
+             failed++;
+             console.error(`Failed to delete student ${id}:`, err);
+           }
+         }
 
         await loadStudents();
         setSelectedStudentIds(new Set());
