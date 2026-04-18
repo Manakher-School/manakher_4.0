@@ -68,35 +68,56 @@ export default function SectionsPage() {
   }
 
    async function handleSubmit(e: React.FormEvent) {
-     e.preventDefault();
-     setSaving(true);
-     try {
-       // Validate required fields (grade_order of 0 is valid)
-       if (!form.grade_ar.trim() || !form.grade_en.trim() || form.grade_order === "" || !form.section_ar.trim() || !form.section_en.trim()) {
-         await alert(locale === "ar" ? "يرجى ملء جميع الحقول" : "Please fill in all fields");
-         setSaving(false);
-         return;
-       }
+      e.preventDefault();
+      setSaving(true);
+      try {
+        // Validate required fields (grade_order of 0 is valid for kindergarten)
+        if (!form.grade_ar.trim() || !form.grade_en.trim() || form.grade_order === "" || !form.section_ar.trim() || !form.section_en.trim()) {
+          await alert(locale === "ar" ? "يرجى ملء جميع الحقول" : "Please fill in all fields");
+          setSaving(false);
+          return;
+        }
 
-       const data = {
-         grade_ar: form.grade_ar.trim(),
-         grade_en: form.grade_en.trim(),
-         grade_order: Number(form.grade_order),
-         section_ar: form.section_ar.trim(),
-         section_en: form.section_en.trim(),
-       };
-       
-       console.log("Submitting class data:", data);
-       
-       if (editingId) {
-         await pb.collection("class_sections").update(editingId, data);
-         await alert(locale === "ar" ? "تم تحديث الفصل بنجاح" : "Class updated successfully");
-       } else {
-         await pb.collection("class_sections").create(data);
-         await alert(locale === "ar" ? "تم إضافة الفصل بنجاح" : "Class added successfully");
-       }
-       closeForm();
-       await load();
+        // Validate grade_order is a valid number (including 0)
+        const gradeOrder = Number(form.grade_order);
+        if (isNaN(gradeOrder) || gradeOrder < 0) {
+          await alert(locale === "ar" ? "رقم الصف يجب أن يكون رقماً موجباً أو صفر" : "Grade order must be a non-negative number");
+          setSaving(false);
+          return;
+        }
+
+        // Check for duplicate section (same grade and section name in same language)
+        const isDuplicate = sections.some(s => 
+          s.id !== editingId && 
+          s.grade_ar === form.grade_ar.trim() && 
+          s.section_ar === form.section_ar.trim()
+        );
+        
+        if (isDuplicate && !editingId) {
+          await alert(locale === "ar" ? "هذا الفصل موجود بالفعل" : "This section already exists");
+          setSaving(false);
+          return;
+        }
+
+        const data = {
+          grade_ar: form.grade_ar.trim(),
+          grade_en: form.grade_en.trim(),
+          grade_order: gradeOrder,
+          section_ar: form.section_ar.trim(),
+          section_en: form.section_en.trim(),
+        };
+        
+        console.log("Submitting class data:", data);
+        
+        if (editingId) {
+          await pb.collection("class_sections").update(editingId, data);
+          await alert(locale === "ar" ? "تم تحديث الفصل بنجاح" : "Class updated successfully");
+        } else {
+          await pb.collection("class_sections").create(data);
+          await alert(locale === "ar" ? "تم إضافة الفصل بنجاح" : "Class added successfully");
+        }
+        closeForm();
+        await load();
      } catch (error) {
        // Extract detailed error message from PocketBase error
        let errorMsg = locale === "ar" ? "حدث خطأ ما" : "Something went wrong";
