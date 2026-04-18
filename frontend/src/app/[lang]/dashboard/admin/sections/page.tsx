@@ -78,13 +78,13 @@ export default function SectionsPage() {
           return;
         }
 
-        // Validate grade_order is a valid number (including 0)
-        const gradeOrder = Number(form.grade_order);
-        if (isNaN(gradeOrder) || gradeOrder < 0) {
-          await alert(locale === "ar" ? "رقم الصف يجب أن يكون رقماً موجباً أو صفر" : "Grade order must be a non-negative number");
-          setSaving(false);
-          return;
-        }
+         // Validate grade_order is a valid number
+         const gradeOrder = Number(form.grade_order);
+         if (isNaN(gradeOrder)) {
+           await alert(locale === "ar" ? "رقم الصف يجب أن يكون رقماً صحيحاً" : "Grade order must be a valid number");
+           setSaving(false);
+           return;
+         }
 
         // Check for duplicate section (same grade and section name in same language)
         const isDuplicate = sections.some(s => 
