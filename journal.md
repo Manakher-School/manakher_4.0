@@ -5624,3 +5624,51 @@ const isEmailUniqueError =
 
 ✅ **Build PASSED:** 56 pages compile successfully, zero TypeScript errors
 
+---
+
+## CRITICAL FIX: Always Retry on Any Error (No Error Type Detection Needed)
+
+**Date:** 2026-04-19  
+**Status:** ✅ COMPLETE  
+**Commit:** `7d1a0e1`
+
+### Problem
+
+Previous retry mechanisms (`86f8133` and `0ee7e0d`) both failed because they tried to detect the error type before deciding whether to retry. The detection approaches all failed:
+
+1. **Specific property checks** (`err?.data?.data?.email?.message?.includes("unique")`) - didn't match PocketBase error structure
+2. **JSON stringify check** (`JSON.stringify(err).includes("unique")`) - produced `{}` because `Error` properties aren't enumerable
+
+**Root Cause:** PocketBase `ClientResponseError` extends `Error`, and `JSON.stringify(new Error())` produces `{}` since Error properties are not enumerable. This means ALL error detection approaches that rely on parsing the error object will fail.
+
+### Solution: Always Retry on Any Error
+
+Instead of trying to detect email uniqueness errors, the retry loop now **always retries on any creation error** with email regeneration:
+
+```
+For each student:
+  for attempt 0 to maxRetries (5):
+    try:
+      if attempt > 0: regenerate email
+      create student with currentEmail
+      if success: break ✅
+    catch ANY error:
+      if attempt < maxRetries: continue (retry with new email) 🔄
+      else: report failure ❌
+```
+
+**Why this works:**
+1. Email uniqueness is BY FAR the most common creation error
+2. Regenerating the email fixes uniqueness errors automatically
+3. Other errors (missing fields, etc.) are extremely rare since the wizard validates data
+4. Non-email errors will fail on all retries too, so we just waste ~5 API calls (acceptable)
+5. No need to parse PocketBase error structures at all
+
+**Retry flow for "امير حمزه علي الدبايبه":**
+1. Attempt 0: Try `amyraldb@manakher.edu.jo` → Fails (email exists)
+2. Attempt 1: Regenerate → Try `amyrhmzh@manakher.edu.jo` → Success! ✅
+
+### Build Status
+
+✅ **Build PASSED:** 56 pages compile successfully, zero TypeScript errors
+
