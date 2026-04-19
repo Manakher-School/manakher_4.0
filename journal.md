@@ -5213,3 +5213,38 @@ Importing 4 students with overlapping names:
 
 This approach is much superior to simple counter suffixes. Thank you for the insight! 🎯
 
+
+---
+
+## Enhancement: Add "Other" Filter for Students Without Class
+
+**Date:** 2026-04-19  
+**Status:** ✅ COMPLETE
+
+### What Was Done
+**Added "Other" option to student class filter for testing purposes:**
+- Users can now filter students with no class assignment using "Other" option
+- Useful when testing and students are created without section assignment
+- Filtering logic updated to handle both:
+  - Regular sections: `s.sections.includes(studentsSectionFilter)`
+  - "Other": `!s.sections || s.sections.length === 0`
+- Labels displayed in both Arabic and English:
+  - Arabic: "بدون فصل (أخرى)" (No Class / Other)
+  - English: "No Class (Other)"
+
+### Files Modified
+- `frontend/src/app/[lang]/dashboard/admin/users/page.tsx`
+  - Updated filter logic (lines 915-937)
+  - Updated filter dropdown (lines 1236-1252)
+
+### Build Status
+✅ All 56 pages compile successfully, zero TypeScript errors
+
+### Commit
+- `332413b` - "feat: Add 'Other' filter option for students with no class assignment"
+
+### Impact
+- Easier to find and debug students created without section assignment during testing
+- Improves test data management workflow
+- No breaking changes to existing functionality
+

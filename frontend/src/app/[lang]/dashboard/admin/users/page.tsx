@@ -739,6 +739,7 @@ export default function UsersPage() {
           const existingUsers = await pb.collection("users").getFullList({ fields: "email" });
           existingUsers.forEach(u => finalEmailSet.add(u.email));
           console.log(`[WIZARD] Found ${finalEmailSet.size} existing emails in system (final check)`);
+          console.log(`[WIZARD] Sample existing emails:`, Array.from(finalEmailSet).slice(0, 5));
         } catch (err) {
           console.warn("[WIZARD] Could not fetch existing emails on submit, proceeding:", err);
         }
@@ -748,13 +749,18 @@ export default function UsersPage() {
         const seenEmails = new Set<string>();
         const emailsNeedingRegen: number[] = [];
         
+        console.log(`[WIZARD] Checking ${importStudents.length} students for duplicates:`);
+        
         for (let i = 0; i < importStudents.length; i++) {
           const studentEmail = studentEmails[i];
+          const isDupInSystem = finalEmailSet.has(studentEmail);
+          const isDupInImport = seenEmails.has(studentEmail);
           
-          if (finalEmailSet.has(studentEmail) || seenEmails.has(studentEmail)) {
-            console.warn(`[WIZARD] Duplicate email detected: ${studentEmail} for student ${importStudents[i].name_ar}`);
+          if (isDupInSystem || isDupInImport) {
+            console.warn(`[WIZARD] Duplicate email detected: ${studentEmail} for student ${importStudents[i].name_ar} (system: ${isDupInSystem}, import: ${isDupInImport})`);
             emailsNeedingRegen.push(i);
           } else {
+            console.log(`[WIZARD]   ✓ ${i}: ${importStudents[i].name_ar} → ${studentEmail}`);
             seenEmails.add(studentEmail);
           }
         }
@@ -766,17 +772,19 @@ export default function UsersPage() {
           for (const idx of emailsNeedingRegen) {
             const student = importStudents[idx];
             try {
+              const oldEmail = student.email;
               const newEmail = generateUniqueEmail(student.name_ar, finalEmailSet);
               importStudents[idx].email = newEmail;
               finalEmailSet.add(newEmail);
               seenEmails.add(newEmail);
-              console.log(`[WIZARD] Regenerated email for ${student.name_ar}: ${newEmail}`);
+              console.log(`[WIZARD] Regenerated email for ${student.name_ar}: ${oldEmail} → ${newEmail}`);
             } catch (err) {
               console.error(`[WIZARD] Failed to regenerate email for ${student.name_ar}:`, err);
             }
           }
         }
         
+        console.log(`[WIZARD] Final emails to be created:`, importStudents.map(s => `${s.name_ar}: ${s.email}`));
         console.log(`[WIZARD] Starting to create ${importStudents.length} students...`);
         
         for (const student of importStudents) {
