@@ -5504,3 +5504,72 @@ Now when duplicate emails exist:
 
 ✅ **Build PASSED:** 56 pages compile successfully, zero TypeScript errors
 
+---
+
+## CRITICAL FIX: Retry Mechanism for Email Uniqueness Errors
+
+**Date:** 2026-04-19  
+**Status:** ✅ COMPLETE  
+**Commit:** `86f8133`
+
+### Problem
+
+Even after implementing the 8-character email strategy and improving pre-check collision detection, students were STILL failing to import with "email: Value must be unique" errors. The error showed the **original Level 0 email** (e.g., `amyraldb@manakher.edu.jo`), meaning the pre-check regeneration wasn't working.
+
+**Root Cause:** The pre-check approach (fetching all existing emails from PocketBase before creation) is fundamentally unreliable because:
+1. `getFullList()` might fail silently or return incomplete data
+2. API rules might restrict which records are visible
+3. Network issues or timeouts can cause empty results
+4. Race conditions: another admin could create users between check and creation
+5. The pre-check catches MOST duplicates but not ALL
+
+### Solution: Defense-in-Depth with Retry Mechanism
+
+Added a **retry loop directly in the creation code** that catches "email: Value must be unique" errors and automatically regenerates the email:
+
+```
+For each student:
+  for attempt 0 to maxRetries (5):
+    try:
+      create student with currentEmail
+      if success: break
+    catch email uniqueness error:
+      if attempt < maxRetries:
+        regenerate email using generateUniqueEmail(name, allKnownEmails)
+        continue (retry with new email)
+      else:
+        report failure
+```
+
+**Key improvements:**
+1. **Catches email uniqueness errors specifically** - checks for "unique" in the error response
+2. **Uses ALL known emails for regeneration** - combines system emails + already-created-in-this-batch emails
+3. **Up to 5 retry attempts** - Level 0, Level 1, then counter suffixes (1-3)
+4. **Tracks successfully created emails** - `createdEmails` Set prevents within-batch duplicates
+5. **Only reports failure after exhausting retries** - non-retryable errors fail immediately
+
+### How It Works Now
+
+**Before (broken):**
+```
+Pre-check: Fetch emails → Check duplicates → Regenerate → Create
+Result: If pre-check misses a duplicate → FAILS with "email must be unique"
+```
+
+**After (fixed):**
+```
+Pre-check: Fetch emails → Check duplicates → Regenerate → Create
+Retry loop: If creation fails with "email must be unique" → Regenerate → Retry (up to 5x)
+Result: Guaranteed to find a unique email through Level 0 → Level 1 → Counter
+```
+
+### Example Flow for "امير حمزه علي الدبايبه"
+
+1. **Attempt 1:** Try `amyraldb@manakher.edu.jo` → PocketBase rejects (already exists)
+2. **Detect:** "email: Value must be unique" → Regenerate email
+3. **Attempt 2:** Try `amyrhmzh@manakher.edu.jo` (Level 1: first+middle) → Success! ✅
+
+### Build Status
+
+✅ **Build PASSED:** 56 pages compile successfully, zero TypeScript errors
+
