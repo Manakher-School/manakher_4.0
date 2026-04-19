@@ -727,22 +727,62 @@ export default function UsersPage() {
         let failed = 0;
         const failedRecords: Array<{name: string, email: string, reason: string}> = [];
         
-        // CRITICAL: Build final email set from ALL students to detect any remaining duplicates
-        // This catches cases where:
-        // 1. Admin manually edited emails and created duplicates
-        // 2. New users were created in system after import preview
-        // 3. Any other edge cases that created collisions
-        const finalEmailSet = new Set<string>();
-        
-        // First, fetch latest existing emails from system
-        try {
-          const existingUsers = await pb.collection("users").getFullList({ fields: "email" });
-          existingUsers.forEach(u => finalEmailSet.add(u.email));
-          console.log(`[WIZARD] Found ${finalEmailSet.size} existing emails in system (final check)`);
-          console.log(`[WIZARD] Sample existing emails:`, Array.from(finalEmailSet).slice(0, 5));
-        } catch (err) {
-          console.warn("[WIZARD] Could not fetch existing emails on submit, proceeding:", err);
-        }
+         // CRITICAL: Build final email set from ALL students to detect any remaining duplicates
+         // This catches cases where:
+         // 1. Admin manually edited emails and created duplicates
+         // 2. New users were created in system after import preview
+         // 3. Any other edge cases that created collisions
+         const finalEmailSet = new Set<string>();
+         
+         // First, fetch latest existing emails from system
+         try {
+           // Use getFullList() with explicit limit and filter to ensure we get all records
+           // Don't use fields parameter - fetch full records to ensure data integrity
+           const existingUsers = await pb.collection("users").getFullList({
+             // Get all records without limit
+             batch: 500, // Fetch in batches of 500
+           });
+           
+           // Extract emails from all users
+           existingUsers.forEach((u: any) => {
+             if (u.email) {
+               finalEmailSet.add(u.email);
+             }
+           });
+           
+           console.log(`[WIZARD] Found ${finalEmailSet.size} existing emails in system (final check)`);
+           console.log(`[WIZARD] Sample existing emails:`, Array.from(finalEmailSet).slice(0, 10));
+           
+           // Debug: log the exact emails that will be checked against
+           if (finalEmailSet.size > 0) {
+             console.log(`[WIZARD] Existing emails that will be checked:`, Array.from(finalEmailSet));
+           }
+         } catch (err) {
+           console.error("[WIZARD] ERROR fetching existing emails:", err);
+           // Try alternative method: use getList with pagination
+           try {
+             let allUsers: any[] = [];
+             let page = 1;
+             let hasMore = true;
+             
+             while (hasMore) {
+               const batch = await pb.collection("users").getList(page, 500, { fields: "email" });
+               allUsers = allUsers.concat(batch.items);
+               hasMore = batch.items.length === 500; // More pages if got full batch
+               page++;
+             }
+             
+             allUsers.forEach((u: any) => {
+               if (u.email) {
+                 finalEmailSet.add(u.email);
+               }
+             });
+             
+             console.log(`[WIZARD] (Fallback method) Found ${finalEmailSet.size} existing emails`);
+           } catch (fallbackErr) {
+             console.warn("[WIZARD] Both methods failed to fetch emails, proceeding with caution:", fallbackErr);
+           }
+         }
         
         // Second, check all students in this import for duplicates
         const studentEmails = importStudents.map(s => s.email);
