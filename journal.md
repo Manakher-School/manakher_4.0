@@ -5672,3 +5672,48 @@ For each student:
 
 ✅ **Build PASSED:** 56 pages compile successfully, zero TypeScript errors
 
+---
+
+## ROOT CAUSE FOUND: Failed Email Not Added to Known Set Before Regeneration
+
+**Date:** 2026-04-19  
+**Status:** ✅ COMPLETE  
+**Commit:** `5cd9929`
+
+### The Real Root Cause (Finally!)
+
+All previous fixes (retry mechanism, error detection, always-retry) were correct in concept but missed ONE critical detail: **when PocketBase rejects an email, that email must be added to the known emails set BEFORE regenerating**.
+
+**Flow before fix (BROKEN):**
+1. Pre-check fetches emails → `finalEmailSet` is incomplete/empty (PocketBase API issue)
+2. `generateUniqueEmail('امير حمزه علي الدبايبه', finalEmailSet)` → `'amyraldb@'`
+3. PocketBase rejects `'amyraldb@'` (already exists in DB)
+4. Retry: `generateUniqueEmail('امير حمزه علي الدبايبه', finalEmailSet)` → `'amyraldb@'` **AGAIN!**
+   - Because `'amyraldb@'` is NOT in `finalEmailSet`, so it's considered available
+5. All 6 retries produce the same email → all fail
+
+**Flow after fix (WORKING):**
+1. Pre-check fetches emails → `allKnownEmails` starts with whatever we got
+2. `generateUniqueEmail('امير حمزه علي الدبايبه', allKnownEmails)` → `'amyraldb@'`
+3. PocketBase rejects `'amyraldb@'` (already exists in DB)
+4. **IMMEDIATELY add `'amyraldb@'` to `allKnownEmails`** ← THE FIX
+5. Retry: `generateUniqueEmail('امير حمزه علي الدبايبه', allKnownEmails)` → `'amyrhmzh@'`
+   - Because `'amyraldb@'` IS NOW in `allKnownEmails`, so Level 1 is used
+6. PocketBase accepts `'amyrhmzh@'` → **SUCCESS!** ✅
+
+### The One-Line Fix
+
+```typescript
+} catch (err: any) {
+  // CRITICAL: Add the failed email to our known set IMMEDIATELY
+  allKnownEmails.add(currentEmail);  // ← THIS IS THE FIX
+  ...
+}
+```
+
+This single line ensures that when PocketBase rejects an email, `generateUniqueEmail()` will skip it on the next attempt and produce a different email.
+
+### Build Status
+
+✅ **Build PASSED:** 56 pages compile successfully, zero TypeScript errors
+
