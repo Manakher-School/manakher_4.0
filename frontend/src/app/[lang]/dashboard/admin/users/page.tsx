@@ -867,12 +867,16 @@ export default function UsersPage() {
               break; // Success, exit retry loop
               
             } catch (err: any) {
-              // Check if this is an email uniqueness error
+              // Robust email uniqueness detection: stringify the entire error and check for "unique"
+              // PocketBase error structures vary between versions, so we check broadly
+              const errString = JSON.stringify(err || {});
               const isEmailUniqueError = 
-                (err?.data?.data?.email?.message?.includes("unique")) ||
-                (err?.data?.data?.email?.message?.includes("must be unique")) ||
-                (String(err?.data?.data?.email || "").includes("unique")) ||
-                (String(err?.message || "").includes("email") && String(err?.message || "").includes("unique"));
+                errString.includes("unique") || 
+                errString.includes("must be unique") ||
+                (err?.data?.data?.email) !== undefined;
+              
+              console.log(`[WIZARD] Error for ${student.name_ar}:`, errString.substring(0, 300));
+              console.log(`[WIZARD] isEmailUniqueError: ${isEmailUniqueError}, attempt: ${attempt}/${maxRetries}`);
               
               if (isEmailUniqueError && attempt < maxRetries) {
                 // Email collision detected - regenerate and retry
