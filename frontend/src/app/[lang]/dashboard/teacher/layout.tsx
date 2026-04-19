@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLocale } from "@/context/locale-context";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { LayoutGrid, Users, BookOpen, FileText, Bell, ClipboardList } from "lucide-react";
+import { LayoutGrid, Users, BookOpen, FileText, Bell, ClipboardList, UserCircle } from "lucide-react";
 import type { ReactNode } from "react";
 
-type NavKey = "overview" | "sections" | "materials" | "homework" | "announcements" | "quizzes";
+type NavKey = "overview" | "sections" | "materials" | "homework" | "announcements" | "quizzes" | "profile";
 
 interface NavItem {
   key: NavKey;
@@ -29,17 +29,19 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
      { key: "homework",       href: `${base}/homework`,         icon: <FileText className="h-6 w-6" /> },
      { key: "announcements",  href: `${base}/announcements`,    icon: <Bell className="h-6 w-6" /> },
      { key: "quizzes",        href: `${base}/quizzes`,          icon: <ClipboardList className="h-6 w-6" /> },
+     { key: "profile",        href: `${base}/profile`,           icon: <UserCircle className="h-6 w-6" /> },
    ];
 
-   // Mobile-sized icons for bottom tab bar
-   const mobileNavItems: NavItem[] = [
-     { key: "overview",       href: base,                       icon: <LayoutGrid className="h-7 w-7" /> },
-     { key: "sections",       href: `${base}/sections`,         icon: <Users className="h-7 w-7" /> },
-     { key: "materials",      href: `${base}/materials`,        icon: <BookOpen className="h-7 w-7" /> },
-     { key: "homework",       href: `${base}/homework`,         icon: <FileText className="h-7 w-7" /> },
-     { key: "announcements",  href: `${base}/announcements`,    icon: <Bell className="h-7 w-7" /> },
-     { key: "quizzes",        href: `${base}/quizzes`,          icon: <ClipboardList className="h-7 w-7" /> },
-   ];
+    // Mobile-sized icons for bottom tab bar
+    const mobileNavItems: NavItem[] = [
+      { key: "overview",       href: base,                       icon: <LayoutGrid className="h-7 w-7" /> },
+      { key: "sections",       href: `${base}/sections`,         icon: <Users className="h-7 w-7" /> },
+      { key: "materials",      href: `${base}/materials`,        icon: <BookOpen className="h-7 w-7" /> },
+      { key: "homework",       href: `${base}/homework`,         icon: <FileText className="h-7 w-7" /> },
+      { key: "announcements",  href: `${base}/announcements`,    icon: <Bell className="h-7 w-7" /> },
+      { key: "quizzes",        href: `${base}/quizzes`,          icon: <ClipboardList className="h-7 w-7" /> },
+      { key: "profile",        href: `${base}/profile`,           icon: <UserCircle className="h-7 w-7" /> },
+    ];
 
   return (
     <div className="flex gap-6">

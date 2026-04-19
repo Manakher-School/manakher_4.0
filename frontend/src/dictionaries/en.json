@@ -288,6 +288,34 @@
             "saveChanges": "Save Changes",
             "saved": "Successfully saved",
             "note": "Note: Some changes may require reloading the platform."
+          },
+          "profile": {
+            "title": "My Profile",
+            "subtitle": "Manage your account settings",
+            "currentEmail": "Current Email",
+            "newEmail": "New Email",
+            "currentPassword": "Current Password",
+            "newPassword": "New Password",
+            "confirmPassword": "Confirm New Password",
+            "username": "Username",
+            "setUsername": "Set Username",
+            "changeEmail": "Change Email",
+            "changePassword": "Change Password",
+            "save": "Save",
+            "saved": "Saved successfully",
+            "passwordMismatch": "Passwords do not match",
+            "passwordTooShort": "Password must be at least 8 characters",
+            "incorrectPassword": "Current password is incorrect",
+            "emailChanged": "Email changed successfully",
+            "passwordChanged": "Password changed successfully",
+            "usernameSet": "Username set successfully",
+            "usernameHint": "3-30 characters, letters, numbers, and underscores only",
+            "currentEmailLabel": "Current email address",
+            "newEmailLabel": "Enter new email address",
+            "currentPasswordLabel": "Enter your current password",
+            "newPasswordLabel": "Enter new password",
+            "confirmPasswordLabel": "Confirm new password",
+            "usernameLabel": "Choose a unique username"
           }
         },
     "teacher": {
@@ -304,7 +332,8 @@
         "materials": "Learning Materials",
         "homework": "Homework",
         "announcements": "Announcements",
-        "quizzes": "Quizzes"
+        "quizzes": "Quizzes",
+        "profile": "My Profile"
       },
       "sections": {
         "title": "My Sections & Students",

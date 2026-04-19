@@ -10,6 +10,7 @@ export interface AuthUser extends RecordModel {
   role: UserRole;
   avatar: string;
   verified: boolean;
+  username?: string;
 }
 
 /** Returns the display name for a user in the given locale. */

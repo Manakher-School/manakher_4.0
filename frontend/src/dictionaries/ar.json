@@ -288,6 +288,34 @@
             "saveChanges": "حفظ التغييرات",
             "saved": "تم الحفظ بنجاح",
             "note": "ملاحظة: بعض التغييرات قد تتطلب إعادة تحميل المنصة."
+          },
+          "profile": {
+            "title": "ملفي الشخصي",
+            "subtitle": "إدارة إعدادات حسابي",
+            "currentEmail": "البريد الإلكتروني الحالي",
+            "newEmail": "البريد الإلكتروني الجديد",
+            "currentPassword": "كلمة المرور الحالية",
+            "newPassword": "كلمة المرور الجديدة",
+            "confirmPassword": "تأكيد كلمة المرور الجديدة",
+            "username": "اسم المستخدم",
+            "setUsername": "تعيين اسم المستخدم",
+            "changeEmail": "تغيير البريد الإلكتروني",
+            "changePassword": "تغيير كلمة المرور",
+            "save": "حفظ",
+            "saved": "تم الحفظ بنجاح",
+            "passwordMismatch": "كلمتا المرور غير متطابقتين",
+            "passwordTooShort": "يجب أن تكون كلمة المرور ٨ أحرف على الأقل",
+            "incorrectPassword": "كلمة المرور الحالية غير صحيحة",
+            "emailChanged": "تم تغيير البريد الإلكتروني بنجاح",
+            "passwordChanged": "تم تغيير كلمة المرور بنجاح",
+            "usernameSet": "تم تعيين اسم المستخدم بنجاح",
+            "usernameHint": "٣-٣٠ حرف، أحرف وأرقام وشرطة سفلية فقط",
+            "currentEmailLabel": "عنوان البريد الإلكتروني الحالي",
+            "newEmailLabel": "أدخل عنوان البريد الإلكتروني الجديد",
+            "currentPasswordLabel": "أدخل كلمة المرور الحالية",
+            "newPasswordLabel": "أدخل كلمة المرور الجديدة",
+            "confirmPasswordLabel": "أكد كلمة المرور الجديدة",
+            "usernameLabel": "اختر اسم مستخدم فريد"
           }
         },
      "teacher": {
@@ -299,13 +327,14 @@
          "pending": "بانتظار المراجعة"
        },
        "nav": {
-         "overview": "نظرة عامة",
-         "sections": "فصولي وطلابي",
-         "materials": "المواد التعليمية",
-         "homework": "الواجبات",
-         "announcements": "الإعلانات",
-         "quizzes": "الاختبارات"
-       },
+"overview": "نظرة عامة",
+        "sections": "فصولي وطلابي",
+        "materials": "المواد التعليمية",
+        "homework": "الواجبات",
+        "announcements": "الإعلانات",
+        "quizzes": "الاختبارات",
+        "profile": "ملفي الشخصي"
+      },
        "sections": {
          "title": "فصولي وطلابي",
          "empty": "لا توجد فصول مُسندة إليك بعد.",

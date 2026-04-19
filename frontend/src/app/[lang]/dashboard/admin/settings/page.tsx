@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale } from "@/context/locale-context";
+import { useAuth } from "@/context/auth-context";
 import { useDialog } from "@/context/dialog-context";
 import { useSettings } from "@/context/settings-context";
 import { getPocketBase } from "@/lib/pocketbase";
@@ -15,7 +16,7 @@ import {
   Settings as SettingsIcon, Check, Loader2, ChevronDown, ChevronUp,
   Shield, Activity, FileText, Megaphone, MessageCircle, Trash2,
   Users, GraduationCap, Layers, BookOpen, ClipboardList,
-  Heart, TrendingUp, User, Calendar
+  Heart, TrendingUp, User, Calendar, Lock, Mail, AtSign
 } from "lucide-react";
 
 // ─── Helper to get display name from expanded user object ────────────
@@ -92,6 +93,7 @@ export default function SettingsPage() {
   const t = dict.dashboard.admin.settings;
   const tMod = dict.dashboard.admin.moderation;
   const tMon = dict.dashboard.admin.monitoring;
+  const tProf = dict.dashboard.admin.profile;
   const common = dict.common;
 
   // ─── Form State (Settings form: 5 fields) ───────────────────────
@@ -116,7 +118,18 @@ export default function SettingsPage() {
     moderation: false,
     monitoring: false,
     settings: true, // Settings open by default
+    profile: false,
   });
+
+  // ─── Profile State ──────────────────────────────────────────────
+  const { user } = useAuth();
+  const [profileCurrentPassword, setProfileCurrentPassword] = useState("");
+  const [profileNewPassword, setProfileNewPassword] = useState("");
+  const [profileConfirmPassword, setProfileConfirmPassword] = useState("");
+  const [profileNewEmail, setProfileNewEmail] = useState("");
+  const [profileEmailPassword, setProfileEmailPassword] = useState("");
+  const [profileUsername, setProfileUsername] = useState(user?.username || "");
+  const [profileSaving, setProfileSaving] = useState<string>("");
 
   // ─── Data Collections (Keep as useState) ──────────────────────
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -701,6 +714,143 @@ export default function SettingsPage() {
             )}
           </div>
         )}
+
+        {/* ─── Profile Accordion ─────────────────────────────────── */}
+        <div className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden">
+          <button
+            onClick={() => setAccordions(prev => ({ ...prev, profile: !prev.profile }))}
+            className="flex w-full items-center justify-between p-4 text-start hover:bg-[var(--color-surface-hover)] transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-[var(--color-accent)]" />
+              <span className="font-semibold text-[var(--color-ink)]">{tProf.title}</span>
+            </div>
+            {accordions.profile ? <ChevronUp className="h-4 w-4 text-[var(--color-ink-secondary)]" /> : <ChevronDown className="h-4 w-4 text-[var(--color-ink-secondary)]" />}
+          </button>
+          {accordions.profile && (
+            <div className="border-t border-[var(--color-border)] p-6 space-y-6">
+              {/* Current Account Info */}
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-[var(--color-role-admin-bg)] flex items-center justify-center">
+                  <User className="h-6 w-6 text-[var(--color-role-admin-bold)]" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-[var(--color-ink)]">
+                    {locale === "ar" ? user?.name_ar : user?.name_en}
+                  </h3>
+                  <p className="text-sm text-[var(--color-ink-secondary)]">{user?.email}</p>
+                  {user?.username && (
+                    <p className="text-xs text-[var(--color-ink-placeholder)]">@{user.username}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Change Password */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-[var(--color-accent)]" />
+                  <h4 className="font-semibold text-[var(--color-ink)]">{tProf.changePassword}</h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">{tProf.currentPassword}</label>
+                    <input type="password" value={profileCurrentPassword} onChange={e => setProfileCurrentPassword(e.target.value)} placeholder={tProf.currentPasswordLabel} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">{tProf.newPassword}</label>
+                    <input type="password" value={profileNewPassword} onChange={e => setProfileNewPassword(e.target.value)} placeholder={tProf.newPasswordLabel} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">{tProf.confirmPassword}</label>
+                    <input type="password" value={profileConfirmPassword} onChange={e => setProfileConfirmPassword(e.target.value)} placeholder={tProf.confirmPasswordLabel} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" />
+                  </div>
+                </div>
+                <Button variant="primary" onClick={async () => {
+                  if (!profileCurrentPassword || !profileNewPassword || !profileConfirmPassword) { await alert(locale === "ar" ? "يرجى ملء جميع الحقول" : "Please fill in all fields"); return; }
+                  if (profileNewPassword.length < 8) { await alert(tProf.passwordTooShort); return; }
+                  if (profileNewPassword !== profileConfirmPassword) { await alert(tProf.passwordMismatch); return; }
+                  const confirmed = await confirm(locale === "ar" ? "تأكيد تغيير كلمة المرور؟" : "Confirm password change?"); if (!confirmed) return;
+                  setProfileSaving("password");
+                  try {
+                    const pb = getPocketBase();
+                    await pb.collection("users").authWithPassword(user!.email, profileCurrentPassword);
+                    await pb.collection("users").update(user!.id, { password: profileNewPassword, passwordConfirm: profileNewPassword });
+                    setProfileCurrentPassword(""); setProfileNewPassword(""); setProfileConfirmPassword("");
+                    await alert(tProf.passwordChanged);
+                  } catch (err: any) { await alert(err?.status === 401 ? tProf.incorrectPassword : locale === "ar" ? "حدث خطأ" : "Error changing password"); }
+                  finally { setProfileSaving(""); }
+                }} disabled={profileSaving === "password"}>
+                  {profileSaving === "password" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+                  {tProf.changePassword}
+                </Button>
+              </div>
+
+              {/* Change Email */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-[var(--color-accent)]" />
+                  <h4 className="font-semibold text-[var(--color-ink)]">{tProf.changeEmail}</h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">{tProf.newEmail}</label>
+                    <input type="email" value={profileNewEmail} onChange={e => setProfileNewEmail(e.target.value)} placeholder={tProf.newEmailLabel} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">{tProf.currentPassword}</label>
+                    <input type="password" value={profileEmailPassword} onChange={e => setProfileEmailPassword(e.target.value)} placeholder={tProf.currentPasswordLabel} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" />
+                  </div>
+                </div>
+                <Button variant="primary" onClick={async () => {
+                  if (!profileNewEmail || !profileEmailPassword) { await alert(locale === "ar" ? "يرجى ملء جميع الحقول" : "Please fill in all fields"); return; }
+                  const confirmed = await confirm(locale === "ar" ? "تأكيد تغيير البريد الإلكتروني؟" : "Confirm email change?"); if (!confirmed) return;
+                  setProfileSaving("email");
+                  try {
+                    const pb = getPocketBase();
+                    await pb.collection("users").authWithPassword(user!.email, profileEmailPassword);
+                    await pb.collection("users").update(user!.id, { email: profileNewEmail });
+                    setProfileNewEmail(""); setProfileEmailPassword("");
+                    await alert(tProf.emailChanged);
+                    await pb.collection("users").authRefresh();
+                  } catch (err: any) { await alert(err?.status === 401 ? tProf.incorrectPassword : locale === "ar" ? "حدث خطأ" : "Error changing email"); }
+                  finally { setProfileSaving(""); }
+                }} disabled={profileSaving === "email"}>
+                  {profileSaving === "email" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                  {tProf.changeEmail}
+                </Button>
+              </div>
+
+              {/* Set Username */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <AtSign className="h-4 w-4 text-[var(--color-accent)]" />
+                  <h4 className="font-semibold text-[var(--color-ink)]">{tProf.setUsername}</h4>
+                </div>
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">{tProf.username}</label>
+                    <input type="text" value={profileUsername} onChange={e => setProfileUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))} placeholder={tProf.usernameLabel} maxLength={30} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" />
+                    <p className="text-xs text-[var(--color-ink-placeholder)] mt-1">{tProf.usernameHint}</p>
+                  </div>
+                  <Button variant="primary" onClick={async () => {
+                    if (!profileUsername.trim() || profileUsername.length < 3) { await alert(tProf.usernameHint); return; }
+                    setProfileSaving("username");
+                    try {
+                      const pb = getPocketBase();
+                      await pb.collection("users").update(user!.id, { username: profileUsername.trim() });
+                      await alert(tProf.usernameSet);
+                      await pb.collection("users").authRefresh();
+                    } catch (err: any) { const msg = err?.response?.data?.username?.message || err?.message || String(err); await alert(locale === "ar" ? `خطأ: ${msg}` : `Error: ${msg}`); }
+                    finally { setProfileSaving(""); }
+                  }} disabled={profileSaving === "username"}>
+                    {profileSaving === "username" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    {tProf.save}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
