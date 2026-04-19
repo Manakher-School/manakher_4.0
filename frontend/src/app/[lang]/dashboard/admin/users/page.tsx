@@ -634,7 +634,16 @@ export default function UsersPage() {
     // Regenerate email for a student
     function regenerateEmail(index: number) {
       try {
-        const newEmail = generateEmail(importStudents[index].name_ar);
+        // Build set of all OTHER students' emails (to avoid collision)
+        const otherEmails = new Set<string>();
+        for (let i = 0; i < importStudents.length; i++) {
+          if (i !== index) {
+            otherEmails.add(importStudents[i].email);
+          }
+        }
+        
+        // Generate unique email that doesn't collide with others
+        const newEmail = generateUniqueEmail(importStudents[index].name_ar, otherEmails);
         updateStudent(index, { email: newEmail });
       } catch (err) {
         console.error("Error regenerating email", err);
@@ -717,6 +726,56 @@ export default function UsersPage() {
         let created = 0;
         let failed = 0;
         const failedRecords: Array<{name: string, email: string, reason: string}> = [];
+        
+        // CRITICAL: Build final email set from ALL students to detect any remaining duplicates
+        // This catches cases where:
+        // 1. Admin manually edited emails and created duplicates
+        // 2. New users were created in system after import preview
+        // 3. Any other edge cases that created collisions
+        const finalEmailSet = new Set<string>();
+        
+        // First, fetch latest existing emails from system
+        try {
+          const existingUsers = await pb.collection("users").getFullList({ fields: "email" });
+          existingUsers.forEach(u => finalEmailSet.add(u.email));
+          console.log(`[WIZARD] Found ${finalEmailSet.size} existing emails in system (final check)`);
+        } catch (err) {
+          console.warn("[WIZARD] Could not fetch existing emails on submit, proceeding:", err);
+        }
+        
+        // Second, check all students in this import for duplicates
+        const studentEmails = importStudents.map(s => s.email);
+        const seenEmails = new Set<string>();
+        const emailsNeedingRegen: number[] = [];
+        
+        for (let i = 0; i < importStudents.length; i++) {
+          const studentEmail = studentEmails[i];
+          
+          if (finalEmailSet.has(studentEmail) || seenEmails.has(studentEmail)) {
+            console.warn(`[WIZARD] Duplicate email detected: ${studentEmail} for student ${importStudents[i].name_ar}`);
+            emailsNeedingRegen.push(i);
+          } else {
+            seenEmails.add(studentEmail);
+          }
+        }
+        
+        // If duplicates found, regenerate them with uniqueness guarantee
+        if (emailsNeedingRegen.length > 0) {
+          console.log(`[WIZARD] Regenerating ${emailsNeedingRegen.length} duplicate emails...`);
+          
+          for (const idx of emailsNeedingRegen) {
+            const student = importStudents[idx];
+            try {
+              const newEmail = generateUniqueEmail(student.name_ar, finalEmailSet);
+              importStudents[idx].email = newEmail;
+              finalEmailSet.add(newEmail);
+              seenEmails.add(newEmail);
+              console.log(`[WIZARD] Regenerated email for ${student.name_ar}: ${newEmail}`);
+            } catch (err) {
+              console.error(`[WIZARD] Failed to regenerate email for ${student.name_ar}:`, err);
+            }
+          }
+        }
         
         console.log(`[WIZARD] Starting to create ${importStudents.length} students...`);
         
@@ -859,7 +918,14 @@ export default function UsersPage() {
       const searchMatch = `${s.name_ar} ${s.name_en} ${s.email}`.toLowerCase().includes(studentsFilter.state.searchTerm.toLowerCase());
       
       // Section filter
-      const sectionMatch = !studentsSectionFilter || s.sections.includes(studentsSectionFilter);
+      let sectionMatch = true;
+      if (studentsSectionFilter === "other") {
+        // "Other" filter: show students with no sections
+        sectionMatch = !s.sections || s.sections.length === 0;
+      } else if (studentsSectionFilter) {
+        // Regular section filter: show students in this section
+        sectionMatch = s.sections.includes(studentsSectionFilter);
+      }
       
       return searchMatch && sectionMatch;
     })
@@ -1174,24 +1240,25 @@ export default function UsersPage() {
 
              {/* Students Filters */}
              <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-               {/* Section Filter */}
-               <div>
-                 <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">
-                   {t_students.filterSection}
-                 </label>
-                 <select
-                   value={studentsSectionFilter}
-                   onChange={(e) => setStudentsSectionFilter(e.target.value)}
-                   className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                 >
-                   <option value="">{t_students.filterAllSections}</option>
-                   {studentsData.sections.map(section => (
-                     <option key={section.id} value={section.id}>
-                       {formatSection(section, locale)}
-                     </option>
-                   ))}
-                 </select>
-               </div>
+              {/* Section Filter */}
+              <div>
+                  <label className="block text-xs font-semibold text-[var(--color-ink-secondary)] mb-1.5">
+                    {t_students.filterSection}
+                  </label>
+                  <select
+                    value={studentsSectionFilter}
+                    onChange={(e) => setStudentsSectionFilter(e.target.value)}
+                    className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                  >
+                    <option value="">{t_students.filterAllSections}</option>
+                    <option value="other">{locale === "ar" ? "بدون فصل (أخرى)" : "No Class (Other)"}</option>
+                    {studentsData.sections.map(section => (
+                      <option key={section.id} value={section.id}>
+                        {formatSection(section, locale)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                {/* Sort By */}
                <div>
