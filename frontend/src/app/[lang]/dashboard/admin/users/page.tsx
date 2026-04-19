@@ -827,56 +827,94 @@ export default function UsersPage() {
         console.log(`[WIZARD] Final emails to be created:`, importStudents.map(s => `${s.name_ar}: ${s.email}`));
         console.log(`[WIZARD] Starting to create ${importStudents.length} students...`);
         
+        // Track successfully created emails to avoid duplicates within this batch
+        const createdEmails = new Set<string>();
+        
         for (const student of importStudents) {
-          try {
-            console.log(`[WIZARD] Creating student: ${student.name_ar} (${student.email})`);
-            
-            // Create student
-            const newStudent = await pb.collection("users").create({
-              name_ar: student.name_ar,
-              name_en: student.name_en,
-              email: student.email,
-              password: student.password,
-              passwordConfirm: student.password,
-              role: "student",
-              sections: [student.section_id],
-              emailVisibility: false,
-            });
-            console.log(`[WIZARD] Successfully created student: ${newStudent.id}`);
-            created++;
-          } catch (err: any) {
-            failed++;
-            
-            // Extract detailed error message
-            let errorReason = "Unknown error";
-            
-            if (err?.data?.data) {
-              // PocketBase field validation errors
-              const fieldErrors = Object.entries(err.data.data)
-                .map(([field, detail]: [string, any]) => {
-                  const fieldMsg = detail?.message || detail || "Invalid value";
-                  return `${field}: ${fieldMsg}`;
-                })
-                .join("; ");
-              errorReason = fieldErrors;
-            } else if (err?.response?.status === 400 && err?.data?.message) {
-              errorReason = err.data.message;
-            } else if (err?.message?.includes("email") || err?.message?.includes("unique")) {
-              // Email uniqueness error
-              errorReason = locale === "ar" 
-                ? "البريد الإلكتروني مستخدم بالفعل في النظام" 
-                : "Email already exists in the system";
-            } else {
-              errorReason = err?.message || String(err);
+          let currentEmail = student.email;
+          let studentCreated = false;
+          const maxRetries = 5; // Maximum regeneration attempts
+          
+          for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+              if (attempt > 0) {
+                // Regenerate email on retry
+                const oldEmail = currentEmail;
+                // Combine system emails + already-created-in-this-batch emails for uniqueness check
+                const allExistingEmails = new Set([...finalEmailSet, ...createdEmails]);
+                currentEmail = generateUniqueEmail(student.name_ar, allExistingEmails);
+                console.log(`[WIZARD] Retry #${attempt} for ${student.name_ar}: ${oldEmail} → ${currentEmail}`);
+              }
+              
+              console.log(`[WIZARD] Creating student: ${student.name_ar} (${currentEmail})`);
+              
+              // Create student
+              const newStudent = await pb.collection("users").create({
+                name_ar: student.name_ar,
+                name_en: student.name_en,
+                email: currentEmail,
+                password: student.password,
+                passwordConfirm: student.password,
+                role: "student",
+                sections: [student.section_id],
+                emailVisibility: false,
+              });
+              
+              console.log(`[WIZARD] Successfully created student: ${newStudent.id} (${currentEmail})`);
+              createdEmails.add(currentEmail);
+              created++;
+              studentCreated = true;
+              break; // Success, exit retry loop
+              
+            } catch (err: any) {
+              // Check if this is an email uniqueness error
+              const isEmailUniqueError = 
+                (err?.data?.data?.email?.message?.includes("unique")) ||
+                (err?.data?.data?.email?.message?.includes("must be unique")) ||
+                (String(err?.data?.data?.email || "").includes("unique")) ||
+                (String(err?.message || "").includes("email") && String(err?.message || "").includes("unique"));
+              
+              if (isEmailUniqueError && attempt < maxRetries) {
+                // Email collision detected - regenerate and retry
+                console.warn(`[WIZARD] Email collision for ${student.name_ar} (${currentEmail}), regenerating (attempt ${attempt + 1}/${maxRetries})...`);
+                continue; // Try again with regenerated email
+              }
+              
+              // Non-retryable error or max retries exceeded
+              failed++;
+              
+              // Extract detailed error message
+              let errorReason = "Unknown error";
+              
+              if (err?.data?.data) {
+                // PocketBase field validation errors
+                const fieldErrors = Object.entries(err.data.data)
+                  .map(([field, detail]: [string, any]) => {
+                    const fieldMsg = detail?.message || detail || "Invalid value";
+                    return `${field}: ${fieldMsg}`;
+                  })
+                  .join("; ");
+                errorReason = fieldErrors;
+              } else if (err?.response?.status === 400 && err?.data?.message) {
+                errorReason = err.data.message;
+              } else if (err?.message?.includes("email") || err?.message?.includes("unique")) {
+                // Email uniqueness error
+                errorReason = locale === "ar" 
+                  ? "البريد الإلكتروني مستخدم بالفعل في النظام" 
+                  : "Email already exists in the system";
+              } else {
+                errorReason = err?.message || String(err);
+              }
+              
+              failedRecords.push({
+                name: student.name_ar,
+                email: currentEmail,
+                reason: errorReason
+              });
+              
+              console.error(`[WIZARD] Failed to create student ${student.name_ar} (${currentEmail}):`, errorReason);
+              break; // Exit retry loop on non-retryable error
             }
-            
-            failedRecords.push({
-              name: student.name_ar,
-              email: student.email,
-              reason: errorReason
-            });
-            
-            console.error(`[WIZARD] Failed to create student ${student.name_ar} (${student.email}):`, errorReason);
           }
         }
         
