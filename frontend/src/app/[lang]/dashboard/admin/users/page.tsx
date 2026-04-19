@@ -1055,7 +1055,7 @@ export default function UsersPage() {
          <div>
              <div className="mb-4 flex items-center justify-center gap-3">
                <div className="flex-1 max-w-md relative">
-                 <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
+                 <Search className="absolute top-1/2 -translate-y-1/2 start-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
                  <input
                    type="text"
                    placeholder={t_teachers.filterSearch}
@@ -1130,12 +1130,12 @@ export default function UsersPage() {
                 </select>
               </div>
 
-              {/* Results count */}
-              <div className="flex items-end">
-                <div className="text-xs text-[var(--color-ink-secondary)]">
-                  {filteredTeachers.length} {t_teachers.title}
+{/* Results count */}
+              <div className="flex items-end justify-center">
+                  <div className="text-sm font-semibold text-[var(--color-ink-secondary)]">
+                    {filteredTeachers.length} {t_teachers.title}
+                  </div>
                 </div>
-              </div>
             </div>
 
           {teachersCrud.state.isLoading ? (
@@ -1150,8 +1150,8 @@ export default function UsersPage() {
                 <div key={teacher.id} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-card)] p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <h3 className="font-semibold">{teacher.name_en}</h3>
-                      <p className="text-sm text-[var(--color-ink-secondary)]">{teacher.name_ar}</p>
+                      <h3 className="font-semibold">{locale === "ar" ? teacher.name_ar : teacher.name_en}</h3>
+                      <p className="text-sm text-[var(--color-ink-secondary)]">{locale === "ar" ? teacher.name_en : teacher.name_ar}</p>
                       <p className="text-xs text-[var(--color-ink-placeholder)] mt-1">{teacher.email}</p>
                        {teacher.expand?.sections?.length ? (
                           <div className="mt-2 flex flex-wrap gap-1">
@@ -1292,7 +1292,7 @@ export default function UsersPage() {
            <div>
              <div className="mb-4 flex items-center justify-center gap-3 flex-wrap">
                <div className="flex-1 max-w-md relative">
-                 <Search className="absolute inset-y-0 inset-x-0 ms-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
+                 <Search className="absolute top-1/2 -translate-y-1/2 start-3 h-4 w-4 text-[var(--color-ink-placeholder)] pointer-events-none" />
                  <input
                    type="text"
                    placeholder={t_students.filterSearch}
@@ -1357,12 +1357,12 @@ export default function UsersPage() {
                  </select>
                </div>
 
-               {/* Results count */}
-               <div className="flex items-end">
-                 <div className="text-xs text-[var(--color-ink-secondary)]">
-                   {filteredStudents.length} {t_students.title}
-                 </div>
-               </div>
+{/* Results count */}
+                <div className="flex items-end justify-center">
+                  <div className="text-sm font-semibold text-[var(--color-ink-secondary)]">
+                    {filteredStudents.length} {t_students.title}
+                  </div>
+                </div>
              </div>
 
            {studentsCrud.state.isLoading ? (
@@ -1441,8 +1441,8 @@ export default function UsersPage() {
                            className="h-4 w-4 cursor-pointer rounded border border-[var(--color-border)] accent-[var(--color-accent)] mt-1 flex-shrink-0"
                          />
                          <div className="flex-1">
-                           <h3 className="font-semibold">{student.name_en}</h3>
-                           <p className="text-sm text-[var(--color-ink-secondary)]">{student.name_ar}</p>
+                           <h3 className="font-semibold">{locale === "ar" ? student.name_ar : student.name_en}</h3>
+                           <p className="text-sm text-[var(--color-ink-secondary)]">{locale === "ar" ? student.name_en : student.name_ar}</p>
                             <p className="text-xs text-[var(--color-ink-placeholder)] mt-1">{student.email}</p>
                              {student.expand?.sections?.length ? (
                                <div className="mt-2 flex flex-wrap gap-1">
