@@ -827,22 +827,21 @@ export default function UsersPage() {
         console.log(`[WIZARD] Final emails to be created:`, importStudents.map(s => `${s.name_ar}: ${s.email}`));
         console.log(`[WIZARD] Starting to create ${importStudents.length} students...`);
         
-        // Track successfully created emails to avoid duplicates within this batch
-        const createdEmails = new Set<string>();
+        // Track all known emails: system emails + successfully created + failed attempts
+        // This is the SINGLE SOURCE OF TRUTH for uniqueness checking
+        const allKnownEmails = new Set<string>(finalEmailSet);
         
         for (const student of importStudents) {
           let currentEmail = student.email;
           const maxRetries = 5; // Maximum regeneration attempts
-          let lastError: any = null;
-          let createdSuccessfully = false;
           
           for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
               if (attempt > 0) {
-                // Regenerate email on retry - use ALL known emails for uniqueness check
+                // Regenerate email on retry - allKnownEmails already contains the failed email
+                // so generateUniqueEmail will skip it and produce a different one
                 const oldEmail = currentEmail;
-                const allExistingEmails = new Set([...finalEmailSet, ...createdEmails]);
-                currentEmail = generateUniqueEmail(student.name_ar, allExistingEmails);
+                currentEmail = generateUniqueEmail(student.name_ar, allKnownEmails);
                 console.log(`[WIZARD] Retry #${attempt} for ${student.name_ar}: ${oldEmail} → ${currentEmail}`);
               }
               
@@ -861,20 +860,19 @@ export default function UsersPage() {
               });
               
               console.log(`[WIZARD] Successfully created student: ${newStudent.id} (${currentEmail})`);
-              createdEmails.add(currentEmail);
+              allKnownEmails.add(currentEmail); // Track successfully created email
               created++;
-              createdSuccessfully = true;
-              lastError = null;
               break; // Success, exit retry loop
               
             } catch (err: any) {
-              lastError = err;
+              // CRITICAL: Add the failed email to our known set IMMEDIATELY
+              // This ensures generateUniqueEmail() will skip it on the next attempt
+              allKnownEmails.add(currentEmail);
               console.warn(`[WIZARD] Attempt ${attempt + 1} failed for ${student.name_ar} (${currentEmail}):`, err?.message || String(err));
+              console.log(`[WIZARD] Added failed email ${currentEmail} to known emails set (total: ${allKnownEmails.size})`);
               
-              // Always retry with a regenerated email - the most common error is email uniqueness
-              // and regenerating will fix it. Other errors are rare since the wizard validates data.
               if (attempt < maxRetries) {
-                console.log(`[WIZARD] Will retry with regenerated email...`);
+                console.log(`[WIZARD] Will retry with regenerated email (avoiding ${currentEmail})...`);
                 continue; // Try again with regenerated email
               }
               
@@ -886,7 +884,6 @@ export default function UsersPage() {
               let errorReason = "Unknown error";
               
               if (err?.data?.data) {
-                // PocketBase field validation errors
                 const fieldErrors = Object.entries(err.data.data)
                   .map(([field, detail]: [string, any]) => {
                     const fieldMsg = detail?.message || detail || "Invalid value";
