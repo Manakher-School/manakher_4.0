@@ -1157,7 +1157,7 @@ export default function UsersPage() {
                           <div className="mt-2 flex flex-wrap gap-1">
                             {teacher.expand.sections.map(s => (
                               <span key={s.id} className="inline-block rounded bg-[var(--color-accent)] bg-opacity-20 px-2 py-0.5 text-xs font-semibold text-white">
-                                {locale === "ar" ? s.section_ar : s.section_en}
+                                {formatSection(s, locale)}
                               </span>
                             ))}
                           </div>
