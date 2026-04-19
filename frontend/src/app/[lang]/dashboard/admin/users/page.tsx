@@ -832,15 +832,15 @@ export default function UsersPage() {
         
         for (const student of importStudents) {
           let currentEmail = student.email;
-          let studentCreated = false;
           const maxRetries = 5; // Maximum regeneration attempts
+          let lastError: any = null;
+          let createdSuccessfully = false;
           
           for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
               if (attempt > 0) {
-                // Regenerate email on retry
+                // Regenerate email on retry - use ALL known emails for uniqueness check
                 const oldEmail = currentEmail;
-                // Combine system emails + already-created-in-this-batch emails for uniqueness check
                 const allExistingEmails = new Set([...finalEmailSet, ...createdEmails]);
                 currentEmail = generateUniqueEmail(student.name_ar, allExistingEmails);
                 console.log(`[WIZARD] Retry #${attempt} for ${student.name_ar}: ${oldEmail} → ${currentEmail}`);
@@ -863,31 +863,26 @@ export default function UsersPage() {
               console.log(`[WIZARD] Successfully created student: ${newStudent.id} (${currentEmail})`);
               createdEmails.add(currentEmail);
               created++;
-              studentCreated = true;
+              createdSuccessfully = true;
+              lastError = null;
               break; // Success, exit retry loop
               
             } catch (err: any) {
-              // Robust email uniqueness detection: stringify the entire error and check for "unique"
-              // PocketBase error structures vary between versions, so we check broadly
-              const errString = JSON.stringify(err || {});
-              const isEmailUniqueError = 
-                errString.includes("unique") || 
-                errString.includes("must be unique") ||
-                (err?.data?.data?.email) !== undefined;
+              lastError = err;
+              console.warn(`[WIZARD] Attempt ${attempt + 1} failed for ${student.name_ar} (${currentEmail}):`, err?.message || String(err));
               
-              console.log(`[WIZARD] Error for ${student.name_ar}:`, errString.substring(0, 300));
-              console.log(`[WIZARD] isEmailUniqueError: ${isEmailUniqueError}, attempt: ${attempt}/${maxRetries}`);
-              
-              if (isEmailUniqueError && attempt < maxRetries) {
-                // Email collision detected - regenerate and retry
-                console.warn(`[WIZARD] Email collision for ${student.name_ar} (${currentEmail}), regenerating (attempt ${attempt + 1}/${maxRetries})...`);
+              // Always retry with a regenerated email - the most common error is email uniqueness
+              // and regenerating will fix it. Other errors are rare since the wizard validates data.
+              if (attempt < maxRetries) {
+                console.log(`[WIZARD] Will retry with regenerated email...`);
                 continue; // Try again with regenerated email
               }
               
-              // Non-retryable error or max retries exceeded
+              // Max retries exceeded - report failure
+              console.error(`[WIZARD] All ${maxRetries + 1} attempts failed for ${student.name_ar}`);
               failed++;
               
-              // Extract detailed error message
+              // Extract detailed error message from last error
               let errorReason = "Unknown error";
               
               if (err?.data?.data) {
@@ -902,7 +897,6 @@ export default function UsersPage() {
               } else if (err?.response?.status === 400 && err?.data?.message) {
                 errorReason = err.data.message;
               } else if (err?.message?.includes("email") || err?.message?.includes("unique")) {
-                // Email uniqueness error
                 errorReason = locale === "ar" 
                   ? "البريد الإلكتروني مستخدم بالفعل في النظام" 
                   : "Email already exists in the system";
@@ -917,7 +911,7 @@ export default function UsersPage() {
               });
               
               console.error(`[WIZARD] Failed to create student ${student.name_ar} (${currentEmail}):`, errorReason);
-              break; // Exit retry loop on non-retryable error
+              break; // Exit retry loop - all retries exhausted
             }
           }
         }
