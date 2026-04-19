@@ -7,7 +7,7 @@ import pb from "@/lib/pocketbase";
 import { Plus, Trash2, Pencil, Loader2, X, ChevronDown, Search, Upload, Check, AlertCircle, RefreshCw } from "lucide-react";
 import { useCrudState, useFormState, useFilterState, useTabState } from "@/lib/hooks";
 import { parseStudentFile } from "@/lib/csv-parser";
-import { generateEmail, generatePassword, generateEnglishName, isValidEmail, isValidPassword, transliterateArabic } from "@/lib/transliteration";
+import { generateEmail, generatePassword, generateEnglishName, isValidEmail, isValidPassword, transliterateArabic, generateUniqueEmail } from "@/lib/transliteration";
 
 interface Teacher {
   id: string;
@@ -577,17 +577,40 @@ export default function UsersPage() {
           throw new Error(locale === "ar" ? "لا توجد بيانات صحيحة في الملف" : "No valid data found in file");
         }
         
-        // Convert to import data with auto-generated defaults
-         const importData: StudentImportData[] = rows.map(row => {
-            const email = generateEmail(row.name_ar);
-            return {
-              name_ar: row.name_ar,
-              name_en: generateEnglishName(row.name_ar), // Auto-generate from Arabic name
-              email: email,
-              password: email, // Use email as default password
-              section_id: ""
-            };
-          });
+        // Fetch existing emails from PocketBase to ensure uniqueness
+        let existingEmails: Set<string> = new Set();
+        try {
+          const existingUsers = await pb.collection("users").getFullList({ fields: "email" });
+          existingEmails = new Set(existingUsers.map(u => u.email));
+          console.log(`[WIZARD] Found ${existingEmails.size} existing emails in system`);
+        } catch (err) {
+          console.warn("[WIZARD] Could not fetch existing emails, proceeding without check:", err);
+        }
+        
+        // Convert to import data with auto-generated defaults and unique emails
+        const importData: StudentImportData[] = rows.map(row => {
+          const email = generateUniqueEmail(row.name_ar, existingEmails);
+          existingEmails.add(email); // Add to set for next iteration
+          
+          return {
+            name_ar: row.name_ar,
+            name_en: generateEnglishName(row.name_ar), // Auto-generate from Arabic name
+            email: email,
+            password: email, // Use email as default password
+            section_id: ""
+          };
+        });
+        
+        // Log any duplicate emails detected and auto-fixed
+        const emailCounts: Record<string, number> = {};
+        importData.forEach(student => {
+          emailCounts[student.email] = (emailCounts[student.email] || 0) + 1;
+        });
+        
+        const duplicateEmails = Object.entries(emailCounts).filter(([_, count]) => count > 1);
+        if (duplicateEmails.length > 0) {
+          console.warn("[WIZARD] Duplicate emails detected and auto-fixed:", duplicateEmails);
+        }
         
         setImportStudents(importData);
         setWizardStep(2);
@@ -628,6 +651,8 @@ export default function UsersPage() {
     function validateStep2(): boolean {
       setWizardError(null);
       
+      // Check for duplicate emails within import list
+      const emailSet = new Set<string>();
       for (let i = 0; i < importStudents.length; i++) {
         const student = importStudents[i];
         
@@ -645,6 +670,13 @@ export default function UsersPage() {
           setWizardError(`${locale === "ar" ? "الطالب" : "Student"} ${i + 1}: ${locale === "ar" ? "صيغة البريد الإلكتروني غير صحيحة" : "Invalid email format"}`);
           return false;
         }
+        
+        // Check for duplicate emails within the import list
+        if (emailSet.has(student.email)) {
+          setWizardError(`${locale === "ar" ? "الطالب" : "Student"} ${i + 1}: ${locale === "ar" ? "البريد الإلكتروني مكرر في القائمة" : "Email is duplicated in the list"} (${student.email}). ${locale === "ar" ? "يرجى تعديل البريد الإلكتروني" : "Please modify the email"}`);
+          return false;
+        }
+        emailSet.add(student.email);
         
         if (!student.password.trim()) {
           setWizardError(`${locale === "ar" ? "الطالب" : "Student"} ${i + 1}: ${locale === "ar" ? "كلمة المرور مطلوبة" : "Password is required"}`);
@@ -684,73 +716,98 @@ export default function UsersPage() {
       try {
         let created = 0;
         let failed = 0;
-        const failedNames: string[] = [];
+        const failedRecords: Array<{name: string, email: string, reason: string}> = [];
         
         console.log(`[WIZARD] Starting to create ${importStudents.length} students...`);
         
-         for (const student of importStudents) {
-            try {
-              console.log(`[WIZARD] Creating student: ${student.name_ar} (${student.email})`);
-              
-              // Create student (PocketBase will validate email uniqueness)
-              const newStudent = await pb.collection("users").create({
-                name_ar: student.name_ar,
-                name_en: student.name_en,
-                email: student.email,
-                password: student.password,
-                passwordConfirm: student.password,
-                role: "student",
-                sections: [student.section_id],
-                emailVisibility: false,
-              });
-              console.log(`[WIZARD] Successfully created student: ${newStudent.id}`);
-              created++;
-            } catch (err: any) {
-              failed++;
-              failedNames.push(student.name_ar);
-              
-              // Extract detailed error message
-              let errorMsg = err?.message || String(err);
-              if (err?.data?.data) {
-                // PocketBase field validation errors
-                const fieldErrors = Object.entries(err.data.data)
-                  .map(([field, detail]: [string, any]) => `${field}: ${detail?.message || detail}`)
-                  .join(", ");
-                errorMsg = fieldErrors;
-              } else if (err?.response?.status === 400 && err?.data?.message) {
-                errorMsg = err.data.message;
-              }
-              
-              console.error(`[WIZARD] Failed to create student ${student.name_ar}:`, errorMsg);
-              console.error(`[WIZARD] Full error:`, err);
+        for (const student of importStudents) {
+          try {
+            console.log(`[WIZARD] Creating student: ${student.name_ar} (${student.email})`);
+            
+            // Create student
+            const newStudent = await pb.collection("users").create({
+              name_ar: student.name_ar,
+              name_en: student.name_en,
+              email: student.email,
+              password: student.password,
+              passwordConfirm: student.password,
+              role: "student",
+              sections: [student.section_id],
+              emailVisibility: false,
+            });
+            console.log(`[WIZARD] Successfully created student: ${newStudent.id}`);
+            created++;
+          } catch (err: any) {
+            failed++;
+            
+            // Extract detailed error message
+            let errorReason = "Unknown error";
+            
+            if (err?.data?.data) {
+              // PocketBase field validation errors
+              const fieldErrors = Object.entries(err.data.data)
+                .map(([field, detail]: [string, any]) => {
+                  const fieldMsg = detail?.message || detail || "Invalid value";
+                  return `${field}: ${fieldMsg}`;
+                })
+                .join("; ");
+              errorReason = fieldErrors;
+            } else if (err?.response?.status === 400 && err?.data?.message) {
+              errorReason = err.data.message;
+            } else if (err?.message?.includes("email") || err?.message?.includes("unique")) {
+              // Email uniqueness error
+              errorReason = locale === "ar" 
+                ? "البريد الإلكتروني مستخدم بالفعل في النظام" 
+                : "Email already exists in the system";
+            } else {
+              errorReason = err?.message || String(err);
             }
+            
+            failedRecords.push({
+              name: student.name_ar,
+              email: student.email,
+              reason: errorReason
+            });
+            
+            console.error(`[WIZARD] Failed to create student ${student.name_ar} (${student.email}):`, errorReason);
           }
+        }
         
         console.log(`[WIZARD] Created ${created} out of ${importStudents.length} students`);
         
-        // Show result
-        const resultMsg = locale === "ar"
-          ? `تم إنشاء ${created} من أصل ${importStudents.length} طالب/طالبة بنجاح${failed > 0 ? `\n\nفشل في إنشاء: ${failedNames.slice(0, 3).join(', ')}${failedNames.length > 3 ? ' وآخرين' : ''}` : ''}`
-          : `Successfully created ${created} out of ${importStudents.length} students${failed > 0 ? `\n\nFailed: ${failedNames.slice(0, 3).join(', ')}${failedNames.length > 3 ? ' and others' : ''}` : ''}`;
+        // Build detailed result message
+        let resultMsg = locale === "ar"
+          ? `تم إنشاء ${created} من أصل ${importStudents.length} طالب/طالبة بنجاح`
+          : `Successfully created ${created} out of ${importStudents.length} students`;
         
-         await alert(resultMsg);
-         
-         // Reset wizard
-         setWizardStep(1);
-         setImportStudents([]);
-         setCsvFile(null);
-         setShowCsvImport(false);
-         
-         console.log(`[WIZARD] Calling loadStudents()...`);
-         // Load students and switch to tab
-         await loadStudents();
-         console.log(`[WIZARD] loadStudents() completed, students data:`, studentsData.items.length);
-         
-         // Small delay to ensure React state updates are batched properly
-         await new Promise(resolve => setTimeout(resolve, 100));
-         console.log(`[WIZARD] Switching to students tab...`);
-         setActiveTab("students");
-         console.log(`[WIZARD] Done!`);
+        if (failed > 0) {
+          const failedDetails = failedRecords
+            .map(r => `• ${r.name} (${r.email})\n  ${locale === "ar" ? "السبب" : "Reason"}: ${r.reason}`)
+            .join("\n");
+          
+          resultMsg += locale === "ar"
+            ? `\n\n⚠️ فشل في إنشاء ${failed}:\n${failedDetails}`
+            : `\n\n⚠️ Failed to create ${failed}:\n${failedDetails}`;
+        }
+        
+        await alert(resultMsg);
+        
+        // Reset wizard
+        setWizardStep(1);
+        setImportStudents([]);
+        setCsvFile(null);
+        setShowCsvImport(false);
+        
+        console.log(`[WIZARD] Calling loadStudents()...`);
+        // Load students and switch to tab
+        await loadStudents();
+        console.log(`[WIZARD] loadStudents() completed, students data:`, studentsData.items.length);
+        
+        // Small delay to ensure React state updates are batched properly
+        await new Promise(resolve => setTimeout(resolve, 100));
+        console.log(`[WIZARD] Switching to students tab...`);
+        setActiveTab("students");
+        console.log(`[WIZARD] Done!`);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(`[WIZARD] Error:`, errorMsg);

@@ -1036,36 +1036,41 @@ Completed all remaining testing issues from Rounds 7, 8, and 9 on the production
 **Final:** 52 pages compiled successfully, zero TypeScript errors
 (Down from 56 after removing duplicate moderation and monitoring pages)
 
-## Round 12 - Kindergarten Class Creation Fix
+## Round 12 - Multiple Fixes: Kindergarten, Import, and Infinite Loading
 
 **Status:** ✅ COMPLETE (2026-04-19)
 
-### What I Did
-- **Issue:** User confirmed that `grade_order = 0` for kindergarten still fails with 400 error from PocketBase
-- **Investigation:** After detailed investigation, found the constraint preventing 0 is from PocketBase backend (not visible in migration files)
-- **User Decision:** Use positive value `100` for kindergarten instead of fighting backend constraint
-- **Solution:** Kindergarten uses `grade_order = 100`
-  - Kindergarten: `grade_order = 100` (sorts after grades 1-10)
-  - Grade 1: `grade_order = 1`
-  - Grade 2: `grade_order = 2`
-  - ... Grade 10: `grade_order = 10`
-- **Implementation:**
-  - Updated `admin/sections/page.tsx` validation to require positive numbers (>= 0)
-  - Build passes: 56 pages, zero TypeScript errors
-  - Committed: `637f895` - "fix: Use grade_order = 100 for kindergarten class"
+### Part 1: Kindergarten Class Creation Fix ✅
+- **Issue:** User confirmed that `grade_order = 0` for kindergarten fails with 400 error from PocketBase
+- **Solution:** Kindergarten uses `grade_order = 100` (sorts after grades 1-10)
+- **Committed:** `637f895` - "fix: Use grade_order = 100 for kindergarten class"
 
-### Why This Works
-- The sort order `sort: "grade_order,section_ar"` will naturally sort 1-10 before 100
-- No backend changes needed
-- Simple positive number: no validation errors from PocketBase
-- Clear separation: regular grades (1-10) before kindergarten (100)
+### Part 2: Student Import Wizard Error Logging ✅
+- **Issue:** When importing students via CSV, wizard shows generic error "Failed to create record" with no details
+- **Solution:** Enhanced error extraction to show specific field validation errors
+- **Committed:** `57dc35f` - "fix: Improve error logging for student import wizard"
+- **Result:** 17 out of 19 students imported successfully ✅
 
-### Testing
-User can now create a kindergarten class:
-1. Go to Admin → Classes and Sections
-2. Add new class with name "روضة" (Kindergarten)
-3. Use `grade_order = 100`
-4. Should create successfully (no 400 error) ✅
+### Part 3: Infinite Loading in Admin Subjects/Exams Page ✅ (FINAL FIX)
+- **Issue:** Admin → Courses & Exams page shows infinite loading spinner, courses never load
+- **Root Cause:** `loadSubjects` and `loadExams` callbacks change on every render due to custom hook dependencies
+  - This triggered infinite loop: useEffect → functions created → dependency change → useEffect again
+- **Previous Attempts (Failed):**
+  1. First attempt: Empty dependency array → React complained about changing array size
+  2. Second attempt: Removed dependencies → functions lost state references, exams disappeared
+- **Final Solution (WORKS):** Use `useRef` to track initialization
+  - Added `const initRef = useRef(false)` to component
+  - Check `if (initRef.current) return;` in useEffect before loading
+  - Set `initRef.current = true` to mark as initialized
+  - Functions run exactly once on mount, never again
+  - Keeps dependency array intact (no React warnings)
+  - Exams and subjects persist in state after initial load
+- **Committed:** `facad65` - "fix: Prevent infinite loop in subjects/exams page initialization"
+
+### Testing Status
+1. ✅ Kindergarten class creation: Use `grade_order = 100`
+2. ✅ Student import: 17/19 successful (error logging enhanced)
+3. ✅ Admin subjects/exams: Loads without infinite spinner, exams visible ✅
 
 ---
 

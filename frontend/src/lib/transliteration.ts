@@ -37,12 +37,13 @@ export function transliterateArabic(arabicText: string): string {
 }
 
 /**
- * Generate email from Arabic name
- * Format: firstname.lastname@manakher.edu.jo
+ * Generate email base from Arabic name (without counter or domain)
+ * Format: firstname.lastname or firstname.middlename.lastname
  * @param arabicName - Full name in Arabic
- * @returns Generated email address
+ * @param useAllNames - If true, uses all name parts; if false, uses first + last only
+ * @returns Generated email base
  */
-export function generateEmail(arabicName: string): string {
+function getEmailBase(arabicName: string, useAllNames: boolean = false): string {
   const nameParts = arabicName.trim().split(/\s+/);
   
   if (nameParts.length === 0) {
@@ -54,8 +55,14 @@ export function generateEmail(arabicName: string): string {
   if (nameParts.length === 1) {
     // Single name
     emailBase = transliterateArabic(nameParts[0]).toLowerCase();
+  } else if (useAllNames && nameParts.length > 2) {
+    // Use all name parts: first.middle.last
+    const allTransliterated = nameParts
+      .map(part => transliterateArabic(part).toLowerCase())
+      .filter(part => part.length > 0);
+    emailBase = allTransliterated.join('.');
   } else {
-    // Multiple names: use first and last
+    // Use first and last: first.last
     const firstName = transliterateArabic(nameParts[0]).toLowerCase();
     const lastName = transliterateArabic(nameParts[nameParts.length - 1]).toLowerCase();
     emailBase = `${firstName}.${lastName}`;
@@ -71,7 +78,64 @@ export function generateEmail(arabicName: string): string {
     throw new Error('Could not generate valid email from name');
   }
   
+  return emailBase;
+}
+
+/**
+ * Generate email from Arabic name
+ * Format: firstname.lastname@manakher.edu.jo
+ * Tries basic format first, then adds counter suffix if needed for uniqueness
+ * @param arabicName - Full name in Arabic
+ * @param counter - Optional counter suffix (e.g., 1, 2, 3)
+ * @returns Generated email address
+ */
+export function generateEmail(arabicName: string, counter?: number): string {
+  let emailBase = getEmailBase(arabicName, false);
+  
+  // Add counter suffix if provided
+  if (counter !== undefined && counter > 0) {
+    emailBase = `${emailBase}${counter}`;
+  }
+  
   return `${emailBase}@manakher.edu.jo`;
+}
+
+/**
+ * Generate email with guaranteed uniqueness against existing emails
+ * Uses counter suffix if needed: firstname.lastname1@, firstname.lastname2@, etc.
+ * @param arabicName - Full name in Arabic
+ * @param existingEmails - Set or array of existing email addresses to avoid
+ * @returns Generated unique email address
+ */
+export function generateUniqueEmail(arabicName: string, existingEmails: Set<string> | string[]): string {
+  const emailSet = existingEmails instanceof Set ? existingEmails : new Set(existingEmails);
+  
+  // Try basic format first
+  let email = generateEmail(arabicName);
+  if (!emailSet.has(email)) {
+    return email;
+  }
+  
+  // Try with counter suffix (1, 2, 3, ...)
+  for (let counter = 1; counter <= 100; counter++) {
+    email = generateEmail(arabicName, counter);
+    if (!emailSet.has(email)) {
+      return email;
+    }
+  }
+  
+  // Fallback: use all name parts + counter (should almost never reach here)
+  let emailBase = getEmailBase(arabicName, true);
+  for (let counter = 1; counter <= 100; counter++) {
+    email = `${emailBase}${counter}@manakher.edu.jo`;
+    if (!emailSet.has(email)) {
+      return email;
+    }
+  }
+  
+  // Last resort: use timestamp
+  const timestamp = Date.now();
+  return `${getEmailBase(arabicName, false)}${timestamp}@manakher.edu.jo`;
 }
 
 /**
