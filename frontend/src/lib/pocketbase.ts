@@ -8,21 +8,29 @@ const pb = new PocketBase(
 pb.autoCancellation(false);
 
 // Sync authStore to a cookie so that proxy.ts (server-side) can read it.
-// PocketBase JS SDK uses localStorage by default which is invisible to
-// the Next.js proxy/middleware layer.
-if (typeof document !== "undefined") {
+// Uses the server-side API route for reliability — document.cookie can
+// silently fail on mobile browsers accessing via IP address.
+if (typeof window !== "undefined") {
   pb.authStore.onChange(() => {
     const isValid = pb.authStore.isValid;
     if (isValid) {
-      // Store the token and model in a cookie accessible to the proxy
-      const cookieValue = JSON.stringify({
-        token: pb.authStore.token,
-        record: pb.authStore.record,
+      const token = pb.authStore.token;
+      const record = pb.authStore.record;
+      // Fire-and-forget: set cookie via server-side API route
+      fetch("/api/auth/set-cookie", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, record }),
+      }).catch(() => {
+        // Fallback to document.cookie if the API route fails
+        const cookieValue = JSON.stringify({ token, record });
+        document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
       });
-      document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
     } else {
-      // Clear the cookie on logout
-      document.cookie = "pb_auth=; path=/; max-age=0; SameSite=Lax";
+      // Fire-and-forget: clear cookie via server-side API route
+      fetch("/api/auth/clear-cookie", { method: "POST" }).catch(() => {
+        document.cookie = "pb_auth=; path=/; max-age=0; SameSite=Lax";
+      });
     }
   }, true);
 }

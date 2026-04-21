@@ -7,6 +7,7 @@ type Locale = (typeof LOCALES)[number];
 const DEFAULT_LOCALE: Locale = "ar";
 
 const publicPathSegments = ["login"];
+const publicPathPrefixes = ["/api/"];
 
 // Role -> dashboard path suffix (without locale prefix)
 const rolePaths: Record<string, string> = {
@@ -65,8 +66,11 @@ export const proxy: NextProxy = (request: NextRequest) => {
   // --- Step 2: Strip locale to get the logical path ---
   const logicalPath = stripLocale(pathname, locale);
 
-  // Allow public paths (login)
-  if (publicPathSegments.some((seg) => logicalPath.startsWith(`/${seg}`))) {
+  // Allow public paths (login, API routes)
+  if (
+    publicPathSegments.some((seg) => logicalPath.startsWith(`/${seg}`)) ||
+    publicPathPrefixes.some((prefix) => logicalPath.startsWith(prefix))
+  ) {
     return NextResponse.next();
   }
 

@@ -103,13 +103,19 @@ export default function TeacherProfilePage() {
       // Refresh auth to get updated user data
       const refreshed = await pb.collection("users").authRefresh();
       if (refreshed?.record) {
-        // Update the cookie with new auth data
-        if (typeof document !== "undefined") {
-          const cookieValue = JSON.stringify({
-            token: pb.authStore.token,
-            record: pb.authStore.record,
+        // Update the cookie with new auth data via server-side API route
+        try {
+          await fetch("/api/auth/set-cookie", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: pb.authStore.token, record: pb.authStore.record }),
           });
-          document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+        } catch {
+          // Fallback to document.cookie
+          if (typeof document !== "undefined") {
+            const cookieValue = JSON.stringify({ token: pb.authStore.token, record: pb.authStore.record });
+            document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+          }
         }
       }
     } catch (err: any) {
@@ -148,12 +154,17 @@ export default function TeacherProfilePage() {
       // Refresh auth to get updated user data
       const refreshed = await pb.collection("users").authRefresh();
       if (refreshed?.record) {
-        if (typeof document !== "undefined") {
-          const cookieValue = JSON.stringify({
-            token: pb.authStore.token,
-            record: pb.authStore.record,
+        try {
+          await fetch("/api/auth/set-cookie", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: pb.authStore.token, record: pb.authStore.record }),
           });
-          document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+        } catch {
+          if (typeof document !== "undefined") {
+            const cookieValue = JSON.stringify({ token: pb.authStore.token, record: pb.authStore.record });
+            document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+          }
         }
       }
     } catch (err: any) {
