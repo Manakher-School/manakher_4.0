@@ -13,21 +13,22 @@ Role:     Admin
 
 ### Teacher Accounts
 ```
-Email:    rania@manakher.edu.jo
-Email:    hanadi@manakher.edu.jo
-Email:    isra@manakher.edu.jo
-Email:    amani@manakher.edu.jo
-Email:    kawthar@manakher.edu.jo
-Email:    maysa@manakher.edu.jo
-Email:    dua@manakher.edu.jo
-Email:    heba@manakher.edu.jo
-Email:    aseel@manakher.edu.jo
-Email:    wejdan@manakher.edu.jo
+All teachers use the same password: Teacher123!
+
 Email:    asma@manakher.edu.jo
-Email:    riham@manakher.edu.jo
+Email:    amani@manakher.edu.jo
+Email:    isra@manakher.edu.jo
+Email:    kawthar@manakher.edu.jo
+Email:    rania@manakher.edu.jo
+Email:    aseel@manakher.edu.jo
 Email:    duha@manakher.edu.jo
-Email:    izdehar@manajher.edu.jo   (note: manajher, not manakher)
-Password: (set individually per teacher)
+Email:    dua@manakher.edu.jo
+Email:    izdehar@manakher.edu.jo
+Email:    hanadi@manakher.edu.jo
+Email:    riham@manakher.edu.jo
+Email:    heba@manakher.edu.jo
+Email:    maysa@manakher.edu.jo
+Email:    wejdan@manakher.edu.jo
 Role:     Teacher
 ```
 
@@ -128,9 +129,8 @@ curl -X POST "https://pocketbase-production-882e.up.railway.app/api/collections/
 
 ## Known Issues
 
-1. **Teacher accounts are `verified: false`** — If PocketBase requires email verification for auth, teachers cannot log in. Fix: set `verified: true` for each teacher in PocketBase admin, or disable "Require email verification" on the users collection.
-2. **Student accounts have no emails** — Students cannot log in until emails are assigned.
-3. **One teacher has a typo in their email domain**: `izdehar@manajher.edu.jo` (should be `manakher`).
+1. **Student accounts have no emails** — Students cannot log in until emails are assigned to them in PocketBase.
+2. **Teacher accounts have `verified: false`** — Login still works (email verification is not required for auth), but the verified badge is not set. If PocketBase enables "Require email verification" in the future, teachers will be locked out until verified.
 
 ## System Requirements
 

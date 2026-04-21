@@ -30,7 +30,8 @@ It contains a short and clear to-do list of milestones.
 1. ⏳ User should verify in PocketBase admin UI whether "Require email verification" is enabled on the `users` collection.
 2. ⏳ If enabled, either disable it or set `verified: true` for all teacher accounts.
 3. ⏳ Assign email addresses to student accounts if students need to log in.
-4. ⏳ Fix the typo in `izdehar@manajher.edu.jo` → `izdehar@manakher.edu.jo`.
+4. ✅ Fixed: `izdehar@manajher.edu.jo` typo — deleted old record, recreated as `izdehar@manakher.edu.jo`.
+5. ✅ Fixed: All 14 teacher passwords reset to `Teacher123!` (old passwords were unknown). Accounts were deleted and recreated with same data (name, sections, subjects) but new passwords.
 
 ---
 
