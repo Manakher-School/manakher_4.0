@@ -1,42 +1,84 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useLocale } from "@/context/locale-context";
 import { useSettings } from "@/context/settings-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LogIn, Loader2, AlertCircle } from "lucide-react";
+import pb from "@/lib/pocketbase";
+import { getRoleDashboardPath } from "@/lib/auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { dict, locale, switchLocale } = useLocale();
   const { settings } = useSettings();
 
   // Check for error query param from server-side redirect
-  const [error, setError] = useState<string>(() => {
-    if (typeof window === "undefined") return "";
+  // (read once on mount, then clear from URL)
+  const [serverError] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
     const params = new URLSearchParams(window.location.search);
     const err = params.get("error");
-    if (!err) return "";
-    if (err === "invalid") return dict.login.invalidCredentials;
-    if (err === "server") return locale === "ar" ? "حدث خطأ في الخادم. حاول مرة أخرى." : "Server error. Please try again.";
-    return dict.login.invalidCredentials;
-  });
-
-  // Clear error from URL so it doesn't persist on refresh
-  useState(() => {
-    if (typeof window !== "undefined" && window.location.search.includes("error=")) {
+    if (err) {
+      // Clear error from URL so it doesn't persist on refresh
       const url = new URL(window.location.href);
       url.searchParams.delete("error");
       window.history.replaceState({}, "", url.toString());
     }
+    return err;
   });
 
-  function handleSubmit() {
-    setIsSubmitting(true);
+  // Show server error on first render if present
+  if (serverError && !error) {
+    if (serverError === "invalid") {
+      // Will be shown below
+    } else if (serverError === "server") {
+      // Will be shown below
+    }
   }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      // Primary auth: use PocketBase SDK client-side
+      // This works reliably because the browser calls PocketBase directly
+      // (no CORS issues since PocketBase is configured for it)
+      const authData = await pb.collection("users").authWithPassword(email, password);
+      const user = authData.record;
+
+      if (!user?.role) {
+        setError(dict.login.invalidCredentials);
+        return;
+      }
+
+      // Auth succeeded — the onChange listener in pocketbase.ts will sync
+      // the cookie to document.cookie. Also explicitly set it here for reliability.
+      if (typeof document !== "undefined") {
+        const cookieValue = JSON.stringify({
+          token: pb.authStore.token,
+          record: pb.authStore.record,
+        });
+        document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+      }
+
+      // Navigate to the dashboard
+      window.location.href = getRoleDashboardPath(user.role, locale);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : dict.login.invalidCredentials);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  // Determine display error (from server redirect or client-side)
+  const displayError = error || (serverError === "invalid" ? dict.login.invalidCredentials : serverError === "server" ? (locale === "ar" ? "حدث خطأ في الخادم. حاول مرة أخرى." : "Server error. Please try again.") : serverError === "missing" ? dict.login.invalidCredentials : "");
 
   const t = dict.login;
   const nextLocale = locale === "ar" ? "en" : "ar";
@@ -123,44 +165,34 @@ export default function LoginPage() {
 
           {/* Card */}
           <div className="bg-[var(--color-surface-card)] border border-[var(--color-border)] rounded-[var(--radius-2xl)] shadow-[var(--shadow-md)] p-8">
-            {error && (
+            {displayError && (
               <div className="mb-5 flex items-start gap-3 rounded-[var(--radius-lg)] bg-[var(--color-danger-subtle)] border border-red-100 p-3.5 text-sm text-[var(--color-danger-text)]">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-danger)]" />
-                <span>{error}</span>
+                <span>{displayError}</span>
               </div>
             )}
 
-            {/*
-              Native HTML form that POSTs directly to /api/auth/login.
-              The server authenticates with PocketBase, sets the pb_auth cookie
-              via Set-Cookie header, and redirects to the dashboard.
-              This is the most reliable auth flow — no client-side JS needed
-              for the critical cookie-setting path.
-            */}
-            <form method="POST" action="/api/auth/login" onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <Input
                 id="email"
-                name="email"
                 label={t.emailLabel}
                 type="email"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); if (error) setError(""); }}
+                onChange={(e) => { setEmail(e.target.value); if (displayError) setError(""); }}
                 required
                 autoComplete="email"
                 placeholder={t.emailPlaceholder}
               />
               <Input
                 id="password"
-                name="password"
                 label={t.passwordLabel}
                 type="password"
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); if (error) setError(""); }}
+                onChange={(e) => { setPassword(e.target.value); if (displayError) setError(""); }}
                 required
                 autoComplete="current-password"
                 placeholder={t.passwordPlaceholder}
               />
-              <input type="hidden" name="locale" value={locale} />
               <Button
                 type="submit"
                 disabled={isSubmitting}
