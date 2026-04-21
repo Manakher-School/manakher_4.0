@@ -1,27 +1,73 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useSettings } from "@/context/settings-context";
 import { StatCard } from "@/components/ui/stat-card";
 import { getDisplayName } from "@/lib/auth";
 import { getPocketBase } from "@/lib/pocketbase";
-import { BookOpen, FileText, Send, Bell, ClipboardList } from "lucide-react";
+import { BookOpen, FileText, Send, Bell, ClipboardList, Calendar, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { RichContent } from "@/components/ui/rich-content";
+import { Comments } from "@/components/ui/comments";
+import { Reactions } from "@/components/ui/reactions";
+
+interface ExamSchedule {
+  id: string;
+  title: string;
+  exam_date: string;
+  start_time: string;
+  end_time: string;
+  exam_type: "month1" | "month2" | "month3" | "final";
+  notes?: string;
+  expand?: {
+    subject?: { name_ar: string; name_en: string; code: string };
+    section?: { grade_ar: string; grade_en: string; section_ar: string; section_en: string };
+  };
+}
+
+interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  scope: "global" | "section";
+  section: string;
+  created: string;
+  expand?: { author?: { name_ar: string; name_en: string } };
+}
 
 export default function StudentDashboard() {
   const { user } = useAuth();
   const { dict, locale } = useLocale();
   const { settings } = useSettings();
   const t = dict.dashboard.student;
+  const tExams = dict.dashboard.student.exams;
+  const tAnn = dict.dashboard.student.announcements;
   const displayName = user ? getDisplayName(user, locale) : "";
 
+  // Stats
   const [subjectCount, setSubjectCount] = useState<number | string>("—");
   const [hwCount, setHwCount] = useState<number | string>("—");
   const [submittedCount, setSubmittedCount] = useState<number | string>("—");
   const [announcementCount, setAnnouncementCount] = useState<number | string>("—");
   const [quizSubmissions, setQuizSubmissions] = useState<string>("—");
+  const [submissionFormat, setSubmissionFormat] = useState<string>("—");
 
+  // Exams
+  const [exams, setExams] = useState<ExamSchedule[]>([]);
+  const [examsLoading, setExamsLoading] = useState(true);
+
+  // Announcements
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [annLoading, setAnnLoading] = useState(true);
+  const [expandedAnnId, setExpandedAnnId] = useState<string | null>(null);
+
+  const base = `/${locale}/dashboard/student`;
+
+  // Load stats
   useEffect(() => {
     if (!user) return;
     const pb = getPocketBase();
@@ -33,6 +79,7 @@ export default function StudentDashboard() {
       setAnnouncementCount(0);
       setSubmittedCount(0);
       setQuizSubmissions("0/0");
+      setSubmissionFormat("0/0");
       return;
     }
 
@@ -46,11 +93,19 @@ export default function StudentDashboard() {
       .then((r) => setHwCount(r.totalItems))
       .catch(() => setHwCount("—"));
 
-    // Count student's own submissions
-    pb.collection("submissions")
-      .getList(1, 1, { filter: `student = "${user.id}"` })
-      .then((r) => setSubmittedCount(r.totalItems))
-      .catch(() => setSubmittedCount("—"));
+    // Count student's own submissions + total homework for format: submitted / total
+    Promise.all([
+      pb.collection("submissions").getList(1, 1, { filter: `student = "${user.id}"` }),
+      pb.collection("homework").getList(1, 1, { filter: sectionFilter }),
+    ])
+      .then(([submitted, total]) => {
+        setSubmittedCount(submitted.totalItems);
+        setSubmissionFormat(`${submitted.totalItems}/${total.totalItems}`);
+      })
+      .catch(() => {
+        setSubmittedCount("—");
+        setSubmissionFormat("—");
+      });
 
     // Count announcements for student's section + global ones
     pb.collection("announcements")
@@ -72,13 +127,104 @@ export default function StudentDashboard() {
     // Count quiz submissions in X/Y format
     Promise.all([
       pb.collection("quizzes").getList(1, 1, { filter: sectionFilter }),
-      pb.collection("quiz_attempts").getList(1, 1, { filter: `student = "${user.id}"` })
+      pb.collection("quiz_attempts").getList(1, 1, { filter: `student = "${user.id}"` }),
     ])
       .then(([quizzes, attempts]) => {
         setQuizSubmissions(`${attempts.totalItems}/${quizzes.totalItems}`);
       })
       .catch(() => setQuizSubmissions("—"));
   }, [user]);
+
+  // Load exams
+  const loadExams = useCallback(async () => {
+    if (!user) return;
+    const pb = getPocketBase();
+    const sections: string[] = (user as any).sections ?? [];
+
+    if (sections.length === 0) {
+      setExams([]);
+      setExamsLoading(false);
+      return;
+    }
+
+    try {
+      const sectionFilter = sections.map((id) => `section = "${id}"`).join(" || ");
+      const items = await pb.collection("exam_schedules").getFullList<ExamSchedule>({
+        filter: `(${sectionFilter})`,
+        sort: "exam_date,start_time",
+        expand: "subject,section",
+      });
+
+      const validTypes = ["month1", "month2", "month3", "final"];
+      const validExams = items.filter(exam => validTypes.includes(exam.exam_type));
+      setExams(validExams);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setExamsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => { loadExams(); }, [loadExams]);
+
+  // Load announcements
+  const loadAnnouncements = useCallback(async () => {
+    if (!user) return;
+    const pb = getPocketBase();
+    const sections: string[] = (user as any).sections ?? [];
+
+    try {
+      let filter = `scope = "global"`;
+      if (sections.length > 0) {
+        const secFilter = sections.map((id) => `section = "${id}"`).join(" || ");
+        filter = `scope = "global" || (${secFilter})`;
+      }
+
+      const items = await pb.collection("announcements").getFullList<Announcement>({
+        filter,
+        sort: "-created",
+        expand: "author",
+      });
+      setAnnouncements(items);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAnnLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => { loadAnnouncements(); }, [loadAnnouncements]);
+
+  // Exam helpers
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const isUpcoming = (dateString: string) => {
+    const examDate = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return examDate >= today;
+  };
+
+  const getExamTypeLabel = (type: string) => {
+    switch (type) {
+      case "month1": return tExams.typeMonth1 || "1st Month";
+      case "month2": return tExams.typeMonth2 || "2nd Month";
+      case "month3": return tExams.typeMonth3 || "3rd Month";
+      case "final": return tExams.typeFinal || "Final";
+      default: return type;
+    }
+  };
+
+  const upcomingExams = exams.filter((exam) => isUpcoming(exam.exam_date));
+  const pastExams = exams.filter((exam) => !isUpcoming(exam.exam_date));
 
   return (
     <div className="space-y-8">
@@ -104,18 +250,208 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* ── Stat cards ────────────────────────────────────────────────── */}
-       <div>
-         <h3 className="text-base font-black text-[var(--color-ink)] mb-6" style={{ letterSpacing: "-0.2px" }}>
-           {t.nav.overview}
-         </h3>
-         <div className="stat-card-group grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-           <StatCard icon={<BookOpen />} label={t.stats.subjects} value={subjectCount} />
-          <StatCard icon={<FileText />} label={t.stats.homework} value={hwCount} />
-          <StatCard icon={<Send />} label={t.stats.submitted} value={submittedCount} />
-          <StatCard icon={<ClipboardList />} label={t.stats.quizzes} value={quizSubmissions} />
-          <StatCard icon={<Bell />} label={t.stats.announcements} value={announcementCount} />
+      {/* ── Stat cards (clickable for navigation) ────────────────────── */}
+      <div>
+        <h3 className="text-base font-black text-[var(--color-ink)] mb-6" style={{ letterSpacing: "-0.2px" }}>
+          {t.nav.overview}
+        </h3>
+        <div className="stat-card-group grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Link href={`${base}/materials`} className="block">
+            <StatCard icon={<BookOpen />} label={t.stats.subjects} value={subjectCount} />
+          </Link>
+          <Link href={`${base}/homework`} className="block">
+            <StatCard icon={<FileText />} label={t.stats.homework} value={hwCount} />
+          </Link>
+          <div>
+            <StatCard icon={<Send />} label={t.stats.submitted} value={submissionFormat} />
+          </div>
+          <Link href={`${base}/assessments`} className="block">
+            <StatCard icon={<ClipboardList />} label={t.stats.quizzes} value={quizSubmissions} />
+          </Link>
+          <Link href="#announcements" className="block">
+            <StatCard icon={<Bell />} label={t.stats.announcements} value={announcementCount} />
+          </Link>
         </div>
+      </div>
+
+      {/* ── Exams Schedule ────────────────────────────────────────────── */}
+      <div id="exams">
+        <h3 className="text-lg font-bold text-[var(--color-ink)] mb-4 flex items-center gap-2">
+          <Calendar className="w-5 h-5" />
+          {tExams.title}
+        </h3>
+
+        {examsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-student-bold)] border-t-transparent animate-spin" />
+          </div>
+        ) : exams.length === 0 ? (
+          <p className="text-[var(--color-ink-secondary)] text-sm">{tExams.empty}</p>
+        ) : (
+          <div className="space-y-6">
+            {/* Upcoming Exams */}
+            {upcomingExams.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-[var(--color-ink-secondary)] uppercase tracking-wide">
+                  {tExams.upcoming}
+                </h4>
+                <div className="space-y-3">
+                  {upcomingExams.map((exam) => {
+                    const subject = exam.expand?.subject;
+                    const subjectName = subject
+                      ? locale === "ar" ? subject.name_ar : subject.name_en
+                      : "";
+
+                    return (
+                      <Card key={exam.id} className="p-5 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h5 className="font-bold text-[var(--color-ink)]">
+                                {exam.title || subjectName}
+                              </h5>
+                              <Badge variant="accent">{getExamTypeLabel(exam.exam_type)}</Badge>
+                            </div>
+                            {subjectName && (
+                              <p className="text-sm font-medium text-[var(--color-ink-secondary)]">
+                                {subjectName}
+                              </p>
+                            )}
+                            <div className="space-y-1 text-sm text-[var(--color-ink-secondary)]">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4" />
+                                <span>{formatDate(exam.exam_date)}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4" />
+                                <span>{exam.start_time} - {exam.end_time}</span>
+                              </div>
+                            </div>
+                            {exam.notes && (
+                              <p className="text-sm text-[var(--color-ink)] mt-2 p-3 rounded-lg bg-[var(--color-surface-sunken)]">
+                                {exam.notes}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Past Exams */}
+            {pastExams.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-[var(--color-ink-secondary)] uppercase tracking-wide">
+                  {locale === "ar" ? "الامتحانات السابقة" : "Past Exams"}
+                </h4>
+                <div className="space-y-2 opacity-60">
+                  {pastExams.map((exam) => {
+                    const subject = exam.expand?.subject;
+                    const subjectName = subject
+                      ? locale === "ar" ? subject.name_ar : subject.name_en
+                      : "";
+
+                    return (
+                      <Card key={exam.id} className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-[var(--color-ink)]">{subjectName}</span>
+                              <Badge variant="default" className="text-xs">{getExamTypeLabel(exam.exam_type)}</Badge>
+                            </div>
+                            <div className="text-sm text-[var(--color-ink-secondary)]">
+                              {formatDate(exam.exam_date)} · {exam.start_time}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Announcements ─────────────────────────────────────────────── */}
+      <div id="announcements">
+        <h3 className="text-lg font-bold text-[var(--color-ink)] mb-4 flex items-center gap-2">
+          <Bell className="w-5 h-5" />
+          {tAnn.title}
+        </h3>
+
+        {annLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 rounded-full border-2 border-[var(--color-role-student-bold)] border-t-transparent animate-spin" />
+          </div>
+        ) : announcements.length === 0 ? (
+          <p className="text-[var(--color-ink-secondary)] text-sm">{tAnn.empty}</p>
+        ) : (
+          <div className="space-y-5">
+            {announcements.map((ann) => {
+              const isExpanded = expandedAnnId === ann.id;
+              const author = ann.expand?.author;
+              const authorName = author
+                ? (locale === "ar" ? author.name_ar : author.name_en)
+                : null;
+
+              return (
+                <div
+                  key={ann.id}
+                  className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden shadow-[var(--shadow-xs)]"
+                >
+                  <button
+                    onClick={() => setExpandedAnnId(isExpanded ? null : ann.id)}
+                    className="w-full flex items-start justify-between gap-3 px-6 py-5 text-start focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-accent)] rounded-t-[var(--radius-xl)]"
+                    aria-label={`${ann.title}: ${isExpanded ? "collapse" : "expand"}`}
+                    aria-expanded={isExpanded}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)]"
+                        style={{
+                          background: "var(--color-role-student-bg)",
+                          color: "var(--color-role-student-bold)",
+                        }}
+                      >
+                        <Bell className="h-5 w-5" />
+                      </span>
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-lg text-[var(--color-ink)] leading-snug">{ann.title}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge variant={ann.scope === "global" ? "accent" : "default"}>
+                            {ann.scope === "global" ? tAnn.scopeGlobal : tAnn.scopeSection}
+                          </Badge>
+                          {authorName && (
+                            <span className="text-xs text-[var(--color-ink-secondary)] font-medium">{authorName}</span>
+                          )}
+                          <span className="text-xs text-[var(--color-ink-secondary)]">
+                            {tAnn.postedOn}: {ann.created?.slice(0, 10)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[var(--color-ink-secondary)] mt-1 shrink-0">
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </span>
+                  </button>
+
+                  {isExpanded && ann.body && (
+                    <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] px-5 py-4 space-y-4">
+                      <RichContent html={ann.body} />
+                      <Reactions targetType="announcement" targetId={ann.id} />
+                      <Comments targetType="announcement" targetId={ann.id} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
     </div>

@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { getPocketBase } from "@/lib/pocketbase";
-import { BookOpen, ChevronDown, ChevronUp, ExternalLink, Paperclip } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, ExternalLink, Paperclip, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { RichContent } from "@/components/ui/rich-content";
 import { Comments } from "@/components/ui/comments";
 
@@ -86,6 +87,10 @@ export default function StudentMaterialsPage() {
 
   return (
     <div className="space-y-6">
+      <Link href={`/${locale}/dashboard/student`} className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-accent)] hover:underline mb-2">
+        {locale === "ar" ? <ArrowRight className="w-4 h-4" /> : <ArrowRight className="w-4 h-4 rotate-180" />}
+        {locale === "ar" ? "العودة للرئيسية" : "Back to Overview"}
+      </Link>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="text-2xl font-black text-[var(--color-ink)]" style={{ letterSpacing: "-0.5px" }}>
           {t.title}

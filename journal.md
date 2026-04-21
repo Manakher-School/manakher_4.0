@@ -87,6 +87,21 @@ If I make a mistake that cannot be undone, I must say so immediately and clearly
 
 ## Round 1 Testing Fixes (2026-04-21)
 
+### Iteration 1.1 - Increase Gap Between Content Items
+
+**Status:** ✅ COMPLETE
+
+**What I Did:**
+- **Increased gap between content items** from `space-y-3` (12px) to `space-y-5` (20px) across all dashboard content list pages
+- User feedback: "I want more gap between the content too" — the previous `space-y-3` was too tight
+- Applied to all content card lists across 13 files:
+  - Teacher: materials, announcements, homework, quizzes, overview
+  - Admin: overview announcements
+  - Student: announcements, materials, homework, quizzes, assessments (quizzes tab + exams tab), exams (upcoming + past)
+- Inner card content spacing (`space-y-3` inside cards) was left unchanged — only the gap between cards in list views was increased
+- **Commit:** `99d8697`
+- **Build:** ✅ All pages compile, zero TypeScript errors
+
 ### Iteration 1 - UI Polish and Content Fixes
 
 **Status:** ✅ COMPLETE

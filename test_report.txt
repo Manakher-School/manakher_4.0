@@ -13,3 +13,17 @@ Round 1:
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ###############################################################
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+Round 2 (Student Dashboard - Revamp):
+1- instead of have the navigations on the side, I would like to remove them from where they are, and combine them with the stats cards.
+	- the exams table must be shown in the overview page bellow the stats cards.
+	- the announcements must be shown in the overview page bellow the exams table from now on.
+	- {material, homeworks, quizez} navigations must be from their stats cards.
+2- the submissions stats card format should be like the quizez stats card format: num / total.
+
+Note:
+Make sure to use all the needed visual cues, like: hover color, curser changing, and other other hint that tells the user that this is clickable, and so on.
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+###############################################################
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

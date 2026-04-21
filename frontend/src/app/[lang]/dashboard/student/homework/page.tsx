@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { getPocketBase } from "@/lib/pocketbase";
-import { FileText, ChevronDown, ChevronUp, Send, CheckCircle } from "lucide-react";
+import { FileText, ChevronDown, ChevronUp, Send, CheckCircle, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RichContent } from "@/components/ui/rich-content";
@@ -155,6 +156,10 @@ export default function StudentHomeworkPage() {
 
   return (
     <div className="space-y-6">
+      <Link href={`/${locale}/dashboard/student`} className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-accent)] hover:underline mb-2">
+        {locale === "ar" ? <ArrowRight className="w-4 h-4" /> : <ArrowRight className="w-4 h-4 rotate-180" />}
+        {locale === "ar" ? "العودة للرئيسية" : "Back to Overview"}
+      </Link>
       <h2 className="text-2xl font-black text-[var(--color-ink)]" style={{ letterSpacing: "-0.5px" }}>
         {t.title}
       </h2>
