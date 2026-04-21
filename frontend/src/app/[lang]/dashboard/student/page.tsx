@@ -51,8 +51,6 @@ export default function StudentDashboard() {
   // Stats
   const [subjectCount, setSubjectCount] = useState<number | string>("—");
   const [hwCount, setHwCount] = useState<number | string>("—");
-  const [submittedCount, setSubmittedCount] = useState<number | string>("—");
-  const [announcementCount, setAnnouncementCount] = useState<number | string>("—");
   const [quizSubmissions, setQuizSubmissions] = useState<string>("—");
   const [submissionFormat, setSubmissionFormat] = useState<string>("—");
 
@@ -76,16 +74,12 @@ export default function StudentDashboard() {
     if (sections.length === 0) {
       setSubjectCount(0);
       setHwCount(0);
-      setAnnouncementCount(0);
-      setSubmittedCount(0);
-      setQuizSubmissions("0/0");
+      setQuizSubmissions("0 / 0");
       setSubmissionFormat("0 / 0");
       return;
     }
 
-    const sectionId = sections[0];
     const sectionFilter = sections.map((id) => `section = "${id}"`).join(" || ");
-    const annFilter = sections.map((id) => `section = "${id}"`).join(" || ");
 
     // Count homework for student's section
     pb.collection("homework")
@@ -99,21 +93,11 @@ export default function StudentDashboard() {
       pb.collection("homework").getList(1, 1, { filter: sectionFilter }),
     ])
       .then(([submitted, total]) => {
-        setSubmittedCount(submitted.totalItems);
         setSubmissionFormat(`${submitted.totalItems} / ${total.totalItems}`);
       })
       .catch(() => {
-        setSubmittedCount("—");
         setSubmissionFormat("—");
       });
-
-    // Count announcements for student's section + global ones
-    pb.collection("announcements")
-      .getList(1, 1, {
-        filter: `scope = "global" || (${annFilter})`,
-      })
-      .then((r) => setAnnouncementCount(r.totalItems))
-      .catch(() => setAnnouncementCount("—"));
 
     // Count distinct subjects via materials in student's section
     pb.collection("materials")
@@ -124,7 +108,7 @@ export default function StudentDashboard() {
       })
       .catch(() => setSubjectCount("—"));
 
-    // Count quiz submissions in X/Y format
+    // Count quiz submissions in X / Y format
     Promise.all([
       pb.collection("quizzes").getList(1, 1, { filter: sectionFilter }),
       pb.collection("quiz_attempts").getList(1, 1, { filter: `student = "${user.id}"` }),
@@ -255,22 +239,19 @@ export default function StudentDashboard() {
         <h3 className="text-base font-black text-[var(--color-ink)] mb-6" style={{ letterSpacing: "-0.2px" }}>
           {t.nav.overview}
         </h3>
-        <div className="stat-card-group grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="stat-card-group grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link href={`${base}/materials`} className="block">
-            <StatCard icon={<BookOpen />} label={t.stats.subjects} value={subjectCount} clickable />
+            <StatCard icon={<BookOpen />} label={t.stats.subjects} value={subjectCount} clickable colorSlot={1} />
           </Link>
           <Link href={`${base}/homework`} className="block">
-            <StatCard icon={<FileText />} label={t.stats.homework} value={hwCount} clickable />
+            <StatCard icon={<FileText />} label={t.stats.homework} value={hwCount} clickable colorSlot={2} />
           </Link>
           <Link href={`${base}/homework`} className="block">
-            <StatCard icon={<Send />} label={t.stats.submitted} value={submissionFormat} clickable />
+            <StatCard icon={<Send />} label={t.stats.submitted} value={submissionFormat} clickable colorSlot={3} />
           </Link>
           <Link href={`${base}/assessments`} className="block">
-            <StatCard icon={<ClipboardList />} label={t.stats.quizzes} value={quizSubmissions} clickable />
+            <StatCard icon={<ClipboardList />} label={t.stats.quizzes} value={quizSubmissions} clickable colorSlot={4} />
           </Link>
-          <a href="#announcements" className="block">
-            <StatCard icon={<Bell />} label={t.stats.announcements} value={announcementCount} clickable />
-          </a>
         </div>
       </div>
 

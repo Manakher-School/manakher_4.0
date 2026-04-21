@@ -18,22 +18,31 @@ const slotStyles: Record<number, { bg: string; icon: string }> = {
 
 const isEmpty = (v: string | number) => v === "—" || v === "" || v === null || v === undefined;
 
+// Map colorSlot to a gentle hover background tint
+const slotHoverBg: Record<number, string> = {
+  1: "hover:bg-[#eff6ff]", // light blue tint
+  2: "hover:bg-[#f0fdf4]", // light green tint
+  3: "hover:bg-[#fdf2f8]", // light pink tint
+  4: "hover:bg-[#fefce8]", // light yellow tint
+};
+
 export function StatCard({ icon, label, value, colorSlot, clickable }: StatCardProps) {
   const explicit = colorSlot ? slotStyles[colorSlot] : null;
   const empty = isEmpty(value);
+  const hoverBg = colorSlot ? slotHoverBg[colorSlot] : "hover:bg-[var(--color-surface-hover)]";
 
   return (
     <div
       className={[
         "relative bg-[var(--color-surface-card)] border rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)] p-5 flex flex-col gap-4 transition-all duration-200",
         clickable
-          ? "cursor-pointer border-[var(--color-border)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 hover:border-[var(--color-accent)]"
-          : "border-[var(--color-border)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5",
+          ? `cursor-pointer border-[var(--color-border)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 hover:border-[var(--color-accent)] ${hoverBg}`
+          : `border-[var(--color-border)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 ${hoverBg}`,
       ].join(" ")}
     >
       {/* Navigation indicator for clickable cards */}
       {clickable && (
-        <span className="absolute top-4 end-4 text-[var(--color-ink-disabled)]">
+        <span className="absolute top-4 end-4 text-[var(--color-ink-disabled)] transition-colors group-hover:text-[var(--color-accent)]">
           <ChevronRight className="h-4 w-4 rtl:rotate-180" />
         </span>
       )}
