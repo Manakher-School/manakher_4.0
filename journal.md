@@ -85,6 +85,46 @@ If I make a mistake that cannot be undone, I must say so immediately and clearly
 
 ---
 
+## Round 2 Testing Fixes (2026-04-21) — Student Dashboard Revamp
+
+### Iteration 1 - Clickable Stat Cards as Navigation
+
+**Status:** ✅ COMPLETE
+
+**What I Did:**
+1. **Updated StatCard component** (`stat-card.tsx`):
+   - Added `clickable?: boolean` prop
+   - When clickable: adds `cursor-pointer`, `hover:border-[var(--color-accent)]` for visual feedback
+   - Added a small `ChevronRight` icon in the top-end corner of clickable cards as a navigation indicator (flips direction in RTL via `rtl:rotate-180`)
+   - Non-clickable cards retain existing hover effects without the accent border or chevron
+
+2. **Made all student stat cards clickable navigation** (`student/page.tsx`):
+   - Materials card → links to `/materials`
+   - Homework card → links to `/homework`
+   - Submissions card → links to `/homework` (was previously not linked, just a plain `<div>`)
+   - Quizzes card → links to `/assessments`
+   - Announcements card → scrolls to `#announcements` section on same page (uses `<a>` instead of `<Link>` for anchor scrolling)
+   - All cards now have `clickable` prop set for visual cues
+
+3. **Fixed num/total format** to use spaces around the slash:
+   - Submissions: `4 / 10` instead of `4/10`
+   - Quizzes: `3 / 5` instead of `3/5`
+   - Consistent with the teacher dashboard's "pending for review" format
+
+4. **Updated grid layout** for 5 stat cards:
+   - `sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5` (was `sm:grid-cols-2 lg:grid-cols-4`)
+   - Better responsive progression for 5 cards
+
+**Files Modified:**
+- `frontend/src/components/ui/stat-card.tsx` — Added clickable prop, chevron indicator, hover accent border
+- `frontend/src/app/[lang]/dashboard/student/page.tsx` — Made all stat cards clickable, fixed format strings, updated grid
+
+**Build:** ✅ Passes with zero errors.
+
+**Commit:** `38d61c8`
+
+---
+
 ## Round 1 Testing Fixes (2026-04-21)
 
 ### Iteration 1.1 - Increase Gap Between Content Items
