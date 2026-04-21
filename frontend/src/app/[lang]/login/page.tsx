@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { useLocale } from "@/context/locale-context";
 import { useSettings } from "@/context/settings-context";
 import { Button } from "@/components/ui/button";
@@ -15,32 +15,29 @@ export default function LoginPage() {
   const { settings } = useSettings();
 
   // Check for error query param from server-side redirect
-  const errorParam = typeof window !== "undefined"
-    ? new URLSearchParams(window.location.search).get("error")
-    : null;
-  const error = errorParam
-    ? errorParam === "invalid"
-      ? dict.login.invalidCredentials
-      : errorParam === "missing"
-        ? dict.login.invalidCredentials
-        : errorParam === "server"
-          ? (locale === "ar" ? "حدث خطأ في الخادم. حاول مرة أخرى." : "Server error. Please try again.")
-          : dict.login.invalidCredentials
-    : "";
+  const [error, setError] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get("error");
+    if (!err) return "";
+    if (err === "invalid") return dict.login.invalidCredentials;
+    if (err === "server") return locale === "ar" ? "حدث خطأ في الخادم. حاول مرة أخرى." : "Server error. Please try again.";
+    return dict.login.invalidCredentials;
+  });
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  // Clear error from URL so it doesn't persist on refresh
+  useState(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("error=")) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("error");
+      window.history.replaceState({}, "", url.toString());
+    }
+  });
+
+  function handleSubmit() {
     setIsSubmitting(true);
-
-    // POST directly to the server-side login route.
-    // The server authenticates with PocketBase, sets the pb_auth cookie
-    // via Set-Cookie header, and redirects to the dashboard.
-    // This is the most reliable auth flow — no client-side cookie setting,
-    // no fetch(), no document.cookie. Just a standard form POST + redirect.
-    const form = e.currentTarget as HTMLFormElement;
-    form.action = "/api/auth/login";
-    form.method = "POST";
-    form.submit();
+    // Form submits natively as POST to /api/auth/login — no e.preventDefault()
+    // The browser handles the submission and the server responds with a redirect
   }
 
   const t = dict.login;
@@ -135,14 +132,21 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            {/*
+              Native HTML form that POSTs directly to /api/auth/login.
+              The server authenticates with PocketBase, sets the pb_auth cookie
+              via Set-Cookie header, and redirects to the dashboard.
+              This is the most reliable auth flow — no client-side JS needed
+              for the critical cookie-setting path.
+            */}
+            <form method="POST" action="/api/auth/login" onSubmit={handleSubmit} className="flex flex-col gap-5">
               <Input
                 id="email"
                 name="email"
                 label={t.emailLabel}
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); if (error) setError(""); }}
                 required
                 autoComplete="email"
                 placeholder={t.emailPlaceholder}
@@ -153,7 +157,7 @@ export default function LoginPage() {
                 label={t.passwordLabel}
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); if (error) setError(""); }}
                 required
                 autoComplete="current-password"
                 placeholder={t.passwordPlaceholder}

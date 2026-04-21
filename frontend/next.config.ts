@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
     pagesBufferLength: 5, // Keep only 5 pages in memory
   },
 
+  // Allow dev server access from local network devices
+  allowedDevOrigins: ["192.168.1.19"],
+
   // Experimental optimizations
   experimental: {
     optimizeCss: true,
