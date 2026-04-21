@@ -7,7 +7,6 @@ type Locale = (typeof LOCALES)[number];
 const DEFAULT_LOCALE: Locale = "ar";
 
 const publicPathSegments = ["login"];
-const publicPathPrefixes = ["/api/"];
 
 // Role -> dashboard path suffix (without locale prefix)
 const rolePaths: Record<string, string> = {
@@ -51,6 +50,15 @@ function getAuthFromCookie(
 export const proxy: NextProxy = (request: NextRequest) => {
   const { pathname } = request.nextUrl;
 
+  // --- Step 0: Bypass API routes entirely ---
+  // API routes don't need locale prefixes or auth checks.
+  // They must be handled BEFORE locale detection, otherwise the proxy
+  // would redirect /api/auth/set-cookie to /ar/api/auth/set-cookie
+  // which doesn't match any Next.js API route.
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
   // --- Step 1: Locale detection / redirect ---
   const locale = getLocaleFromPathname(pathname);
 
@@ -66,11 +74,8 @@ export const proxy: NextProxy = (request: NextRequest) => {
   // --- Step 2: Strip locale to get the logical path ---
   const logicalPath = stripLocale(pathname, locale);
 
-  // Allow public paths (login, API routes)
-  if (
-    publicPathSegments.some((seg) => logicalPath.startsWith(`/${seg}`)) ||
-    publicPathPrefixes.some((prefix) => logicalPath.startsWith(prefix))
-  ) {
+  // Allow public paths (login)
+  if (publicPathSegments.some((seg) => logicalPath.startsWith(`/${seg}`))) {
     return NextResponse.next();
   }
 
