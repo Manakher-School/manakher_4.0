@@ -287,6 +287,31 @@ This is the standard, battle-tested pattern used by every major web application 
 
 **Commit:** `c97fc19`
 
+### Iteration 1.8 - Native HTML Form POST + Cookie Sync on Load (Critical Fixes)
+
+**Status:** ✅ COMPLETE
+
+**Two Critical Bugs Found from Terminal Logs:**
+
+1. **CREDENTIALS IN URL**: Terminal showed `GET /ar/login?email=ahmdaldb%40manakher.edu.jo&password=...&locale=ar` — the login form was submitting as GET instead of POST, exposing the user's email and password in the URL. This is a critical security vulnerability.
+
+2. **COOKIE CLEARED ON PAGE LOAD**: Terminal showed `POST /api/auth/clear-cookie` immediately after login. The `pb.authStore.onChange(true)` listener fired on page load with `isValid=false` (because localStorage was empty after server-side login), which called `clear-cookie` and wiped the cookie that the server had just set.
+
+**Root Causes:**
+
+1. The login form had no `method="POST"` HTML attribute. JavaScript was setting it dynamically, but the form submitted as GET before the JS could execute. Fix: Use a native HTML form with `method="POST"` and `action="/api/auth/login"` as HTML attributes. The browser handles the submission natively — no JavaScript form manipulation needed.
+
+2. After server-side login, the cookie is set via `Set-Cookie` header, but `localStorage` is empty. PocketBase SDK reads from `localStorage`, so `pb.authStore.isValid` is `false`. The `onChange(true)` listener fires immediately with `isValid=false`, calling `clear-cookie`. Fix: Sync the `pb_auth` cookie to `localStorage` BEFORE registering the `onChange` listener, and remove the `true` (fire-immediately) parameter.
+
+**Changes:**
+- `login/page.tsx`: Native HTML form with `method="POST"` and `action="/api/auth/login"`. No JavaScript form submission. Error messages read from `?error=` query param.
+- `pocketbase.ts`: Sync cookie → localStorage on page load BEFORE registering onChange listener. Removed `true` parameter from onChange. Removed fetch() calls to API routes (document.cookie is sufficient for keeping cookie in sync after initial login).
+- `next.config.ts`: Added `allowedDevOrigins: ["192.168.1.19"]` to fix cross-origin warnings.
+
+**Build:** ✅ Passes with zero errors.
+
+**Commit:** `cf371fb`
+
 ---
 
 ## Round 1 Testing Fixes (2026-04-21)
