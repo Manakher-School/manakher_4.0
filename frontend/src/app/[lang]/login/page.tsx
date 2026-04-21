@@ -6,62 +6,41 @@ import { useSettings } from "@/context/settings-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LogIn, Loader2, AlertCircle } from "lucide-react";
-import pb from "@/lib/pocketbase";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { dict, locale, switchLocale } = useLocale();
   const { settings } = useSettings();
 
+  // Check for error query param from server-side redirect
+  const errorParam = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("error")
+    : null;
+  const error = errorParam
+    ? errorParam === "invalid"
+      ? dict.login.invalidCredentials
+      : errorParam === "missing"
+        ? dict.login.invalidCredentials
+        : errorParam === "server"
+          ? (locale === "ar" ? "حدث خطأ في الخادم. حاول مرة أخرى." : "Server error. Please try again.")
+          : dict.login.invalidCredentials
+    : "";
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError("");
     setIsSubmitting(true);
-    try {
-      // Authenticate with PocketBase
-      await pb.collection("users").authWithPassword(email, password);
 
-      // POST to server-side callback which sets the cookie via Set-Cookie
-      // header and redirects to the dashboard in a single response. This is
-      // the most reliable way to set cookies — Set-Cookie in a full page
-      // redirect response is guaranteed to be processed by all browsers,
-      // unlike fetch() responses or document.cookie which can silently fail
-      // on mobile devices accessing via IP address.
-      const token = pb.authStore.token;
-      const record = pb.authStore.record;
-      const role = record?.role;
-
-      // Submit a hidden form that POSTs to /api/auth/callback
-      // This triggers a full page navigation with Set-Cookie + 302 redirect
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = "/api/auth/callback";
-      form.style.display = "none";
-
-      const fields = {
-        token,
-        record: JSON.stringify(record),
-        locale,
-        role,
-      };
-
-      for (const [key, value] of Object.entries(fields)) {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = key;
-        input.value = String(value);
-        form.appendChild(input);
-      }
-
-      document.body.appendChild(form);
-      form.submit();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : dict.login.invalidCredentials);
-      setIsSubmitting(false);
-    }
+    // POST directly to the server-side login route.
+    // The server authenticates with PocketBase, sets the pb_auth cookie
+    // via Set-Cookie header, and redirects to the dashboard.
+    // This is the most reliable auth flow — no client-side cookie setting,
+    // no fetch(), no document.cookie. Just a standard form POST + redirect.
+    const form = e.currentTarget as HTMLFormElement;
+    form.action = "/api/auth/login";
+    form.method = "POST";
+    form.submit();
   }
 
   const t = dict.login;
@@ -159,6 +138,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <Input
                 id="email"
+                name="email"
                 label={t.emailLabel}
                 type="email"
                 value={email}
@@ -169,6 +149,7 @@ export default function LoginPage() {
               />
               <Input
                 id="password"
+                name="password"
                 label={t.passwordLabel}
                 type="password"
                 value={password}
@@ -177,6 +158,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 placeholder={t.passwordPlaceholder}
               />
+              <input type="hidden" name="locale" value={locale} />
               <Button
                 type="submit"
                 disabled={isSubmitting}

@@ -21,43 +21,11 @@ export function getDisplayName(user: AuthUser, locale: string): string {
 }
 
 /**
- * Set the pb_auth cookie via a server-side API route.
- * This is more reliable than document.cookie, especially on mobile
- * browsers accessing the app over the network (e.g. Android at
- * http://192.168.1.19:3001) where document.cookie can silently fail.
+ * Client-side login function.
+ * NOTE: The primary login flow is now server-side via /api/auth/login.
+ * This function is kept for any remaining client-side auth needs (e.g., testing).
+ * It authenticates with PocketBase and sets the cookie via the server-side API route.
  */
-async function setAuthCookie(token: string, record: unknown): Promise<void> {
-  try {
-    await fetch("/api/auth/set-cookie", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, record }),
-    });
-  } catch (e) {
-    console.error("Failed to set auth cookie via API route:", e);
-    // Fallback to document.cookie if the API route fails
-    if (typeof document !== "undefined") {
-      const cookieValue = JSON.stringify({ token, record });
-      document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
-    }
-  }
-}
-
-/**
- * Clear the pb_auth cookie via a server-side API route.
- */
-async function clearAuthCookie(): Promise<void> {
-  try {
-    await fetch("/api/auth/clear-cookie", { method: "POST" });
-  } catch (e) {
-    console.error("Failed to clear auth cookie via API route:", e);
-    // Fallback to document.cookie
-    if (typeof document !== "undefined") {
-      document.cookie = "pb_auth=; path=/; max-age=0; SameSite=Lax";
-    }
-  }
-}
-
 export async function login(
   email: string,
   password: string
@@ -66,16 +34,31 @@ export async function login(
     .collection("users")
     .authWithPassword(email, password);
 
-  // Set the auth cookie via server-side API route for reliability
-  await setAuthCookie(pb.authStore.token, pb.authStore.record);
+  // Set the auth cookie via server-side API route
+  try {
+    await fetch("/api/auth/set-cookie", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: pb.authStore.token, record: pb.authStore.record }),
+    });
+  } catch {
+    // Fallback to document.cookie
+    if (typeof document !== "undefined") {
+      const cookieValue = JSON.stringify({ token: pb.authStore.token, record: pb.authStore.record });
+      document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+    }
+  }
 
   return authData.record as unknown as AuthUser;
 }
 
 export function logout(): void {
   pb.authStore.clear();
-  // Clear the cookie via server-side API route (fire and forget)
-  clearAuthCookie();
+  if (typeof document !== "undefined") {
+    document.cookie = "pb_auth=; path=/; max-age=0; SameSite=Lax";
+  }
+  // Also clear via server-side route
+  fetch("/api/auth/clear-cookie", { method: "POST" }).catch(() => {});
 }
 
 export function getCurrentUser(): AuthUser | null {

@@ -8,28 +8,34 @@ const pb = new PocketBase(
 pb.autoCancellation(false);
 
 // Sync authStore to a cookie so that proxy.ts (server-side) can read it.
-// Uses the server-side API route for reliability — document.cookie can
-// silently fail on mobile browsers accessing via IP address.
+// The primary auth flow (login) sets the cookie server-side via /api/auth/login.
+// This onChange listener keeps the cookie in sync for subsequent auth changes
+// (e.g., token refresh, profile updates, logout).
 if (typeof window !== "undefined") {
   pb.authStore.onChange(() => {
     const isValid = pb.authStore.isValid;
     if (isValid) {
-      const token = pb.authStore.token;
-      const record = pb.authStore.record;
-      // Fire-and-forget: set cookie via server-side API route
+      // Update the cookie to match the current auth state
+      const cookieValue = JSON.stringify({
+        token: pb.authStore.token,
+        record: pb.authStore.record,
+      });
+      document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+
+      // Also try the server-side route as a backup
       fetch("/api/auth/set-cookie", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, record }),
+        body: JSON.stringify({ token: pb.authStore.token, record: pb.authStore.record }),
       }).catch(() => {
-        // Fallback to document.cookie if the API route fails
-        const cookieValue = JSON.stringify({ token, record });
-        document.cookie = `pb_auth=${encodeURIComponent(cookieValue)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+        // Silently ignore — document.cookie fallback above already handled it
       });
     } else {
-      // Fire-and-forget: clear cookie via server-side API route
+      // Clear the cookie on logout
+      document.cookie = "pb_auth=; path=/; max-age=0; SameSite=Lax";
+
       fetch("/api/auth/clear-cookie", { method: "POST" }).catch(() => {
-        document.cookie = "pb_auth=; path=/; max-age=0; SameSite=Lax";
+        // Silently ignore — document.cookie fallback above already handled it
       });
     }
   }, true);
