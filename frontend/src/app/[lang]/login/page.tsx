@@ -1,20 +1,18 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useSettings } from "@/context/settings-context";
-import { getRoleDashboardPath } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LogIn, Loader2, AlertCircle } from "lucide-react";
+import pb from "@/lib/pocketbase";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useAuth();
   const { dict, locale, switchLocale } = useLocale();
   const { settings } = useSettings();
 
@@ -23,16 +21,45 @@ export default function LoginPage() {
     setError("");
     setIsSubmitting(true);
     try {
-      const user = await login(email, password);
-      // Use full page navigation instead of client-side router to guarantee
-      // the pb_auth cookie is sent with the request. Client-side navigation
-      // (router.push) can race with cookie persistence, causing the proxy
-      // to see no auth and redirect back to login — especially on mobile
-      // devices accessing the app over the network.
-      window.location.href = getRoleDashboardPath(user.role, locale);
+      // Authenticate with PocketBase
+      await pb.collection("users").authWithPassword(email, password);
+
+      // POST to server-side callback which sets the cookie via Set-Cookie
+      // header and redirects to the dashboard in a single response. This is
+      // the most reliable way to set cookies — Set-Cookie in a full page
+      // redirect response is guaranteed to be processed by all browsers,
+      // unlike fetch() responses or document.cookie which can silently fail
+      // on mobile devices accessing via IP address.
+      const token = pb.authStore.token;
+      const record = pb.authStore.record;
+      const role = record?.role;
+
+      // Submit a hidden form that POSTs to /api/auth/callback
+      // This triggers a full page navigation with Set-Cookie + 302 redirect
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "/api/auth/callback";
+      form.style.display = "none";
+
+      const fields = {
+        token,
+        record: JSON.stringify(record),
+        locale,
+        role,
+      };
+
+      for (const [key, value] of Object.entries(fields)) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = String(value);
+        form.appendChild(input);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : dict.login.invalidCredentials);
-    } finally {
       setIsSubmitting(false);
     }
   }
