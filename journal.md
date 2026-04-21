@@ -5,6 +5,35 @@ It contains a short and clear to-do list of milestones.
 
 ---
 
+## Authentication Fix (2026-04-21)
+
+### Iteration 1 - Login credentials mismatch
+
+**Status:** ✅ COMPLETE
+
+**What I Did:**
+1. **Diagnosed login failure** — User reported authentication error when trying to log in. Investigated the full auth chain: frontend login form → PocketBase SDK → PocketBase API.
+2. **Root cause identified**: The `LOGIN_CREDENTIALS.md` file listed stale credentials (`admin@school.edu`, `teacher@school.edu`, `student@school.edu`) that do not exist in the production database. The actual production credentials use `@manakher.edu.jo` domain. User was typing `admin@manakher.edu` (missing the `.jo` TLD).
+3. **Verified production auth works correctly**: `admin@manakher.edu.jo` / `Admin123!` authenticates successfully via the PocketBase API (200 OK with valid token).
+4. **Updated `LOGIN_CREDENTIALS.md`** with correct production credentials and comprehensive troubleshooting section.
+5. **Identified secondary issues** (not blocking login, but need attention):
+   - All 11 teacher accounts have `verified: false` — if PocketBase "Require email verification" is enabled, teachers cannot log in.
+   - All 189 student accounts have NO email addresses — students cannot log in at all until emails are assigned.
+   - One teacher email has a typo: `izdehar@manajher.edu.jo` (should be `manakher`).
+
+**What I Struggled With:**
+- Initially misdiagnosed the issue as an empty database (unauthenticated API queries return 0 results due to API rules).
+- Spent significant time investigating code-level issues (cookie sync, proxy, CORS) before confirming the PocketBase API itself was returning 400 for the wrong credentials.
+- Could not verify the `onlyVerified` collection setting without superuser access to the PocketBase admin panel.
+
+**Next Steps:**
+1. ⏳ User should verify in PocketBase admin UI whether "Require email verification" is enabled on the `users` collection.
+2. ⏳ If enabled, either disable it or set `verified: true` for all teacher accounts.
+3. ⏳ Assign email addresses to student accounts if students need to log in.
+4. ⏳ Fix the typo in `izdehar@manajher.edu.jo` → `izdehar@manakher.edu.jo`.
+
+---
+
 ## Continued Testing & UX Improvements (2026-04-17)
 
 ### Iteration 2 - Bulk Delete Students & UI Polish

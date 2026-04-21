@@ -1,4 +1,4 @@
-# 🔐 Login Credentials & Testing Guide
+# Login Credentials & Testing Guide
 
 ## Quick Reference
 
@@ -6,29 +6,41 @@ Use these credentials to login to the Manakher School Platform:
 
 ### Admin Account
 ```
-Email:    admin@school.edu
-Password: Admin@12345
+Email:    admin@manakher.edu.jo
+Password: Admin123!
 Role:     Admin
 ```
 
-### Teacher Account
+### Teacher Accounts
 ```
-Email:    teacher@school.edu
-Password: Teacher@12345
+Email:    rania@manakher.edu.jo
+Email:    hanadi@manakher.edu.jo
+Email:    isra@manakher.edu.jo
+Email:    amani@manakher.edu.jo
+Email:    kawthar@manakher.edu.jo
+Email:    maysa@manakher.edu.jo
+Email:    dua@manakher.edu.jo
+Email:    heba@manakher.edu.jo
+Email:    aseel@manakher.edu.jo
+Email:    wejdan@manakher.edu.jo
+Email:    asma@manakher.edu.jo
+Email:    riham@manakher.edu.jo
+Email:    duha@manakher.edu.jo
+Email:    izdehar@manajher.edu.jo   (note: manajher, not manakher)
+Password: (set individually per teacher)
 Role:     Teacher
 ```
 
-### Student Account
+### Student Accounts
 ```
-Email:    student@school.edu
-Password: Student@12345
-Role:     Student
+Note: Student accounts do NOT have email addresses in the database.
+They cannot log in via email/password authentication until emails are assigned.
 ```
 
 ## Access Instructions
 
-1. **Open Browser**: Navigate to `http://localhost:3000`
-2. **Choose Language**: Select Arabic (العربية) or English
+1. **Open Browser**: Navigate to the production URL or `http://localhost:3000`
+2. **Choose Language**: Select Arabic or English
 3. **Enter Credentials**: Use one of the accounts above
 4. **Login**: Click the login button
 5. **Dashboard**: You should be redirected to your role-specific dashboard
@@ -36,7 +48,6 @@ Role:     Student
 ## Role Dashboards
 
 ### Admin Dashboard
-Access: `http://localhost:3000/ar/dashboard/admin`
 - Manage all users (teachers and students)
 - Manage classes and sections
 - Manage subjects and exam schedules
@@ -45,7 +56,6 @@ Access: `http://localhost:3000/ar/dashboard/admin`
 - Platform settings
 
 ### Teacher Dashboard
-Access: `http://localhost:3000/ar/dashboard/teacher`
 - View assigned sections and students
 - Create and manage materials
 - Assign and grade homework
@@ -54,57 +64,61 @@ Access: `http://localhost:3000/ar/dashboard/teacher`
 - View student submissions
 
 ### Student Dashboard
-Access: `http://localhost:3000/ar/dashboard/student`
 - View announcements and materials
 - Submit homework
 - Take quizzes
 - View exam schedules
 - Check grades
 
-## Adding More Users
+## PocketBase Admin UI
 
-### Via PocketBase Admin UI
-1. Go to `http://127.0.0.1:8090`
-2. Login with: `admin@manakher.com` / `Admin@12345`
-3. Navigate to the `users` collection
-4. Click "New Record"
-5. Fill in the form:
-   - Email
-   - Password (and confirm)
-   - Name (Arabic & English)
-   - Role (admin, teacher, or student)
-6. Save the record
+### Production
+- URL: `https://pocketbase-production-882e.up.railway.app/_/`
+- Login with your PocketBase superuser credentials
 
-### Via API (curl)
+### Adding More Users
+
+Via PocketBase Admin UI:
+1. Go to the PocketBase admin URL above
+2. Navigate to the `users` collection
+3. Click "New Record"
+4. Fill in: Email, Password, name_ar, name_en, role, and set `verified = true`
+5. Save the record
+
+Via API (curl):
 ```bash
-ADMIN_TOKEN="<your-token-here>"
+ADMIN_TOKEN="<your-admin-auth-token>"
 
-curl -X POST "http://127.0.0.1:8090/api/collections/users/records" \
+curl -X POST "https://pocketbase-production-882e.up.railway.app/api/collections/users/records" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "newuser@school.edu",
-    "password": "Password@12345",
-    "passwordConfirm": "Password@12345",
+    "email": "newuser@manakher.edu.jo",
+    "password": "Password123!",
+    "passwordConfirm": "Password123!",
     "name_ar": "اسم المستخدم",
     "name_en": "User Name",
-    "role": "student",
+    "role": "teacher",
     "verified": true
   }'
 ```
 
 ## Troubleshooting
 
-### Login Page Not Loading
-- Clear browser cache (Ctrl+Shift+Delete)
-- Verify frontend is running: `curl http://localhost:3000`
-- Check browser console (F12) for errors
-
-### Authentication Failed
-- Verify PocketBase is running: `curl http://127.0.0.1:8090/api/health`
-- Check email spelling (case-insensitive but must match exactly)
+### Authentication Failed (400 Error)
+- **Double-check the email domain**: It must end in `@manakher.edu.jo` (not `@school.edu`)
+- Verify PocketBase is accessible: `curl https://pocketbase-production-882e.up.railway.app/api/health`
+- Check email spelling carefully (case-insensitive but must match exactly)
 - Ensure password is entered correctly
 - Clear browser cache and retry
+
+### Teacher Cannot Login
+- Teachers must have `verified: true` in the database. If login fails, check the `verified` field in PocketBase admin.
+- If "Require email verification" is enabled on the users collection, all users need `verified: true` to authenticate.
+
+### Student Cannot Login
+- Student accounts currently have no email addresses assigned. They need emails before they can log in.
+- Assign emails via PocketBase admin or API, and set `verified: true`.
 
 ### Dashboard Not Displaying
 - Check browser console (F12) for errors
@@ -112,14 +126,19 @@ curl -X POST "http://127.0.0.1:8090/api/collections/users/records" \
 - Try refreshing the page
 - Try logging out and logging back in
 
+## Known Issues
+
+1. **Teacher accounts are `verified: false`** — If PocketBase requires email verification for auth, teachers cannot log in. Fix: set `verified: true` for each teacher in PocketBase admin, or disable "Require email verification" on the users collection.
+2. **Student accounts have no emails** — Students cannot log in until emails are assigned.
+3. **One teacher has a typo in their email domain**: `izdehar@manajher.edu.jo` (should be `manakher`).
+
 ## System Requirements
 
-- **Backend**: PocketBase v0.23+ running at `http://127.0.0.1:8090`
-- **Frontend**: Next.js 16.2.1 running at `http://localhost:3000`
+- **Backend**: PocketBase hosted on Railway at `https://pocketbase-production-882e.up.railway.app`
+- **Frontend**: Next.js 16.2.1 (local dev: `http://localhost:3000`, production: Netlify)
 - **Browser**: Modern browser with JavaScript enabled
-- **Network**: Local network access (127.0.0.1)
 
-## Starting the Application
+## Starting the Application (Local Development)
 
 ### Start Backend (PocketBase)
 ```bash
@@ -133,15 +152,7 @@ cd frontend
 npm run dev
 ```
 
-Both services should be running for the application to work properly.
-
-## Session Details
-
-- **Last Updated**: 2026-04-17
-- **Test Data Status**: 3 users seeded and verified
-- **Build Status**: All 56 pages compile (zero errors)
-- **Backend Status**: Operational and verified
-- **Frontend Status**: Running and optimized
+Both services should be running for local development. The frontend connects to the production PocketBase by default (via `NEXT_PUBLIC_POCKETBASE_URL` in `.env`).
 
 ---
 
