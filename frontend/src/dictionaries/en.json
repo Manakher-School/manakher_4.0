@@ -447,13 +447,12 @@
     },
     "student": {
       "title": "Student Dashboard",
-      "stats": {
-        "subjects": "My Subjects",
-        "homework": "Homework Due",
-        "submitted": "Submissions",
-        "quizzes": "Quizzes Taken",
-        "announcements": "Announcements"
-      },
+"stats": {
+         "subjects": "My Subjects",
+         "myHomework": "My Homework",
+         "quizzes": "Quizzes Taken",
+         "announcements": "Announcements"
+       },
       "nav": {
         "overview": "Overview",
         "announcements": "Announcements",

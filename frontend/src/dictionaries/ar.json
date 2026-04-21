@@ -447,13 +447,12 @@
     },
      "student": {
        "title": "لوحة الطالب/ة",
-       "stats": {
-         "subjects": "موادي",
-         "homework": "واجبات مستحقة",
-         "submitted": "تسليمات",
-         "quizzes": "اختبارات مُجابة",
-         "announcements": "إعلانات"
-       },
+"stats": {
+          "subjects": "موادي",
+          "myHomework": "واجباتي",
+          "quizzes": "اختبارات مُجابة",
+          "announcements": "إعلانات"
+        },
       "nav": {
         "overview": "نظرة عامة",
         "announcements": "الإعلانات",
