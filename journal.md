@@ -123,6 +123,30 @@ If I make a mistake that cannot be undone, I must say so immediately and clearly
 
 **Commit:** `38d61c8`
 
+### Iteration 1.2 - Remove Announcements Stat Card + Gentle Hover Colors
+
+**Status:** ✅ COMPLETE
+
+**What I Did:**
+1. **Removed the announcements stat card** — Announcements are already displayed in full below the exams table on the same overview page, so a stat card for them was redundant.
+2. **Removed unused state variables** — `announcementCount` and `submittedCount` were no longer needed in the JSX after removing the announcements card, so their state declarations and API calls were cleaned up.
+3. **Added gentle hover color tints per stat card** — Each stat card now gets a soft, light background tint on hover matching its color slot:
+   - Slot 1 (blue): `hover:bg-[#eff6ff]` (very light blue)
+   - Slot 2 (green): `hover:bg-[#f0fdf4]` (very light green)
+   - Slot 3 (pink): `hover:bg-[#fdf2f8]` (very light pink)
+   - Slot 4 (yellow): `hover:bg-[#fefce8]` (very light yellow)
+   - No slot (default): `hover:bg-[var(--color-surface-hover)]`
+4. **Assigned `colorSlot` props** to each student stat card so each has a distinct, gentle hover color.
+5. **Grid layout** reverted to `lg:grid-cols-4` since we now have 4 cards instead of 5.
+
+**Files Modified:**
+- `frontend/src/components/ui/stat-card.tsx` — Added `slotHoverBg` map, applied hover background per colorSlot
+- `frontend/src/app/[lang]/dashboard/student/page.tsx` — Removed announcements card, removed unused state, added colorSlot props
+
+**Build:** ✅ Passes with zero errors.
+
+**Commit:** `7985b55`
+
 ---
 
 ## Round 1 Testing Fixes (2026-04-21)
