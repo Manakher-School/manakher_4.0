@@ -218,14 +218,14 @@ export default function TeacherAnnouncementsPage() {
             const sec = a.expand?.section;
             const isExpanded = expandedId === a.id;
             return (
-              <div key={a.id} className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] px-5 py-4 shadow-[var(--shadow-xs)]">
+              <div key={a.id} className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] px-6 py-5 shadow-[var(--shadow-xs)]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-role-teacher-bold)]" style={{ background: "var(--color-role-teacher-bg)" }}>
-                      <Bell className="h-4 w-4" />
+                    <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-role-teacher-bold)]" style={{ background: "var(--color-role-teacher-bg)" }}>
+                      <Bell className="h-5 w-5" />
                     </span>
                     <div>
-                      <p className="font-bold text-[var(--color-ink)]">{a.title}</p>
+                      <p className="font-bold text-lg text-[var(--color-ink)] leading-snug">{a.title}</p>
                       <div className="flex gap-2 mt-0.5 flex-wrap text-xs text-[var(--color-ink-secondary)] font-semibold">
                         <span>{a.scope === "global" ? t.scopeGlobal : t.scopeSection}</span>
                         {sec && <span>· {locale === "ar" ? `${sec.grade_ar} — ${sec.section_ar}` : `${sec.grade_en} — ${sec.section_en}`}</span>}

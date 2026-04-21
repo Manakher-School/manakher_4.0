@@ -41,8 +41,15 @@ export function RichContent({ html, className = "" }: RichContentProps) {
 
 /**
  * Strips HTML tags to produce a plain-text preview (for card truncation).
+ * Replaces block-level tags (p, div, br, h1-h6, li) with spaces/newlines
+ * so the preview reads naturally without visible paragraph artifacts.
  */
 export function stripHtml(html: string): string {
   if (!html) return "";
-  return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/?(p|div|h[1-6]|li|blockquote|pre)\b[^>]*>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }

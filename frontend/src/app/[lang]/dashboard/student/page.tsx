@@ -92,7 +92,7 @@ export default function StudentDashboard() {
         <div className="absolute rounded-full opacity-[0.07]" style={{ width: 140, height: 140, background: "#fff", bottom: -40, insetInlineStart: 40 }} />
 
         <div className="relative z-10">
-          <p className="text-white text-sm font-semibold mb-1">
+          <p className="text-white text-base font-bold mb-1">
             {dict.dashboard.greeting} {displayName}
           </p>
           <h2 className="text-white text-2xl font-black" style={{ letterSpacing: "-0.5px" }}>

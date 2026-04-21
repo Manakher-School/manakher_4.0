@@ -1,45 +1,15 @@
-# Round 1:
+Round 1:
+1- The paragraph tag is visible in the announcements descrition.
+2- the "pending for review" stat card is better formatted as reviewded out of total, example: 4 / 10.
+3- the student counter in the class accordion needs to be a bit bigger and more visible, but doesn't take visual priority.
+4- give the content of the meterial item some extra space to breath, and a bigger ffont for it's title.
+	- apply this to:
+		- homeworks.
+		- overview page announcements.
+		- announcements.
+		- quizez.
+		- the name card in the overview page.
 
-- I tried to create the kinder garten class, روضة, with the order 0, but failed to create it.
-- issue 1:
-## Error Type
-Console ClientResponseError 400
-
-## Error Message
-Failed to create record.
-
-
-    at async handleSubmit (src/app/[lang]/dashboard/admin/sections/page.tsx:95:10)
-
-## Code Frame
-  93 |          await alert(locale === "ar" ? "تم تحديث الفصل بنجاح" : "Class updated successfully");
-  94 |        } else {
-> 95 |          await pb.collection("class_sections").create(data);
-     |          ^
-  96 |          await alert(locale === "ar" ? "تم إضافة الفصل بنجاح" : "Class added successfully");
-  97 |        }
-  98 |        closeForm();
-
-Next.js version: 16.2.1 (Turbopack)
-
-- issue 2:
-## Error Type
-Console ClientResponseError 400
-
-## Error Message
-Failed to create record.
-
-
-    at async handleSubmit (src/app/[lang]/dashboard/admin/sections/page.tsx:95:10)
-
-## Code Frame
-  93 |          await alert(locale === "ar" ? "تم تحديث الفصل بنجاح" : "Class updated successfully");
-  94 |        } else {
-> 95 |          await pb.collection("class_sections").create(data);
-     |          ^
-  96 |          await alert(locale === "ar" ? "تم إضافة الفصل بنجاح" : "Class added successfully");
-  97 |        }
-  98 |        closeForm();
-
-Next.js version: 16.2.1 (Turbopack)
-
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+###############################################################
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

@@ -204,7 +204,7 @@ export default function TeacherSectionsPage() {
                         <Users className="h-4 w-4" />
                       </span>
                       <span className="font-bold text-[var(--color-ink)]">{sectionName(section)}</span>
-                      <span className="text-xs font-semibold text-[var(--color-ink-secondary)] bg-[var(--color-surface-sunken)] rounded-full px-2 py-0.5">
+                      <span className="text-sm font-bold text-[var(--color-ink-secondary)] bg-[var(--color-surface-sunken)] rounded-full px-2.5 py-0.5 min-w-[2rem] text-center">
                         {countLabel} {t.students}
                       </span>
                     </div>

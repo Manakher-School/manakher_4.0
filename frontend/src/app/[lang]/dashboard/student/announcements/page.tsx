@@ -86,24 +86,24 @@ export default function StudentAnnouncementsPage() {
                 key={ann.id}
                 className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden shadow-[var(--shadow-xs)]"
               >
-                 <button
-                   onClick={() => toggle(ann.id)}
-                   className="w-full flex items-start justify-between gap-3 px-5 py-4 text-start focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-accent)] rounded-t-[var(--radius-xl)]"
-                   aria-label={`${ann.title}: ${isExpanded ? "collapse" : "expand"}`}
-                   aria-expanded={isExpanded}
-                 >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)]"
-                      style={{
-                        background: "var(--color-role-student-bg)",
-                        color: "var(--color-role-student-bold)",
-                      }}
-                    >
-                      <Bell className="h-4 w-4" />
-                    </span>
-                    <div className="space-y-0.5">
-                      <p className="font-bold text-[var(--color-ink)]">{ann.title}</p>
+<button
+                    onClick={() => toggle(ann.id)}
+                    className="w-full flex items-start justify-between gap-3 px-6 py-5 text-start focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[var(--color-accent)] rounded-t-[var(--radius-xl)]"
+                    aria-label={`${ann.title}: ${isExpanded ? "collapse" : "expand"}`}
+                    aria-expanded={isExpanded}
+                  >
+                   <div className="flex items-center gap-3">
+                     <span
+                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)]"
+                       style={{
+                         background: "var(--color-role-student-bg)",
+                         color: "var(--color-role-student-bold)",
+                       }}
+                     >
+                       <Bell className="h-5 w-5" />
+                     </span>
+                     <div className="space-y-0.5">
+                       <p className="font-bold text-lg text-[var(--color-ink)] leading-snug">{ann.title}</p>
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant={ann.scope === "global" ? "accent" : "default"}>
                           {ann.scope === "global" ? t.scopeGlobal : t.scopeSection}

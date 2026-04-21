@@ -455,16 +455,16 @@ export default function TeacherQuizzesPage() {
                 className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] overflow-hidden shadow-[var(--shadow-xs)]"
               >
                 {/* Quiz header row */}
-                <div className="flex items-start justify-between gap-3 px-5 py-4">
+                <div className="flex items-start justify-between gap-3 px-6 py-5">
                   <div className="flex items-center gap-3">
                     <span
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)]"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)]"
                       style={{ background: "var(--color-role-teacher-bg)", color: "var(--color-role-teacher-bold)" }}
                     >
-                      <ClipboardList className="h-4 w-4" />
+                      <ClipboardList className="h-5 w-5" />
                     </span>
                     <div>
-                      <p className="font-bold text-[var(--color-ink)]">{quiz.title}</p>
+                      <p className="font-bold text-lg text-[var(--color-ink)] leading-snug">{quiz.title}</p>
                       <div className="flex gap-2 mt-0.5 flex-wrap text-xs text-[var(--color-ink-secondary)] font-semibold">
                         {sec && <span>{sectionName(sec)}</span>}
                         {sub && <span>· {subjectName(sub)}</span>}

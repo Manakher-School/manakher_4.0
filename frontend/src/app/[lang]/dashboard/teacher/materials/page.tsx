@@ -293,14 +293,14 @@ async function handleSave() {
             const sub = m.expand?.subject;
             const isExpanded = crudState.state.expandedId === m.id;
             return (
-              <div key={m.id} className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] px-5 py-4 shadow-[var(--shadow-xs)]">
+              <div key={m.id} className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] px-6 py-5 shadow-[var(--shadow-xs)]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-role-teacher-bold)]" style={{ background: "var(--color-role-teacher-bg)" }}>
-                      <BookOpen className="h-4 w-4" />
+                    <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-role-teacher-bold)]" style={{ background: "var(--color-role-teacher-bg)" }}>
+                      <BookOpen className="h-5 w-5" />
                     </span>
                     <div>
-                      <p className="font-bold text-[var(--color-ink)]">{m.title}</p>
+                      <p className="font-bold text-lg text-[var(--color-ink)] leading-snug">{m.title}</p>
                       <div className="flex gap-2 mt-0.5 flex-wrap">
                         {sec && <span className="text-xs text-[var(--color-ink-secondary)] font-semibold">{locale === "ar" ? `${sec.grade_ar} — ${sec.section_ar}` : `${sec.grade_en} — ${sec.section_en}`}</span>}
                         {sub && <span className="text-xs text-[var(--color-ink-secondary)]">· {locale === "ar" ? sub.name_ar : sub.name_en}</span>}
