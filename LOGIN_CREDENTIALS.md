@@ -13,23 +13,23 @@ Role:     Admin
 
 ### Teacher Accounts
 ```
-All teachers use the same password: Teacher123!
+Each teacher's password is their email address.
 
-Email:    asma@manakher.edu.jo
-Email:    amani@manakher.edu.jo
-Email:    isra@manakher.edu.jo
-Email:    kawthar@manakher.edu.jo
-Email:    rania@manakher.edu.jo
-Email:    aseel@manakher.edu.jo
-Email:    duha@manakher.edu.jo
-Email:    dua@manakher.edu.jo
-Email:    izdehar@manakher.edu.jo
-Email:    hanadi@manakher.edu.jo
-Email:    riham@manakher.edu.jo
-Email:    heba@manakher.edu.jo
-Email:    maysa@manakher.edu.jo
-Email:    wejdan@manakher.edu.jo
-Role:     Teacher
+Email/Password:  asma@manakher.edu.jo
+Email/Password:  amani@manakher.edu.jo
+Email/Password:  isra@manakher.edu.jo
+Email/Password:  kawthar@manakher.edu.jo
+Email/Password:  rania@manakher.edu.jo
+Email/Password:  aseel@manakher.edu.jo
+Email/Password:  duha@manakher.edu.jo
+Email/Password:  dua@manakher.edu.jo
+Email/Password:  izdehar@manakher.edu.jo
+Email/Password:  hanadi@manakher.edu.jo
+Email/Password:  riham@manakher.edu.jo
+Email/Password:  heba@manakher.edu.jo
+Email/Password:  maysa@manakher.edu.jo
+Email/Password:  wejdan@manakher.edu.jo
+Role:            Teacher
 ```
 
 ### Student Accounts
