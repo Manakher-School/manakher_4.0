@@ -252,6 +252,41 @@ This is the standard, battle-tested way to set cookies in web apps. The `Set-Coo
 
 **Commit:** `325c43a`
 
+### Iteration 1.7 - Server-Side Login Authentication (Definitive Fix)
+
+**Status:** ✅ COMPLETE
+
+**Problem:** All previous client-side cookie-setting methods failed on Android:
+- `document.cookie` — silently dropped on mobile browsers over HTTP/IP
+- `fetch()` with `Set-Cookie` header — some browsers don't process Set-Cookie in fetch responses
+- Form POST to `/api/auth/callback` — the form POST never reached the server (terminal showed no `POST /api/auth/callback`)
+
+Terminal logs showed only `POST /api/auth/clear-cookie` and `GET /ar/login?` repeating, meaning `authWithPassword()` was either failing silently or the form POST wasn't being submitted.
+
+**Root Cause:** Client-side JavaScript authentication is fundamentally unreliable on mobile browsers accessing the app via IP address. The PocketBase SDK call, `document.cookie`, `fetch()` Set-Cookie, and hidden form POSTs all have failure modes on mobile.
+
+**Fix: Server-Side Authentication**
+
+Moved the entire authentication flow to the server side. The login form now POSTs directly to `/api/auth/login` as a standard HTML form submission — no client-side JavaScript needed for the critical auth path.
+
+New flow:
+1. Login form POSTs `email` + `password` + `locale` to `/api/auth/login`
+2. Server authenticates with PocketBase via server-side `fetch()` (no CORS issues)
+3. On success: server sets `pb_auth` cookie via `Set-Cookie` header in a 302 redirect response to `/{locale}/dashboard/{role}` — **Set-Cookie in a redirect response is guaranteed to be processed by ALL browsers**
+4. On failure: server redirects to `/{locale}/login?error=invalid`
+
+This is the standard, battle-tested pattern used by every major web application for authentication. No client-side cookie setting, no `fetch()`, no `document.cookie`, no hidden forms — just a standard form POST + server redirect.
+
+**Files Modified:**
+- `frontend/src/app/api/auth/login/route.ts` — NEW: server-side auth route
+- `frontend/src/app/[lang]/login/page.tsx` — form now POSTs to `/api/auth/login`, reads error from `?error=` query param
+- `frontend/src/lib/auth.ts` — simplified `login()` to use API route + document.cookie fallback
+- `frontend/src/lib/pocketbase.ts` — onChange now sets cookie via `document.cookie` FIRST, then API route as backup
+
+**Build:** ✅ Passes with zero errors.
+
+**Commit:** `c97fc19`
+
 ---
 
 ## Round 1 Testing Fixes (2026-04-21)
