@@ -287,7 +287,7 @@ async function handleSave() {
       ) : materials.length === 0 ? (
         <p className="text-[var(--color-ink-secondary)] text-sm">{t.empty}</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-5">
           {materials.map((m) => {
             const sec = m.expand?.section;
             const sub = m.expand?.subject;

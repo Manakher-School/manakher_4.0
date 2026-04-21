@@ -584,7 +584,7 @@ export default function StudentAssessmentsPage() {
           ) : quizzes.length === 0 ? (
             <p className="text-[var(--color-ink-secondary)] text-sm">{tQuizzes.empty}</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-5">
               {quizzes.map((quiz) => {
                 const sub = quiz.expand?.subject;
                 const status = getQuizStatus(quiz);
@@ -700,7 +700,7 @@ export default function StudentAssessmentsPage() {
             <>
               {/* Upcoming Exams */}
               {upcomingExams.length > 0 && (
-                <div className="space-y-3">
+                <div className="space-y-5">
                   <h3 className="text-lg font-bold text-[var(--color-ink)] flex items-center gap-2">
                     <Calendar className="w-5 h-5" />
                     {tExams.upcoming}
@@ -756,7 +756,7 @@ export default function StudentAssessmentsPage() {
 
               {/* Past Exams */}
               {pastExams.length > 0 && (
-                <div className="space-y-3 mt-6">
+                <div className="space-y-5 mt-6">
                   <h3 className="text-lg font-bold text-[var(--color-ink-secondary)]">
                     {locale === "ar" ? "الامتحانات السابقة" : "Past Exams"}
                   </h3>

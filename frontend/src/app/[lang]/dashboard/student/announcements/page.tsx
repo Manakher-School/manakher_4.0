@@ -73,7 +73,7 @@ export default function StudentAnnouncementsPage() {
       ) : list.length === 0 ? (
         <p className="text-[var(--color-ink-secondary)] text-sm">{t.empty}</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-5">
           {list.map((ann) => {
             const isExpanded = expandedId === ann.id;
             const author = ann.expand?.author;

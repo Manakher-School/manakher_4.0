@@ -213,7 +213,7 @@ export default function TeacherAnnouncementsPage() {
       ) : announcements.length === 0 ? (
         <p className="text-[var(--color-ink-secondary)] text-sm">{t.empty}</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-5">
           {announcements.map((a) => {
             const sec = a.expand?.section;
             const isExpanded = expandedId === a.id;

@@ -166,7 +166,7 @@ export default function StudentHomeworkPage() {
       ) : list.length === 0 ? (
         <p className="text-[var(--color-ink-secondary)] text-sm">{t.empty}</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-5">
           {list.map((hw) => {
             const isExpanded = expandedId === hw.id;
             const sub = hw.expand?.subject;

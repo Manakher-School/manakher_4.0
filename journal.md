@@ -71,10 +71,49 @@ If I make a mistake that cannot be undone, I must say so immediately and clearly
 4. ⏳ **Reset teacher passwords** to what the user originally intended (currently set to email addresses as a temporary measure)
 5. ⏳ **Fix the PocketBase admin UI update issue** — when editing user records in the admin UI, changes to `email` and `verified` fields may not save due to PocketBase v0.25+ security restrictions. As superuser, these restrictions should be bypassed in the admin UI.
 
+**What the User Needs to Do (Superuser Actions):**
+1. ⏳ **Set `verified: true`** for all teacher accounts in PocketBase admin UI
+2. ⏳ **Check if "Require email verification"** is enabled on the `users` collection
+3. ⏳ **Assign email addresses** to student accounts if students need to log in
+4. ⏳ **Reset teacher passwords** to what the user originally intended
+5. ⏳ **Fix the PocketBase admin UI update issue** — changes to `email` and `verified` fields may not save due to PocketBase v0.25+ security restrictions
+
 **Working Credentials (current state):**
 - Admin: `admin@manakher.edu.jo` / `Admin123!`
 - Teachers: `<email>` / `<email>` (password = email address)
 - Students: Cannot log in (no email addresses assigned)
+
+---
+
+## Round 1 Testing Fixes (2026-04-21)
+
+### Iteration 1 - UI Polish and Content Fixes
+
+**Status:** ✅ COMPLETE
+
+**What I Did:**
+1. **Fixed visible paragraph tags in announcements description** — Updated `stripHtml()` utility in `rich-content.tsx` to replace block-level HTML tags (`<p>`, `<div>`, `<h1>`-`<h6>`, `<li>`, `<blockquote>`, `<pre>`) with spaces instead of stripping them, which was causing visible `<p>` text artifacts. Also fixed teacher dashboard overview that was rendering raw HTML as text (now uses `stripHtml()`).
+
+2. **Reformatted "pending for review" stat card** — Changed from showing just the pending count to showing `reviewed / total` format (e.g. "4 / 10"). Added `reviewedCount` and `totalSubmissionsCount` states to teacher dashboard, fetching graded and total submissions separately.
+
+3. **Made student counter in class accordion bigger and more visible** — Increased font from `text-xs font-semibold` to `text-sm font-bold`, added `min-w-[2rem] text-center` for consistent width, increased padding from `px-2 py-0.5` to `px-2.5 py-0.5`. Applied to both teacher sections page and admin students page.
+
+4. **Gave content items more breathing space and bigger title font** — Increased card padding from `px-5 py-4` to `px-6 py-5`, icon size from `h-9 w-9` to `h-10 w-10`, icon SVG from `h-4 w-4` to `h-5 w-5`, title from `font-bold` to `font-bold text-lg leading-snug`. Applied across: teacher materials, teacher announcements, teacher homework, teacher quizzes, teacher dashboard overview, admin dashboard overview, student announcements. Also increased welcome banner name from `text-sm font-semibold` to `text-base font-bold` across all three dashboards.
+
+**Files Modified:**
+- `frontend/src/components/ui/rich-content.tsx` — stripHtml() improvement
+- `frontend/src/app/[lang]/dashboard/teacher/page.tsx` — overview announcements, stat card, welcome banner
+- `frontend/src/app/[lang]/dashboard/teacher/announcements/page.tsx` — card spacing
+- `frontend/src/app/[lang]/dashboard/teacher/materials/page.tsx` — card spacing
+- `frontend/src/app/[lang]/dashboard/teacher/homework/page.tsx` — card spacing
+- `frontend/src/app/[lang]/dashboard/teacher/quizzes/page.tsx` — card spacing
+- `frontend/src/app/[lang]/dashboard/teacher/sections/page.tsx` — student counter
+- `frontend/src/app/[lang]/dashboard/admin/page.tsx` — overview announcements, welcome banner
+- `frontend/src/app/[lang]/dashboard/admin/students/page.tsx` — student counter
+- `frontend/src/app/[lang]/dashboard/student/page.tsx` — welcome banner
+- `frontend/src/app/[lang]/dashboard/student/announcements/page.tsx` — card spacing
+
+**Build:** Passes with zero errors.
 
 ---
 

@@ -113,7 +113,7 @@ export default function StudentMaterialsPage() {
       ) : list.length === 0 ? (
         <p className="text-[var(--color-ink-secondary)] text-sm">{t.empty}</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-5">
           {list.map((mat) => {
             const isExpanded = expandedId === mat.id;
             const sub = mat.expand?.subject;

@@ -305,7 +305,7 @@ export default function TeacherHomeworkPage() {
       ) : homeworkList.length === 0 ? (
         <p className="text-[var(--color-ink-secondary)] text-sm">{t.empty}</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-5">
           {homeworkList.map((hw) => {
             const sec = hw.expand?.section;
             const sub = hw.expand?.subject;

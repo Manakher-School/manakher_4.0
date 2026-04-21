@@ -244,7 +244,7 @@ export default function AdminDashboard() {
         )}
         
         {/* Announcements List */}
-        <div className="space-y-3">
+        <div className="space-y-5">
           {announcements.length === 0 ? (
             <p className="text-[var(--color-ink-secondary)] text-sm">{dict.dashboard.admin.announcements.empty}</p>
           ) : (

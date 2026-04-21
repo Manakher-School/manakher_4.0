@@ -433,7 +433,7 @@ export default function TeacherQuizzesPage() {
       ) : quizzes.length === 0 ? (
         <p className="text-[var(--color-ink-secondary)] text-sm">{t.empty}</p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-5">
           {quizzes.map((quiz) => {
             const sec = quiz.expand?.section;
             const sub = quiz.expand?.subject;

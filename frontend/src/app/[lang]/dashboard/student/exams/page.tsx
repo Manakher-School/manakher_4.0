@@ -127,7 +127,7 @@ export default function StudentExamsPage() {
         <>
           {/* Upcoming Exams */}
           {upcomingExams.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-5">
               <h3 className="text-lg font-bold text-[var(--color-ink)] flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
                 {t.upcoming}
@@ -187,7 +187,7 @@ export default function StudentExamsPage() {
 
           {/* Past Exams */}
           {pastExams.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-5">
               <h3 className="text-lg font-bold text-[var(--color-ink-secondary)]">
                 {locale === "ar" ? "الامتحانات السابقة" : "Past Exams"}
               </h3>
