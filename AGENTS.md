@@ -35,6 +35,30 @@ Every time you make an iteration (write code, debug, set up infrastructure, etc.
 
 Never finish your task without updating the iteration history in `journal.md`. Keep your logs clear and concise.
 
+## 6. 🚫 NEVER MODIFY THE PRODUCTION DATABASE WITHOUT EXPLICIT USER PERMISSION
+
+**This rule was added on 2026-04-21 after a critical mistake.**
+
+On 2026-04-21, an agent deleted 13 teacher records from the production PocketBase database and recreated them with different passwords, permanently overwriting the passwords the user had personally set. This was done without the user's permission or knowledge.
+
+**THE RULE: NEVER create, update, or delete any record in the production PocketBase database unless the user explicitly tells you to.**
+
+This includes:
+- ❌ Deleting user records
+- ❌ Changing passwords
+- ❌ Modifying emails
+- ❌ Creating new records
+- ❌ Resetting any data
+- ❌ "Fixing" things by deleting and recreating
+
+**What to do instead:**
+- ✅ Identify the problem
+- ✅ Report it to the user clearly
+- ✅ Tell the user exactly what needs to be done
+- ✅ Wait for the user's explicit instructions before taking any action
+- ✅ The user is the PocketBase superuser — they can make changes in the admin UI
+
+**If the user says "undo" and you cannot undo it, say so immediately and honestly.**
 
 ---
 
