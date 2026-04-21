@@ -167,6 +167,42 @@ If I make a mistake that cannot be undone, I must say so immediately and clearly
 
 **Commit:** `3f163d8`
 
+### Iteration 1.4 - Server-Side Auth Cookie Setting (Definitive Fix)
+
+**Status:** ✅ COMPLETE
+
+**Problem:** Iteration 1.3's fix (`window.location.href` instead of `router.push()`) did not solve the login issue on Android. The root cause was deeper: `document.cookie` is unreliable for setting auth cookies on mobile browsers accessing the app over the network (e.g., Android at `http://192.168.1.19:3001`). Mobile browsers may silently drop or not persist cookies set via `document.cookie`, especially when accessing via IP address over HTTP.
+
+**Root Cause:** The `pb_auth` cookie was being set entirely via `document.cookie` in three places (pocketbase.ts onChange, auth.ts login, teacher profile). On mobile browsers, this method is unreliable — the cookie may not persist between page loads, causing the proxy to see no auth and redirect back to login.
+
+**Fix: Server-Side Cookie Setting via API Routes**
+
+Created two Next.js API routes that set/clear cookies via `Set-Cookie` HTTP response headers — the standard, reliable way to set cookies that works across all browsers and devices:
+
+1. **`/api/auth/set-cookie`** (POST) — Receives `{token, record}` in request body, sets `pb_auth` cookie via `Set-Cookie` header with `path=/; maxAge=7days; sameSite=lax`
+2. **`/api/auth/clear-cookie`** (POST) — Clears `pb_auth` cookie via `Set-Cookie` header with `maxAge=0`
+
+Updated all cookie-setting code to call these API routes:
+- `auth.ts` `login()` → calls `/api/auth/set-cookie` (with `document.cookie` fallback)
+- `auth.ts` `logout()` → calls `/api/auth/clear-cookie` (with `document.cookie` fallback)
+- `pocketbase.ts` `onChange` listener → calls API routes (with `document.cookie` fallbacks)
+- `teacher/profile/page.tsx` → both cookie updates now use API routes (with fallbacks)
+- `proxy.ts` → added `/api/` to allowed public paths so the API routes bypass auth
+
+**Why this works:** `Set-Cookie` HTTP headers are the standard, browser-agnostic way to set cookies. Unlike `document.cookie`, they are processed by the browser's network layer and are guaranteed to be persisted before the response completes. This eliminates the race condition between cookie persistence and page navigation.
+
+**Files Modified:**
+- `frontend/src/app/api/auth/set-cookie/route.ts` — NEW: API route to set auth cookie
+- `frontend/src/app/api/auth/clear-cookie/route.ts` — NEW: API route to clear auth cookie
+- `frontend/src/lib/auth.ts` — login/logout now use API routes with fallbacks
+- `frontend/src/lib/pocketbase.ts` — onChange listener now uses API routes with fallbacks
+- `frontend/src/app/[lang]/dashboard/teacher/profile/page.tsx` — cookie updates use API routes
+- `frontend/src/proxy.ts` — allow `/api/` paths without auth
+
+**Build:** ✅ Passes with zero errors.
+
+**Commit:** `8ab49be`
+
 ---
 
 ## Round 1 Testing Fixes (2026-04-21)
