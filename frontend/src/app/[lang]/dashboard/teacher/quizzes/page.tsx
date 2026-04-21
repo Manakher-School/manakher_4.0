@@ -144,6 +144,7 @@ export default function TeacherQuizzesPage() {
     if (!user) return;
     const pb = getPocketBase();
     const sectionIds: string[] = (user as any).sections ?? [];
+    const subjectIds: string[] = (user as any).subjects ?? [];
 
     try {
       const [secs, subs, qzs] = await Promise.all([
@@ -153,7 +154,12 @@ export default function TeacherQuizzesPage() {
               sort: "grade_order,section_ar",
             })
           : Promise.resolve([] as Section[]),
-        pb.collection("subjects").getFullList<Subject>({ sort: "name_ar" }),
+        subjectIds.length > 0
+          ? pb.collection("subjects").getFullList<Subject>({
+              filter: subjectIds.map((id) => `id = "${id}"`).join(" || "),
+              sort: "name_ar",
+            })
+          : Promise.resolve([] as Subject[]),
         pb.collection("quizzes").getFullList<Quiz>({
           filter: `teacher = "${user.id}"`,
           sort: "-created",

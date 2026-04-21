@@ -73,6 +73,7 @@ export default function TeacherMaterialsPage() {
     if (!user) return;
     const pb = getPocketBase();
     const sectionIds: string[] = (user as any).sections ?? [];
+    const subjectIds: string[] = (user as any).subjects ?? [];
 
     crudState.setIsLoading(true);
     try {
@@ -83,7 +84,12 @@ export default function TeacherMaterialsPage() {
               sort: "grade_order,section_ar",
             })
           : Promise.resolve([] as Section[]),
-        pb.collection("subjects").getFullList<Subject>({ sort: locale === "ar" ? "name_ar" : "name_en" }),
+        subjectIds.length > 0
+          ? pb.collection("subjects").getFullList<Subject>({
+              filter: subjectIds.map((id) => `id = "${id}"`).join(" || "),
+              sort: locale === "ar" ? "name_ar" : "name_en",
+            })
+          : Promise.resolve([] as Subject[]),
       ]);
       setSections(secs);
       setSubjects(subs);

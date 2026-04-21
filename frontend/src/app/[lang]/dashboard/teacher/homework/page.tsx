@@ -86,6 +86,7 @@ export default function TeacherHomeworkPage() {
     if (!user) return;
     const pb = getPocketBase();
     const sectionIds: string[] = (user as any).sections ?? [];
+    const subjectIds: string[] = (user as any).subjects ?? [];
 
     try {
       hwListCrudState.setIsLoading(true);
@@ -96,7 +97,12 @@ export default function TeacherHomeworkPage() {
               sort: "grade_order,section_ar",
             })
           : Promise.resolve([] as Section[]),
-        pb.collection("subjects").getFullList<Subject>({ sort: "name_ar" }),
+        subjectIds.length > 0
+          ? pb.collection("subjects").getFullList<Subject>({
+              filter: subjectIds.map((id) => `id = "${id}"`).join(" || "),
+              sort: "name_ar",
+            })
+          : Promise.resolve([] as Subject[]),
       ]);
       setSections(secs);
       setSubjects(subs);
