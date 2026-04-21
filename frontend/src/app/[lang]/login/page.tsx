@@ -36,8 +36,6 @@ export default function LoginPage() {
 
   function handleSubmit() {
     setIsSubmitting(true);
-    // Form submits natively as POST to /api/auth/login — no e.preventDefault()
-    // The browser handles the submission and the server responds with a redirect
   }
 
   const t = dict.login;
