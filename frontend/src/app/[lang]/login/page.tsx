@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useSettings } from "@/context/settings-context";
@@ -18,7 +17,6 @@ export default function LoginPage() {
   const { login } = useAuth();
   const { dict, locale, switchLocale } = useLocale();
   const { settings } = useSettings();
-  const router = useRouter();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,7 +24,12 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       const user = await login(email, password);
-      router.push(getRoleDashboardPath(user.role, locale));
+      // Use full page navigation instead of client-side router to guarantee
+      // the pb_auth cookie is sent with the request. Client-side navigation
+      // (router.push) can race with cookie persistence, causing the proxy
+      // to see no auth and redirect back to login — especially on mobile
+      // devices accessing the app over the network.
+      window.location.href = getRoleDashboardPath(user.role, locale);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : dict.login.invalidCredentials);
     } finally {
