@@ -203,6 +203,23 @@ Updated all cookie-setting code to call these API routes:
 
 **Commit:** `8ab49be`
 
+### Iteration 1.5 - Fix Proxy Blocking API Routes (Critical Bug)
+
+**Status:** ✅ COMPLETE
+
+**Problem:** Iteration 1.4's server-side cookie setting still didn't work. The `/api/auth/set-cookie` fetch call was being intercepted by the proxy and redirected from `/api/auth/set-cookie` to `/ar/api/auth/set-cookie` (locale prefix added). This redirected URL doesn't match any Next.js API route, so the cookie was never set.
+
+**Root Cause:** The proxy's locale detection (Step 1) ran BEFORE the public path check. When `fetch('/api/auth/set-cookie')` was called, the proxy saw no locale prefix and redirected to `/ar/api/auth/set-cookie`. The API route only exists at `/api/auth/set-cookie`, not `/ar/api/auth/set-cookie`.
+
+**Fix:** Added Step 0 to the proxy — bypass all `/api/` paths entirely, before any locale or auth checks. API routes don't need locale prefixes or authentication.
+
+**Files Modified:**
+- `frontend/src/proxy.ts` — Added early return for `/api/` paths, removed `publicPathPrefixes` (no longer needed)
+
+**Build:** ✅ Passes with zero errors.
+
+**Commit:** `2fbb4f8`
+
 ---
 
 ## Round 1 Testing Fixes (2026-04-21)
