@@ -6092,3 +6092,49 @@ This single line ensures that when PocketBase rejects an email, `generateUniqueE
 The `/api/auth/login` route is kept as a backup but is no longer the primary auth flow.
 
 **Commit:** `44dc95a`
+
+### Iteration 3.1 - Teacher Dashboard: Filter Subjects to Teacher's Own
+
+**Status:** ✅ COMPLETE
+
+**What I Did:**
+- Materials, homework, and quizzes pages were loading ALL subjects from the database in their dropdowns, allowing teachers to create content for subjects they don't teach.
+- Fixed all three pages to filter subjects by the teacher's assigned subjects using `(user as any).subjects`, matching the same pattern already used for filtering sections.
+
+**Files Modified:**
+- `teacher/materials/page.tsx` — subjects filtered by teacher's subjects
+- `teacher/homework/page.tsx` — subjects filtered by teacher's subjects
+- `teacher/quizzes/page.tsx` — subjects filtered by teacher's subjects
+
+**Commit:** `d18cc39`
+
+### Iteration 3.2 - Student Dashboard: Combine Homework & Submissions Stat Cards
+
+**Status:** ✅ COMPLETE
+
+**What I Did:**
+- Combined the "Homework Due" and "Submissions" stat cards into a single "My Homework" (واجباتي) card showing done/total format (e.g. "4 / 10")
+- Updated ar.json and en.json dictionaries
+- Grid layout changed from 4 columns to 3 columns (3 cards now)
+- Removed unused Send icon import and hwCount/submissionFormat states
+
+**Commit:** `5448553`
+
+### Iteration 3.3 - Announcements Visible on All Dashboards
+
+**Status:** ✅ COMPLETE
+
+**What I Did:**
+- Teacher dashboard was only showing announcements authored by the current teacher (filter: `author = user.id`).
+- Changed to show all relevant announcements: global + teacher's assigned sections, matching the student dashboard's behavior.
+
+**Files Modified:**
+- `teacher/page.tsx` — announcement filter changed from `author = user.id` to `scope = "global" || (section filters)`
+
+**Commit:** `fb8f72e`
+
+### Iteration 3.4 - Comments and Reactions Visible to Other Users
+
+**Status:** IN PROGRESS
+
+The Comments and Reactions components already work correctly — they load all comments/reactions from the database and display them. The issue is that they're only used in the student overview and teacher announcements page, not in the teacher overview or admin overview.

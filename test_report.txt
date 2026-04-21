@@ -27,3 +27,19 @@ Make sure to use all the needed visual cues, like: hover color, curser changing,
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ###############################################################
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+Round 3:
+1- In the teacher dashboard:
+	- any class/section selection menu or functionality must only show the teacher's classes only.
+		- for example 
+	- any course selection menu or functionality must only show the teacher's course only.
+2- In the student dashboard:
+	- the sublission stat card currently nvigates to the homeworks page, so, the homeworks stat & the submission stat must be combined into "my homeworks" with (done / total) format.
+3- Any announcement that gets posted must be shown on these dashboards (student, teacher, admin).
+4- when a students comments and reacts to a post/announcement the comment and reaction must be visible to the other users.
+5- the hosted website fails to login, it refreshes instead!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! I think it's because pushing your updates it broke it.....
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+###############################################################
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
