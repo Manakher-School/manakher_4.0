@@ -6073,3 +6073,22 @@ This single line ensures that when PocketBase rejects an email, `generateUniqueE
 
 ✅ **Build PASSED:** 56 pages compile successfully, zero TypeScript errors
 
+
+---
+
+## Round 3 Testing Fixes (2026-04-21)
+
+### Iteration 3.0 - Production Login Fix (Revert to Client-Side SDK)
+
+**Status:** ✅ COMPLETE
+
+**Problem:** The production site (Netlify) was broken — login redirected back to the login page. The server-side `/api/auth/login` route was causing the issue, likely due to Netlify server-side function configuration or redirect URL handling.
+
+**Fix:** Reverted the login page to use the client-side PocketBase SDK (`authWithPassword()`), which was working before on production. Two key improvements retained:
+1. `window.location.href` instead of `router.push()` — avoids client-side navigation race condition
+2. Explicit `document.cookie` set before navigation — ensures cookie is written before redirect
+3. `pocketbase.ts` syncs cookie → localStorage on page load — ensures PocketBase SDK is initialized correctly
+
+The `/api/auth/login` route is kept as a backup but is no longer the primary auth flow.
+
+**Commit:** `44dc95a`
