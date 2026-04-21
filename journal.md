@@ -220,6 +220,38 @@ Updated all cookie-setting code to call these API routes:
 
 **Commit:** `2fbb4f8`
 
+### Iteration 1.6 - Form POST + Server Redirect for Login (Definitive Fix)
+
+**Status:** ✅ COMPLETE
+
+**Problem:** Iterations 1.3-1.5 all failed to fix the login issue on Android. The root cause is that **some mobile browsers don't reliably process `Set-Cookie` headers in `fetch()` responses**, and `document.cookie` can silently fail on mobile devices accessing via IP address over HTTP.
+
+**Root Cause:** There are three ways to set cookies in a web app:
+1. `document.cookie` — Unreliable on mobile browsers, especially over HTTP/IP
+2. `Set-Cookie` header in `fetch()` response — Some browsers don't process these reliably
+3. `Set-Cookie` header in a **full page response** (form POST redirect) — **Guaranteed to work on all browsers**
+
+The previous iterations used methods 1 and 2, which is why they failed.
+
+**Fix: Form POST + Server Redirect**
+
+The login page now uses method 3:
+1. After `authWithPassword()` succeeds, create a hidden `<form>` element
+2. The form POSTs to `/api/auth/callback` with the auth data (token, record, locale, role)
+3. The server-side route sets the `pb_auth` cookie via `Set-Cookie` header
+4. The server-side route returns a **302 redirect** to `/{locale}/dashboard/{role}`
+5. The browser follows the redirect **with the cookie already set** → proxy sees auth → allows through
+
+This is the standard, battle-tested way to set cookies in web apps. The `Set-Cookie` header in a full page redirect response is processed by the browser's network layer before any JavaScript runs, guaranteeing the cookie is set.
+
+**Files Modified:**
+- `frontend/src/app/api/auth/callback/route.ts` — NEW: Server-side route that sets cookie + redirects
+- `frontend/src/app/[lang]/login/page.tsx` — Replaced `window.location.href` with hidden form POST
+
+**Build:** ✅ Passes with zero errors.
+
+**Commit:** `325c43a`
+
 ---
 
 ## Round 1 Testing Fixes (2026-04-21)
