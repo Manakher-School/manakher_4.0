@@ -147,6 +147,26 @@ If I make a mistake that cannot be undone, I must say so immediately and clearly
 
 **Commit:** `7985b55`
 
+### Iteration 1.3 - Fix Login Redirect on Network/Mobile Devices
+
+**Status:** ✅ COMPLETE
+
+**Problem:** When accessing the app from another device on the same network (e.g., Android phone at `http://192.168.1.19:3001`), successful login would just refresh the login page instead of redirecting to the dashboard.
+
+**Root Cause:** After `authWithPassword()` succeeds, the `pb_auth` cookie is set via `document.cookie`. Then `router.push()` triggers a Next.js client-side navigation, which sends an RSC fetch request to the server. The proxy (`proxy.ts`) checks for the `pb_auth` cookie on this request. On some browsers (especially mobile), the cookie set via `document.cookie` may not be included in the subsequent client-side navigation request — there's a race condition between cookie persistence and the navigation fetch. The proxy sees no auth cookie and redirects back to `/login`.
+
+**Fix:**
+1. **Changed login redirect from `router.push()` to `window.location.href`** — This triggers a full page reload instead of a client-side navigation, which guarantees the browser sends the `pb_auth` cookie with the request. The proxy then sees the valid auth and allows through to the dashboard.
+2. **Added `-H 0.0.0.0` to the dev script** — So `npm run dev` binds to all network interfaces by default, making the app accessible from other devices on the same network without manual flags.
+
+**Files Modified:**
+- `frontend/src/app/[lang]/login/page.tsx` — Replaced `router.push()` with `window.location.href` for post-login redirect, removed unused `useRouter` import
+- `frontend/package.json` — Added `-H 0.0.0.0` to dev script
+
+**Build:** ✅ Passes with zero errors.
+
+**Commit:** `3f163d8`
+
 ---
 
 ## Round 1 Testing Fixes (2026-04-21)
