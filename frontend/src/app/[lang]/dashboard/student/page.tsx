@@ -79,7 +79,7 @@ export default function StudentDashboard() {
       setAnnouncementCount(0);
       setSubmittedCount(0);
       setQuizSubmissions("0/0");
-      setSubmissionFormat("0/0");
+      setSubmissionFormat("0 / 0");
       return;
     }
 
@@ -100,7 +100,7 @@ export default function StudentDashboard() {
     ])
       .then(([submitted, total]) => {
         setSubmittedCount(submitted.totalItems);
-        setSubmissionFormat(`${submitted.totalItems}/${total.totalItems}`);
+        setSubmissionFormat(`${submitted.totalItems} / ${total.totalItems}`);
       })
       .catch(() => {
         setSubmittedCount("—");
@@ -130,7 +130,7 @@ export default function StudentDashboard() {
       pb.collection("quiz_attempts").getList(1, 1, { filter: `student = "${user.id}"` }),
     ])
       .then(([quizzes, attempts]) => {
-        setQuizSubmissions(`${attempts.totalItems}/${quizzes.totalItems}`);
+        setQuizSubmissions(`${attempts.totalItems} / ${quizzes.totalItems}`);
       })
       .catch(() => setQuizSubmissions("—"));
   }, [user]);
@@ -255,22 +255,22 @@ export default function StudentDashboard() {
         <h3 className="text-base font-black text-[var(--color-ink)] mb-6" style={{ letterSpacing: "-0.2px" }}>
           {t.nav.overview}
         </h3>
-        <div className="stat-card-group grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="stat-card-group grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <Link href={`${base}/materials`} className="block">
-            <StatCard icon={<BookOpen />} label={t.stats.subjects} value={subjectCount} />
+            <StatCard icon={<BookOpen />} label={t.stats.subjects} value={subjectCount} clickable />
           </Link>
           <Link href={`${base}/homework`} className="block">
-            <StatCard icon={<FileText />} label={t.stats.homework} value={hwCount} />
+            <StatCard icon={<FileText />} label={t.stats.homework} value={hwCount} clickable />
           </Link>
-          <div>
-            <StatCard icon={<Send />} label={t.stats.submitted} value={submissionFormat} />
-          </div>
+          <Link href={`${base}/homework`} className="block">
+            <StatCard icon={<Send />} label={t.stats.submitted} value={submissionFormat} clickable />
+          </Link>
           <Link href={`${base}/assessments`} className="block">
-            <StatCard icon={<ClipboardList />} label={t.stats.quizzes} value={quizSubmissions} />
+            <StatCard icon={<ClipboardList />} label={t.stats.quizzes} value={quizSubmissions} clickable />
           </Link>
-          <Link href="#announcements" className="block">
-            <StatCard icon={<Bell />} label={t.stats.announcements} value={announcementCount} />
-          </Link>
+          <a href="#announcements" className="block">
+            <StatCard icon={<Bell />} label={t.stats.announcements} value={announcementCount} clickable />
+          </a>
         </div>
       </div>
 

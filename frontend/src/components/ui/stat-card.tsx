@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
+import { ChevronRight } from "lucide-react";
 
 interface StatCardProps {
   icon: ReactNode;
   label: string;
   value: string | number;
   colorSlot?: 1 | 2 | 3 | 4;
+  clickable?: boolean;
 }
 
 const slotStyles: Record<number, { bg: string; icon: string }> = {
@@ -16,12 +18,26 @@ const slotStyles: Record<number, { bg: string; icon: string }> = {
 
 const isEmpty = (v: string | number) => v === "—" || v === "" || v === null || v === undefined;
 
-export function StatCard({ icon, label, value, colorSlot }: StatCardProps) {
+export function StatCard({ icon, label, value, colorSlot, clickable }: StatCardProps) {
   const explicit = colorSlot ? slotStyles[colorSlot] : null;
   const empty = isEmpty(value);
 
   return (
-    <div className="group bg-[var(--color-surface-card)] border border-[var(--color-border)] rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)] p-5 flex flex-col gap-4 hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 transition-all duration-200">
+    <div
+      className={[
+        "relative bg-[var(--color-surface-card)] border rounded-[var(--radius-xl)] shadow-[var(--shadow-sm)] p-5 flex flex-col gap-4 transition-all duration-200",
+        clickable
+          ? "cursor-pointer border-[var(--color-border)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 hover:border-[var(--color-accent)]"
+          : "border-[var(--color-border)] hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5",
+      ].join(" ")}
+    >
+      {/* Navigation indicator for clickable cards */}
+      {clickable && (
+        <span className="absolute top-4 end-4 text-[var(--color-ink-disabled)]">
+          <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+        </span>
+      )}
+
       {/* Icon */}
       <span
         className={`stat-icon flex h-12 w-12 items-center justify-center rounded-[var(--radius-lg)] ${explicit ? `${explicit.bg} ${explicit.icon}` : ""}`}
