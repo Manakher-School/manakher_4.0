@@ -76,12 +76,19 @@ export default function TeacherDashboard() {
       .then((r) => setReviewedCount(r.totalItems))
       .catch(() => setReviewedCount("—"));
       
-    // Load announcements
+    // Load announcements (global + teacher's sections)
     if (user) {
+      const sections: string[] = (user as any).sections ?? [];
+      const secFilter = sections.map((id) => `section = "${id}"`).join(" || ");
+      const filter = secFilter
+        ? `scope = "global" || (${secFilter})`
+        : `scope = "global"`;
+
       pb.collection("announcements")
-        .getFullList<{id: string; title: string; body: string; created: string}>({
-          filter: `author = "${user.id}"`,
-          sort: "-created"
+        .getFullList<{id: string; title: string; body: string; created: string; scope: string; section: string; author: string}>({
+          filter,
+          sort: "-created",
+          expand: "author",
         })
         .then((anns) => {
           setAnnouncements(anns);
