@@ -3,12 +3,13 @@
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useSettings } from "@/context/settings-context";
+import { useNotifications } from "@/context/notification-context";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { getRoleDashboardPath, getDisplayName } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { LogOut, Loader2 } from "lucide-react";
+import { LogOut, Loader2, Bell, BellOff } from "lucide-react";
 
 const roleHeaderAccent: Record<string, string> = {
   admin:   "from-[var(--color-role-admin-bold)] to-[#7c3aed]",
@@ -20,8 +21,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, isLoading, logout } = useAuth();
   const { dict, locale, switchLocale } = useLocale();
   const { settings } = useSettings();
+  const { permissionGranted, requestPermission } = useNotifications();
   const router = useRouter();
   const pathname = usePathname();
+  const [notifDismissed, setNotifDismissed] = useState(false);
+
+  // Check if user previously dismissed the notification prompt
+  useEffect(() => {
+    const dismissed = localStorage.getItem("manakher_notif_dismissed");
+    if (dismissed) setNotifDismissed(true);
+  }, []);
 
   const nextLocale = locale === "ar" ? "en" : "ar";
 
@@ -87,6 +96,24 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <span className="hidden md:block text-sm font-semibold text-[var(--color-ink-secondary)] px-2 truncate max-w-[160px]">
               {displayName}
             </span>
+
+            {/* Notification permission */}
+            <button
+              onClick={async () => {
+                if (!permissionGranted) {
+                  await requestPermission();
+                }
+              }}
+              aria-label={permissionGranted ? (locale === "ar" ? "الإشعارات مفعّلة" : "Notifications enabled") : (locale === "ar" ? "تفعيل الإشعارات" : "Enable notifications")}
+              className={`flex items-center gap-1.5 rounded-[var(--radius-full)] px-3 py-1.5 text-xs font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] ${
+                permissionGranted
+                  ? "text-green-600 bg-green-50 hover:bg-green-100"
+                  : "text-[var(--color-ink-secondary)] border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)]"
+              }`}
+            >
+              {permissionGranted ? <Bell className="h-3.5 w-3.5" /> : <BellOff className="h-3.5 w-3.5" />}
+              <span className="hidden sm:inline">{permissionGranted ? (locale === "ar" ? "الإشعارات" : "Notifications") : (locale === "ar" ? "تفعيل" : "Enable")}</span>
+            </button>
 
             {/* Language switcher */}
             <button

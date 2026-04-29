@@ -1,45 +1,33 @@
 Round 1:
-1- The paragraph tag is visible in the announcements descrition.
-2- the "pending for review" stat card is better formatted as reviewded out of total, example: 4 / 10.
-3- the student counter in the class accordion needs to be a bit bigger and more visible, but doesn't take visual priority.
-4- give the content of the meterial item some extra space to breath, and a bigger ffont for it's title.
-	- apply this to:
-		- homeworks.
-		- overview page announcements.
-		- announcements.
-		- quizez.
-		- the name card in the overview page.
+- When the teacher or the admin posts somthing, it must:
+	- be shown to all users.
+	- if user added a link, or uploaded an image or both, they must must be visible to the viewer of the post!!!!!!!!!!!!!!!!!
+- When a teacher uploads a link or image or any other type of files, it must be visible when saved as an edit/posted/submitted, this uplies to:
+	- posting announcements.
+	- creating learning materials.
+	- creating homeworks.
+	- and any other similar feature or functionality the teacher does.
+- Add a courses counter to the courses page (admin).
+- I want to enable notifications for the users to get notfied about posts, uploads, exams, quizez, and any other activity that require the attention of the user (student, teacher, and admin), when the borwser is open on desktop, and mobile too (we can discuss the mobile part if you need to).
+- Only the owner of the post plus the admin are capable of editing and/or deleting a post.
 
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-###############################################################
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-Round 2 (Student Dashboard - Revamp):
-1- instead of have the navigations on the side, I would like to remove them from where they are, and combine them with the stats cards.
-	- the exams table must be shown in the overview page bellow the stats cards.
-	- the announcements must be shown in the overview page bellow the exams table from now on.
-	- {material, homeworks, quizez} navigations must be from their stats cards.
-2- the submissions stats card format should be like the quizez stats card format: num / total.
 
-Note:
-Make sure to use all the needed visual cues, like: hover color, curser changing, and other other hint that tells the user that this is clickable, and so on.
 
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-###############################################################
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+
+Round 2:
+- The input fields are not showing optional / mandatory hint, the user can't tell what is what...
+- The input fields are also silent when the input is wrong or empty, where the input validation logic!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+
+
 
 Round 3:
-1- In the teacher dashboard:
-	- any class/section selection menu or functionality must only show the teacher's classes only.
-		- for example 
-	- any course selection menu or functionality must only show the teacher's course only.
-2- In the student dashboard:
-	- the sublission stat card currently nvigates to the homeworks page, so, the homeworks stat & the submission stat must be combined into "my homeworks" with (done / total) format.
-3- Any announcement that gets posted must be shown on these dashboards (student, teacher, admin).
-4- when a students comments and reacts to a post/announcement the comment and reaction must be visible to the other users.
-5- the hosted website fails to login, it refreshes instead!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! I think it's because pushing your updates it broke it.....
-
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-###############################################################
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
+- Fix the MCP error visible in the opencode's TUI: pocketbase MCP error -32000: Connection closed.
+	Notes if helpful:
+	- this project has two versions: local for developments and testing, hosted for deployments.
+		- the hosted version is controled only be me.

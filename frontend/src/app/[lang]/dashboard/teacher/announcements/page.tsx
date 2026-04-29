@@ -5,12 +5,13 @@ import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
-import { Bell, Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
+import { Bell, Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, MessageCircle, Link2, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LazyRichEditor } from "@/components/ui/lazy-rich-editor";
 import { stripHtml, RichContent } from "@/components/ui/rich-content";
 import { Comments } from "@/components/ui/comments";
+import FileUpload from "@/components/ui/file-upload";
 
 interface Section {
   id: string;
@@ -20,17 +21,29 @@ interface Section {
   section_en: string;
 }
 
+interface User {
+  id: string;
+  name_ar: string;
+  name_en: string;
+  role: string;
+}
+
 interface Announcement {
   id: string;
   title: string;
   body: string;
   scope: "global" | "section";
   section: string;
+  link_url: string;
+  attachment: string;
+  image: string;
+  author: string;
   created: string;
-  expand?: { section?: Section };
+  collectionId: string;
+  expand?: { section?: Section; author?: User };
 }
 
-const EMPTY_FORM = { title: "", body: "", scope: "global" as Announcement["scope"], section: "" };
+const EMPTY_FORM = { title: "", body: "", scope: "global" as Announcement["scope"], section: "", link_url: "", selectedFile: null as File | null };
 
 export default function TeacherAnnouncementsPage() {
   const { user } = useAuth();
@@ -66,10 +79,17 @@ export default function TeacherAnnouncementsPage() {
           : [];
       setSections(secs);
 
+      // Show all visible announcements (global + teacher's sections), not just own
+      let filter = `scope = "global"`;
+      if (sectionIds.length > 0) {
+        const secFilter = sectionIds.map((id) => `section = "${id}"`).join(" || ");
+        filter = `scope = "global" || (${secFilter})`;
+      }
+
       const anns = await pb.collection("announcements").getFullList<Announcement>({
-        filter: `author = "${user.id}"`,
+        filter,
         sort: "-created",
-        expand: "section",
+        expand: "section,author",
       });
       setAnnouncements(anns);
     } catch (e) {
@@ -88,7 +108,7 @@ export default function TeacherAnnouncementsPage() {
   }
 
   function openEdit(a: Announcement) {
-    setForm({ title: a.title, body: a.body, scope: a.scope, section: a.section ?? "" });
+    setForm({ title: a.title, body: a.body, scope: a.scope, section: a.section ?? "", link_url: a.link_url || "", selectedFile: null });
     setEditingId(a.id);
     setShowForm(true);
   }
@@ -98,17 +118,21 @@ export default function TeacherAnnouncementsPage() {
     setSaving(true);
     const pb = getPocketBase();
     try {
-      const payload = {
-        title: form.title,
-        body: form.body,
-        scope: form.scope,
-        section: form.scope === "section" ? form.section : "",
-        author: user.id,
-      };
+      const formDataObj = new FormData();
+      formDataObj.append("title", form.title);
+      formDataObj.append("body", form.body);
+      formDataObj.append("scope", form.scope);
+      formDataObj.append("section", form.scope === "section" ? form.section : "");
+      formDataObj.append("author", user.id);
+      formDataObj.append("link_url", form.link_url || "");
+      if (form.selectedFile) {
+        formDataObj.append("attachment", form.selectedFile);
+      }
+      
       if (editingId) {
-        await pb.collection("announcements").update(editingId, payload);
+        await pb.collection("announcements").update(editingId, formDataObj);
       } else {
-        await pb.collection("announcements").create(payload);
+        await pb.collection("announcements").create(formDataObj);
       }
       setShowForm(false);
       await load();
@@ -186,15 +210,31 @@ export default function TeacherAnnouncementsPage() {
             </div>
           )}
 
-          <div className="space-y-1">
-            <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.body}</label>
-            <LazyRichEditor
-              value={form.body}
-              onChange={(html) => setForm((f) => ({ ...f, body: html }))}
-              placeholder={t.phBody}
-              dir={locale === "ar" ? "rtl" : "ltr"}
-            />
-          </div>
+<div className="space-y-1">
+             <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.body}</label>
+             <LazyRichEditor
+               value={form.body}
+               onChange={(html) => setForm((f) => ({ ...f, body: html }))}
+               placeholder={t.phBody}
+               dir={locale === "ar" ? "rtl" : "ltr"}
+             />
+           </div>
+
+           {/* Optional link URL */}
+           <div className="sm:col-span-2">
+             <Input label={locale === "ar" ? "رابط (اختياري)" : "Link URL (optional)"} value={form.link_url} onChange={(e) => setForm((f) => ({ ...f, link_url: e.target.value }))} placeholder={locale === "ar" ? "https://example.com" : "https://example.com"} />
+           </div>
+
+           {/* File upload */}
+           <div className="sm:col-span-2">
+             <FileUpload
+               label={locale === "ar" ? "مرفق (اختياري)" : "Attachment (optional)"}
+               acceptedTypes={["application/pdf", "image/jpeg", "image/png", "image/webp", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]}
+               maxSizeMB={10}
+               onFileChange={(file) => setForm((f) => ({ ...f, selectedFile: file }))}
+               fileName={form.selectedFile?.name}
+             />
+           </div>
 
           <div className="flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => setShowForm(false)}>{common.cancel}</Button>
@@ -214,8 +254,11 @@ export default function TeacherAnnouncementsPage() {
         <p className="text-[var(--color-ink-secondary)] text-sm">{t.empty}</p>
       ) : (
         <div className="space-y-5">
-          {announcements.map((a) => {
+{announcements.map((a) => {
             const sec = a.expand?.section;
+            const author = a.expand?.author;
+            const authorName = author ? (locale === "ar" ? author.name_ar : author.name_en) : null;
+            const isOwnerOrAdmin = user && (a.author === user.id || (user as any).role === "admin");
             const isExpanded = expandedId === a.id;
             return (
               <div key={a.id} className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] px-6 py-5 shadow-[var(--shadow-xs)]">
@@ -229,29 +272,49 @@ export default function TeacherAnnouncementsPage() {
                       <div className="flex gap-2 mt-0.5 flex-wrap text-xs text-[var(--color-ink-secondary)] font-semibold">
                         <span>{a.scope === "global" ? t.scopeGlobal : t.scopeSection}</span>
                         {sec && <span>· {locale === "ar" ? `${sec.grade_ar} — ${sec.section_ar}` : `${sec.grade_en} — ${sec.section_en}`}</span>}
+                        {authorName && <span>· {authorName}</span>}
                         <span>· {t.postedOn}: {a.created?.slice(0, 10)}</span>
                       </div>
                     </div>
                   </div>
-                   <div className="flex gap-1 shrink-0">
-                     <button onClick={() => openEdit(a)} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" aria-label={`${t.edit}: ${a.title}`}>
-                       <Pencil className="h-3.5 w-3.5" />
-                     </button>
-                     <button onClick={() => handleDelete(a.id)} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-300" aria-label={`${common.delete}: ${a.title}`}>
-                       <Trash2 className="h-3.5 w-3.5" />
-                     </button>
-                   </div>
+                   {isOwnerOrAdmin && (
+                    <div className="flex gap-1 shrink-0">
+                      <button onClick={() => openEdit(a)} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" aria-label={`${t.edit}: ${a.title}`}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button onClick={() => handleDelete(a.id)} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-300" aria-label={`${common.delete}: ${a.title}`}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                   )}
                 </div>
                 {!isExpanded && <p className="mt-2 text-sm text-[var(--color-ink-secondary)] line-clamp-3">{stripHtml(a.body)}</p>}
+                {!isExpanded && a.link_url && (
+                  <a href={a.link_url} target="_blank" rel="noopener noreferrer" className="mt-1.5 flex items-center gap-1.5 text-sm text-[var(--color-accent-text)] hover:underline truncate">
+                    <Link2 className="h-3.5 w-3.5 shrink-0" />
+                    {a.link_url}
+                  </a>
+                )}
+                {!isExpanded && a.attachment && (
+                  <a
+                    href={`${getPocketBase().baseURL}/api/files/${a.collectionId}/${a.id}/${a.attachment}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1.5 flex items-center gap-1.5 text-sm text-[var(--color-accent-text)] hover:underline truncate"
+                  >
+                    <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                    {a.attachment}
+                  </a>
+                )}
                 
-                 {/* Expand/Collapse button */}
-                 <button
-                   onClick={() => setExpandedId(isExpanded ? null : a.id)}
-                   className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent-text)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1"
-                   aria-label={isExpanded ? (locale === "ar" ? "إخفاء التفاصيل" : "Hide Details") : (locale === "ar" ? "عرض التفاصيل والتعليقات" : "View Details & Comments")}
-                   aria-expanded={isExpanded}
-                 >
-                  <MessageCircle className="h-4 w-4" />
+                {/* Expand/Collapse button */}
+                <button
+                  onClick={() => setExpandedId(isExpanded ? null : a.id)}
+                  className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent-text)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1"
+                  aria-label={isExpanded ? (locale === "ar" ? "إخفاء التفاصيل" : "Hide Details") : (locale === "ar" ? "عرض التفاصيل والتعليقات" : "View Details & Comments")}
+                  aria-expanded={isExpanded}
+                >
+                   <MessageCircle className="h-4 w-4" />
                   {isExpanded 
                     ? (locale === "ar" ? "إخفاء التفاصيل" : "Hide Details") 
                     : (locale === "ar" ? "عرض التفاصيل والتعليقات" : "View Details & Comments")}
@@ -264,6 +327,23 @@ export default function TeacherAnnouncementsPage() {
                     <div className="mb-4">
                       <RichContent html={a.body} />
                     </div>
+                    {a.link_url && (
+                      <a href={a.link_url} target="_blank" rel="noopener noreferrer" className="mb-2 flex items-center gap-1.5 text-sm text-[var(--color-accent-text)] hover:underline">
+                        <Link2 className="h-3.5 w-3.5 shrink-0" />
+                        {a.link_url}
+                      </a>
+                    )}
+                    {a.attachment && (
+                      <a
+                        href={`${getPocketBase().baseURL}/api/files/${a.collectionId}/${a.id}/${a.attachment}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mb-4 flex items-center gap-1.5 text-sm text-[var(--color-accent-text)] hover:underline"
+                      >
+                        <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                        {a.attachment}
+                      </a>
+                    )}
                     <Comments targetType="announcement" targetId={a.id} />
                   </div>
                 )}

@@ -6,13 +6,14 @@ import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
 import { getDisplayName } from "@/lib/auth";
-import { FileText, Plus, Pencil, Trash2, X, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Plus, Pencil, Trash2, X, ChevronDown, ChevronUp, Link2, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { LazyRichEditor } from "@/components/ui/lazy-rich-editor";
 import { RichContent, stripHtml } from "@/components/ui/rich-content";
 import { useCrudState, useFormState } from "@/lib/hooks";
+import FileUpload from "@/components/ui/file-upload";
 
 interface Section {
   id: string;
@@ -33,11 +34,14 @@ interface Homework {
   id: string;
   title: string;
   description: string;
+  link_url: string;
+  attachment: string;
   due_date: string;
   submission_type: "online" | "onsite";
   section: string;
   subject: string;
   created: string;
+  collectionId: string;
   expand?: { section?: Section; subject?: Subject };
 }
 
@@ -55,10 +59,12 @@ interface Submission {
 const EMPTY_FORM = {
   title: "",
   description: "",
+  link_url: "",
   due_date: "",
   submission_type: "online" as Homework["submission_type"],
   section: "",
   subject: "",
+  selectedFile: null as File | null,
 };
 
 export default function TeacherHomeworkPage() {
@@ -184,29 +190,43 @@ export default function TeacherHomeworkPage() {
     hwListCrudState.setShowCreate(true);
   }
 
-  function openEdit(hw: Homework) {
-    hwFormData.setData({
-      title: hw.title,
-      description: hw.description ?? "",
-      due_date: hw.due_date ? hw.due_date.slice(0, 10) : "",
-      submission_type: hw.submission_type,
-      section: hw.section,
-      subject: hw.subject,
-    });
-    hwListCrudState.setEditingId(hw.id);
-    hwListCrudState.setShowCreate(true);
-  }
+function openEdit(hw: Homework) {
+  hwFormData.setData({
+    title: hw.title,
+    description: hw.description ?? "",
+    link_url: hw.link_url || "",
+    due_date: hw.due_date ? hw.due_date.slice(0, 10) : "",
+    submission_type: hw.submission_type,
+    section: hw.section,
+    subject: hw.subject,
+    selectedFile: null,
+  });
+  hwListCrudState.setEditingId(hw.id);
+  hwListCrudState.setShowCreate(true);
+}
 
   async function handleSave() {
     if (!user || !hwFormData.state.data.title || !hwFormData.state.data.section || !hwFormData.state.data.subject || !hwFormData.state.data.due_date) return;
     hwListCrudState.setIsLoading(true);
     const pb = getPocketBase();
     try {
-      const payload = { ...hwFormData.state.data, teacher: user.id };
+      const formDataObj = new FormData();
+      formDataObj.append("title", hwFormData.state.data.title);
+      formDataObj.append("description", hwFormData.state.data.description);
+      formDataObj.append("link_url", hwFormData.state.data.link_url || "");
+      formDataObj.append("due_date", hwFormData.state.data.due_date);
+      formDataObj.append("submission_type", hwFormData.state.data.submission_type);
+      formDataObj.append("section", hwFormData.state.data.section);
+      formDataObj.append("subject", hwFormData.state.data.subject);
+      formDataObj.append("teacher", user.id);
+      if (hwFormData.state.data.selectedFile) {
+        formDataObj.append("attachment", hwFormData.state.data.selectedFile);
+      }
+      
       if (hwListCrudState.state.editingId) {
-        await pb.collection("homework").update(hwListCrudState.state.editingId, payload);
+        await pb.collection("homework").update(hwListCrudState.state.editingId, formDataObj);
       } else {
-        await pb.collection("homework").create(payload);
+        await pb.collection("homework").create(formDataObj);
       }
       hwListCrudState.setShowCreate(false);
       await load();
@@ -286,6 +306,20 @@ export default function TeacherHomeworkPage() {
                 <option value="onsite">{t.typeOnsite}</option>
               </select>
             </div>
+            <div className="sm:col-span-2">
+              <Input label={locale === "ar" ? "رابط (اختياري)" : "Link URL (optional)"} value={hwFormData.state.data.link_url} onChange={(e) => hwFormData.setFieldValue("link_url", e.target.value)} placeholder={locale === "ar" ? "https://example.com" : "https://example.com"} />
+            </div>
+            
+            <div className="sm:col-span-2">
+              <FileUpload
+                label={locale === "ar" ? "مرفق (اختياري)" : "Attachment (optional)"}
+                acceptedTypes={["application/pdf", "image/jpeg", "image/png", "image/webp", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]}
+                maxSizeMB={10}
+                onFileChange={(file) => hwFormData.setFieldValue("selectedFile", file)}
+                fileName={hwFormData.state.data.selectedFile?.name}
+              />
+            </div>
+
             <div className="sm:col-span-2 space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.description}</label>
               <LazyRichEditor
@@ -344,10 +378,33 @@ export default function TeacherHomeworkPage() {
                     <button onClick={() => handleDelete(hw.id)} aria-label={`Delete homework: ${hw.title}`} className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-[var(--color-danger)]">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                  </div>
-                </div>
+</div>
+                 </div>
 
-                {/* Submissions panel */}
+                 {/* Link and attachment display */}
+                 {hw.link_url && (
+                   <div className="px-6 pb-1">
+                     <a href={hw.link_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-[var(--color-accent-text)] hover:underline truncate">
+                       <Link2 className="h-3.5 w-3.5 shrink-0" />
+                       {hw.link_url}
+                     </a>
+                   </div>
+                 )}
+                 {hw.attachment && (
+                   <div className="px-6 pb-2">
+                     <a
+                       href={`${getPocketBase().baseURL}/api/files/${hw.collectionId}/${hw.id}/${hw.attachment}`}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="flex items-center gap-1.5 text-sm text-[var(--color-accent-text)] hover:underline truncate"
+                     >
+                       <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                       {hw.attachment}
+                     </a>
+                   </div>
+                 )}
+
+                 {/* Submissions panel */}
                 {isExpanded && (
                   <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] p-4 space-y-3">
                     {submissionCrudState.state.isLoading ? (

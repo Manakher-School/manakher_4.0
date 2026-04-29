@@ -7,11 +7,12 @@ import { useDialog } from "@/context/dialog-context";
 import { useSettings } from "@/context/settings-context";
 import { StatCard } from "@/components/ui/stat-card";
 import { getDisplayName } from "@/lib/auth";
-import { Users, Layers, GraduationCap, BookOpen, Bell, Plus, Pencil, Trash2, X } from "lucide-react";
+import { Users, Layers, GraduationCap, BookOpen, Bell, Plus, Pencil, Trash2, X, Link2, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LazyRichEditor } from "@/components/ui/lazy-rich-editor";
 import { stripHtml } from "@/components/ui/rich-content";
+import FileUpload from "@/components/ui/file-upload";
 import pb from "@/lib/pocketbase";
 
 export default function AdminDashboard() {
@@ -25,8 +26,8 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ users: "—", sections: "—", teachers: "—", students: "—" });
   
   // Announcements state
-  const [announcements, setAnnouncements] = useState<Array<{id: string; title: string; body: string; created: string}>>([]);
-  const [announcementForm, setAnnouncementForm] = useState<{title: string; body: string}>({title: "", body: ""});
+  const [announcements, setAnnouncements] = useState<Array<{id: string; title: string; body: string; link_url: string; attachment: string; author: string; created: string; collectionId: string}>>([]);
+  const [announcementForm, setAnnouncementForm] = useState<{title: string; body: string; link_url: string; selectedFile: File | null}>({title: "", body: "", link_url: "", selectedFile: null});
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
   const [savingAnnouncement, setSavingAnnouncement] = useState(false);
   const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
@@ -56,11 +57,11 @@ export default function AdminDashboard() {
       if (!user) return;
       try {
         // Admin can see all announcements - fetch only first 50 sorted by date
-        const allAnns = await pb.collection("announcements").getList<{id: string; title: string; body: string; created: string}>(1, 50, {
+        const allAnns = await pb.collection("announcements").getList(1, 50, {
           sort: "-created",
           expand: "author"
         });
-        setAnnouncements(allAnns.items);
+        setAnnouncements(allAnns.items as any);
       } catch (e) {
         console.error(e);
         setAnnouncements([]);
@@ -75,41 +76,44 @@ export default function AdminDashboard() {
     if (!user || !announcementForm.title || !announcementForm.body) return;
     setSavingAnnouncement(true);
     try {
-      const payload = {
-        title: announcementForm.title,
-        body: announcementForm.body,
-        author: user.id,
-        scope: "global",
-        section: "",
-      };
+      const formDataObj = new FormData();
+      formDataObj.append("title", announcementForm.title);
+      formDataObj.append("body", announcementForm.body);
+      formDataObj.append("author", user.id);
+      formDataObj.append("scope", "global");
+      formDataObj.append("section", "");
+      formDataObj.append("link_url", announcementForm.link_url || "");
+      if (announcementForm.selectedFile) {
+        formDataObj.append("attachment", announcementForm.selectedFile);
+      }
       
        if (editingAnnouncementId) {
          // Verify the record exists before updating
          try {
            await pb.collection("announcements").getOne(editingAnnouncementId);
-           await pb.collection("announcements").update(editingAnnouncementId, payload);
+           await pb.collection("announcements").update(editingAnnouncementId, formDataObj);
          } catch (err: any) {
            if (err?.status === 404) {
              await alert(locale === "ar" ? "الإعلان غير موجود. سيتم إنشاء إعلان جديد." : "Announcement not found. Creating a new one.");
-             await pb.collection("announcements").create(payload);
+             await pb.collection("announcements").create(formDataObj);
            } else {
              throw err;
            }
          }
          setEditingAnnouncementId(null);
        } else {
-         await pb.collection("announcements").create(payload);
+         await pb.collection("announcements").create(formDataObj);
        }
        
-       setAnnouncementForm({title: "", body: ""});
+       setAnnouncementForm({title: "", body: "", link_url: "", selectedFile: null});
        setShowAnnouncementForm(false);
        
         // Reload announcements (paginated - max 50 to avoid memory bloat)
-        const allAnns = await pb.collection("announcements").getList<{id: string; title: string; body: string; created: string}>(1, 50, {
+        const allAnns = await pb.collection("announcements").getList(1, 50, {
           sort: "-created",
           expand: "author"
         });
-        setAnnouncements(allAnns.items);
+        setAnnouncements(allAnns.items as any);
      } catch (e) {
        console.error(e);
        await alert(locale === "ar" ? "فشل الحفظ. يرجى المحاولة مرة أخرى." : "Save failed. Please try again.");
@@ -118,8 +122,8 @@ export default function AdminDashboard() {
     }
   };
 
-  const openAnnouncementEdit = (ann: {id: string; title: string; body: string; created: string}) => {
-    setAnnouncementForm({title: ann.title, body: ann.body});
+  const openAnnouncementEdit = (ann: {id: string; title: string; body: string; link_url: string; attachment: string; author: string; created: string; collectionId: string}) => {
+    setAnnouncementForm({title: ann.title, body: ann.body, link_url: ann.link_url || "", selectedFile: null});
     setEditingAnnouncementId(ann.id);
     setShowAnnouncementForm(true);
   };
@@ -129,11 +133,11 @@ export default function AdminDashboard() {
     await pb.collection("announcements").delete(id);
     
     // Reload announcements (paginated - max 50 to avoid memory bloat)
-    const allAnns = await pb.collection("announcements").getList<{id: string; title: string; body: string; created: string}>(1, 50, {
-      sort: "-created",
-      expand: "author"
-    });
-    setAnnouncements(allAnns.items);
+const allAnns = await pb.collection("announcements").getList(1, 50, {
+          sort: "-created",
+          expand: "author"
+        });
+        setAnnouncements(allAnns.items as any);
   };
 
   return (
@@ -179,7 +183,7 @@ export default function AdminDashboard() {
            </h3>
             <button 
               onClick={() => {
-                setAnnouncementForm({title: "", body: ""});
+                setAnnouncementForm({title: "", body: "", link_url: "", selectedFile: null});
                 setEditingAnnouncementId(null);
                 setShowAnnouncementForm(true);
               }}
@@ -224,6 +228,21 @@ export default function AdminDashboard() {
                 dir={locale === "ar" ? "rtl" : "ltr"}
               />
             </div>
+            
+            <Input 
+              label={locale === "ar" ? "رابط (اختياري)" : "Link URL (optional)"} 
+              value={announcementForm.link_url} 
+              onChange={(e) => setAnnouncementForm(f => ({...f, link_url: e.target.value}))} 
+              placeholder={locale === "ar" ? "https://example.com" : "https://example.com"}
+            />
+            
+            <FileUpload 
+              label={locale === "ar" ? "مرفق (اختياري)" : "Attachment (optional)"} 
+              acceptedTypes={["application/pdf", "image/jpeg", "image/png", "image/webp", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]}
+              maxSizeMB={10}
+              onFileChange={(file) => setAnnouncementForm(f => ({...f, selectedFile: file}))}
+              fileName={announcementForm.selectedFile?.name}
+            />
             
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" onClick={() => {
@@ -287,6 +306,23 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <p className="mt-2 text-sm text-[var(--color-ink-secondary)] line-clamp-3">{stripHtml(ann.body)}</p>
+                    {ann.link_url && (
+                      <a href={ann.link_url} target="_blank" rel="noopener noreferrer" className="mt-1.5 flex items-center gap-1.5 text-sm text-[var(--color-accent-text)] hover:underline truncate">
+                        <Link2 className="h-3.5 w-3.5 shrink-0" />
+                        {ann.link_url}
+                      </a>
+                    )}
+                    {ann.attachment && (
+                      <a
+                        href={`${pb.baseURL}/api/files/${ann.collectionId}/${ann.id}/${ann.attachment}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1.5 flex items-center gap-1.5 text-sm text-[var(--color-accent-text)] hover:underline truncate"
+                      >
+                        <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                        {ann.attachment}
+                      </a>
+                    )}
                 </div>
               ))}
             </>

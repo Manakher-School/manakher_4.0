@@ -3,6 +3,7 @@ import { Cairo } from "next/font/google";
 import { AuthProvider } from "@/context/auth-context";
 import { DialogProvider } from "@/context/dialog-context";
 import { SettingsProvider } from "@/context/settings-context";
+import { NotificationProvider } from "@/context/notification-context";
 import { ReactQueryProvider } from "@/lib/react-query";
 import { ErrorBoundary } from "@/components/error-boundary";
 import "./globals.css";
@@ -31,7 +32,7 @@ export default function RootLayout({
           <ReactQueryProvider>
             <SettingsProvider>
               <DialogProvider>
-                <AuthProvider>{children}</AuthProvider>
+                <AuthProvider><NotificationProvider>{children}</NotificationProvider></AuthProvider>
               </DialogProvider>
             </SettingsProvider>
           </ReactQueryProvider>

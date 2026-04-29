@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { getPocketBase } from "@/lib/pocketbase";
-import { Bell, ChevronDown, ChevronUp } from "lucide-react";
+import { Bell, ChevronDown, ChevronUp, Link2, Paperclip } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { RichContent } from "@/components/ui/rich-content";
 import { Comments } from "@/components/ui/comments";
@@ -16,7 +16,11 @@ interface Announcement {
   body: string;
   scope: "global" | "section";
   section: string;
+  link_url: string;
+  attachment: string;
+  image: string;
   created: string;
+  collectionId: string;
   expand?: { author?: { name_ar: string; name_en: string } };
 }
 
@@ -104,27 +108,50 @@ export default function StudentAnnouncementsPage() {
                      </span>
                      <div className="space-y-0.5">
                        <p className="font-bold text-lg text-[var(--color-ink)] leading-snug">{ann.title}</p>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant={ann.scope === "global" ? "accent" : "default"}>
-                          {ann.scope === "global" ? t.scopeGlobal : t.scopeSection}
-                        </Badge>
-                        {authorName && (
-                          <span className="text-xs text-[var(--color-ink-secondary)] font-medium">{authorName}</span>
-                        )}
-                        <span className="text-xs text-[var(--color-ink-secondary)]">
-                          {t.postedOn}: {ann.created?.slice(0, 10)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[var(--color-ink-secondary)] mt-1 shrink-0">
-                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </span>
-                </button>
+                       <div className="flex items-center gap-2 flex-wrap">
+                         <Badge variant={ann.scope === "global" ? "accent" : "default"}>
+                           {ann.scope === "global" ? t.scopeGlobal : t.scopeSection}
+                         </Badge>
+                         {authorName && (
+                           <span className="text-xs text-[var(--color-ink-secondary)] font-medium">{authorName}</span>
+                         )}
+                         <span className="text-xs text-[var(--color-ink-secondary)]">
+                           {t.postedOn}: {ann.created?.slice(0, 10)}
+                         </span>
+                       </div>
+                     </div>
+                   </div>
+                   <span className="text-[var(--color-ink-secondary)] mt-1 shrink-0">
+                     {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                   </span>
+                 </button>
 
                 {isExpanded && ann.body && (
                   <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-sunken)] px-5 py-4 space-y-4">
                     <RichContent html={ann.body} />
+
+                    {ann.link_url && (
+                      <a
+                        href={ann.link_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1"
+                      >
+                        <Link2 className="h-3.5 w-3.5" />
+                        {ann.link_url}
+                      </a>
+                    )}
+                    {ann.attachment && (
+                      <a
+                        href={`${getPocketBase().baseURL}/api/files/${ann.collectionId}/${ann.id}/${ann.attachment}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1"
+                      >
+                        <Paperclip className="h-3.5 w-3.5" />
+                        {ann.attachment}
+                      </a>
+                    )}
                     
                     <Reactions targetType="announcement" targetId={ann.id} />
                     

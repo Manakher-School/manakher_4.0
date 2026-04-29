@@ -5,7 +5,7 @@ import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
-import { BookOpen, Calendar, Clock, Plus, Trash2, Edit2, Pencil, Loader2, X } from "lucide-react";
+import { BookOpen, Calendar, Clock, Plus, Trash2, Edit2, Pencil, Loader2, X, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -437,30 +437,44 @@ export default function SubjectsExamsPage() {
 
         {/* Tab buttons */}
          <div className="flex gap-2 border border-[var(--color-border)] rounded-[var(--radius-lg)] p-1 bg-[var(--color-surface-card)]">
-           <button
-             onClick={() => tabState.setActiveTab("subjects")}
-             aria-label={`${t.subjects?.title || "Subjects"} tab`}
-             aria-current={tabState.state.activeTab === "subjects" ? "page" : undefined}
-             className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] ${
-               tabState.state.activeTab === "subjects"
-                 ? "bg-[var(--color-role-admin-bold)] text-white"
-                 : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
-             }`}
-           >
-             {t.subjects?.title || "Subjects"}
-           </button>
-           <button
-             onClick={() => tabState.setActiveTab("exams")}
-             aria-label={`${t.exams?.title || "Exams"} tab`}
-             aria-current={tabState.state.activeTab === "exams" ? "page" : undefined}
-             className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] ${
-               tabState.state.activeTab === "exams"
-                 ? "bg-[var(--color-role-admin-bold)] text-white"
-                 : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
-             }`}
-           >
-             {t.exams?.title || "Exams"}
-           </button>
+<button
+              onClick={() => tabState.setActiveTab("subjects")}
+              aria-label={`${t.subjects?.title || "Subjects"} tab`}
+              aria-current={tabState.state.activeTab === "subjects" ? "page" : undefined}
+              className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] flex items-center gap-2 ${
+                tabState.state.activeTab === "subjects"
+                  ? "bg-[var(--color-role-admin-bold)] text-white"
+                  : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
+              }`}
+            >
+              {t.subjects?.title || "Subjects"}
+              <span className={`text-xs px-1.5 py-0.5 rounded-full min-w-[1.5rem] text-center ${
+                tabState.state.activeTab === "subjects"
+                  ? "bg-white/20 text-white"
+                  : "bg-[var(--color-surface-hover)] text-[var(--color-ink-secondary)]"
+              }`}>
+                {subjects.length}
+              </span>
+            </button>
+<button
+              onClick={() => tabState.setActiveTab("exams")}
+              aria-label={`${t.exams?.title || "Exams"} tab`}
+              aria-current={tabState.state.activeTab === "exams" ? "page" : undefined}
+              className={`px-4 py-2 rounded-[var(--radius-md)] text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] flex items-center gap-2 ${
+                tabState.state.activeTab === "exams"
+                  ? "bg-[var(--color-role-admin-bold)] text-white"
+                  : "text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
+              }`}
+            >
+              {t.exams?.title || "Exams"}
+              <span className={`text-xs px-1.5 py-0.5 rounded-full min-w-[1.5rem] text-center ${
+                tabState.state.activeTab === "exams"
+                  ? "bg-white/20 text-white"
+                  : "bg-[var(--color-surface-hover)] text-[var(--color-ink-secondary)]"
+              }`}>
+                {exams.length}
+              </span>
+            </button>
          </div>
       </div>
 

@@ -495,6 +495,47 @@ This is the standard, battle-tested pattern used by every major web application 
 
 ---
 
+## Round 1 Test Report Updates (2026-04-29)
+
+### Status: INPROGRESS
+
+**What was done:**
+
+1. **Posts shown to all users** — Teacher announcements page now shows ALL visible announcements (global + teacher's sections), not just the teacher's own posts. Teacher overview page also shows all visible announcements. Admin overview already showed all.
+
+2. **Links and files visible in posts** — Added `link_url` and `attachment` fields to:
+   - Announcements: PocketBase schema already had these fields (migration `1777118157`). Updated teacher announcements page, admin announcements page, admin overview, teacher overview, and student announcements page to display links and attachments in both collapsed and expanded views. Updated forms to include link URL input and file upload.
+   - Homework: Created new PocketBase migration (`1777465478`) adding `link_url` and `attachment` fields. Updated teacher homework form to include link URL and file upload. Updated teacher homework card and student homework page to display links and attachments.
+
+3. **Courses counter on admin page** — Added subject count and exam count badges to the tab buttons on the admin subjects_exams page. The "Subjects" tab now shows the total number of subjects, and the "Exams" tab shows the total number of exams.
+
+4. **Browser notifications** — Created `notifications.ts` utility with Web Notification API integration. Created `notification-context.tsx` with `NotificationProvider` that:
+   - Provides `requestPermission()` and `permissionGranted` state
+   - Sets up PocketBase real-time subscriptions for: new announcements, new materials (students), new homework (students), graded submissions (students), new submissions (teachers)
+   - Added notification bell button in dashboard header (green when enabled, with enable prompt when not)
+   - Added `NotificationProvider` to root layout
+
+5. **Owner + admin only can edit/delete** — Teacher announcements page now conditionally shows edit/delete buttons only when `a.author === user.id || user.role === "admin"`. Teacher overview also has this permission check. Admin pages already had full access.
+
+**Files Modified:**
+- `frontend/src/app/[lang]/dashboard/teacher/announcements/page.tsx` — Show all visible announcements, add link/file support, permission checks for edit/delete
+- `frontend/src/app/[lang]/dashboard/teacher/page.tsx` — Show all visible announcements, add link/file support, permission checks, FormData for file upload
+- `frontend/src/app/[lang]/dashboard/admin/announcements/page.tsx` — Add link/file support, FormData for file upload
+- `frontend/src/app/[lang]/dashboard/admin/page.tsx` — Add link/file support, FormData for file upload
+- `frontend/src/app/[lang]/dashboard/student/announcements/page.tsx` — Display links and attachments
+- `frontend/src/app/[lang]/dashboard/teacher/homework/page.tsx` — Add link/file fields, FormData for file upload, display links/attachments
+- `frontend/src/app/[lang]/dashboard/student/homework/page.tsx` — Display links and attachments
+- `frontend/src/app/[lang]/dashboard/admin/subjects_exams/page.tsx` — Added subject/exam count badges to tab buttons
+- `frontend/src/app/layout.tsx` — Added NotificationProvider
+- `frontend/src/app/[lang]/dashboard/layout.tsx` — Added notification bell button in header
+- `frontend/src/lib/notifications.ts` — NEW: Browser notification utility
+- `frontend/src/context/notification-context.tsx` — NEW: Notification context with real-time subscriptions
+- `backend/pb_migrations/1777465478_updated_homework.js` — NEW: Added link_url and attachment fields to homework collection
+
+**Build:** ✅ Passes with zero errors.
+
+---
+
 **Available Statuses:** `PLANNING` | `INPROGRESS` | `NOT_STARTED` | `HANDOFF` | `NOT_STARTED`
 
 ---

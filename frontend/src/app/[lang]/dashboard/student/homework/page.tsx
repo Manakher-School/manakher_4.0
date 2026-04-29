@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { getPocketBase } from "@/lib/pocketbase";
-import { FileText, ChevronDown, ChevronUp, Send, CheckCircle, ArrowRight } from "lucide-react";
+import { FileText, ChevronDown, ChevronUp, Send, CheckCircle, ArrowRight, Link2, Paperclip } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,11 +21,14 @@ interface Homework {
   id: string;
   title: string;
   description: string;
+  link_url: string;
+  attachment: string;
   due_date: string;
   submission_type: "online" | "onsite";
   section: string;
   subject: string;
   created: string;
+  collectionId: string;
   expand?: {
     subject?: Subject;
     teacher?: { name_ar: string; name_en: string };
@@ -235,6 +238,30 @@ export default function StudentHomeworkPage() {
                       <div>
                         <RichContent html={hw.description} />
                       </div>
+                    )}
+
+                    {/* Link and attachment */}
+                    {hw.link_url && (
+                      <a
+                        href={hw.link_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1"
+                      >
+                        <Link2 className="h-3.5 w-3.5" />
+                        {locale === "ar" ? "فتح الرابط" : "Open Link"}
+                      </a>
+                    )}
+                    {hw.attachment && (
+                      <a
+                        href={`${getPocketBase().baseURL}/api/files/${hw.collectionId}/${hw.id}/${hw.attachment}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--color-accent)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md p-1"
+                      >
+                        <Paperclip className="h-3.5 w-3.5" />
+                        {hw.attachment}
+                      </a>
                     )}
 
                     {/* Submission area — only for online homework */}

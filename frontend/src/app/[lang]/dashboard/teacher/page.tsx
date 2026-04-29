@@ -8,7 +8,8 @@ import { useSettings } from "@/context/settings-context";
 import { StatCard } from "@/components/ui/stat-card";
 import { getDisplayName } from "@/lib/auth";
 import { getPocketBase } from "@/lib/pocketbase";
-import { BookOpen, Users, FileText, Clock, Bell, Plus, X, Pencil, Trash2 } from "lucide-react";
+import FileUpload from "@/components/ui/file-upload";
+import { BookOpen, Users, FileText, Clock, Bell, Plus, X, Pencil, Trash2, Link2, Paperclip } from "lucide-react";
 import { stripHtml } from "@/components/ui/rich-content";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,8 +30,8 @@ export default function TeacherDashboard() {
   const [totalSubmissionsCount, setTotalSubmissionsCount] = useState<number | string>("—");
   
   // Announcements state
-  const [announcements, setAnnouncements] = useState<Array<{id: string; title: string; body: string; created: string}>>([]);
-  const [announcementForm, setAnnouncementForm] = useState<{title: string; body: string}>({title: "", body: ""});
+  const [announcements, setAnnouncements] = useState<Array<{id: string; title: string; body: string; link_url: string; attachment: string; author: string; created: string; collectionId: string}>>([]);
+  const [announcementForm, setAnnouncementForm] = useState<{title: string; body: string; link_url: string; selectedFile: File | null}>({title: "", body: "", link_url: "", selectedFile: null});
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
   const [savingAnnouncement, setSavingAnnouncement] = useState(false);
   const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
@@ -85,13 +86,13 @@ export default function TeacherDashboard() {
         : `scope = "global"`;
 
       pb.collection("announcements")
-        .getFullList<{id: string; title: string; body: string; created: string; scope: string; section: string; author: string}>({
+        .getFullList({
           filter,
           sort: "-created",
           expand: "author",
         })
         .then((anns) => {
-          setAnnouncements(anns);
+          setAnnouncements(anns as any);
         })
         .catch(() => {
           setAnnouncements([]);
@@ -104,32 +105,42 @@ export default function TeacherDashboard() {
     setSavingAnnouncement(true);
     const pb = getPocketBase();
     try {
-      const payload = {
-        title: announcementForm.title,
-        body: announcementForm.body,
-        author: user.id,
-        scope: "global",
-        section: "",
-      };
-      
-      if (editingAnnouncementId) {
-        await pb.collection("announcements").update(editingAnnouncementId, payload);
-        setEditingAnnouncementId(null);
-      } else {
-        await pb.collection("announcements").create(payload);
+      const formDataObj = new FormData();
+      formDataObj.append("title", announcementForm.title);
+      formDataObj.append("body", announcementForm.body);
+      formDataObj.append("author", user.id);
+      formDataObj.append("scope", "global");
+      formDataObj.append("section", "");
+      formDataObj.append("link_url", announcementForm.link_url || "");
+      if (announcementForm.selectedFile) {
+        formDataObj.append("attachment", announcementForm.selectedFile);
       }
       
-      setAnnouncementForm({title: "", body: ""});
+      if (editingAnnouncementId) {
+        await pb.collection("announcements").update(editingAnnouncementId, formDataObj);
+        setEditingAnnouncementId(null);
+      } else {
+        await pb.collection("announcements").create(formDataObj);
+      }
+      
+      setAnnouncementForm({title: "", body: "", link_url: "", selectedFile: null});
       setShowAnnouncementForm(false);
       
-      // Reload announcements
+      // Reload announcements (show all visible, not just own)
+      const sections: string[] = (user as any).sections ?? [];
+      const secFilter = sections.map((id) => `section = "${id}"`).join(" || ");
+      const reloadFilter = secFilter
+        ? `scope = "global" || (${secFilter})`
+        : `scope = "global"`;
+
       pb.collection("announcements")
-        .getFullList<{id: string; title: string; body: string; created: string}>({
-          filter: `author = "${user.id}"`,
-          sort: "-created"
+        .getFullList({
+          filter: reloadFilter,
+          sort: "-created",
+          expand: "author",
         })
         .then((anns) => {
-          setAnnouncements(anns);
+          setAnnouncements(anns as any);
         });
     } catch (e) {
       console.error(e);
@@ -138,8 +149,8 @@ export default function TeacherDashboard() {
     }
   };
 
-  const openAnnouncementEdit = (ann: {id: string; title: string; body: string; created: string}) => {
-    setAnnouncementForm({title: ann.title, body: ann.body});
+  const openAnnouncementEdit = (ann: {id: string; title: string; body: string; link_url: string; attachment: string; created: string; collectionId: string}) => {
+    setAnnouncementForm({title: ann.title, body: ann.body, link_url: ann.link_url || "", selectedFile: null});
     setEditingAnnouncementId(ann.id);
     setShowAnnouncementForm(true);
   };
@@ -150,15 +161,22 @@ export default function TeacherDashboard() {
      const pb = getPocketBase();
      await pb.collection("announcements").delete(id);
      
-     // Reload announcements
-     pb.collection("announcements")
-       .getFullList<{id: string; title: string; body: string; created: string}>({
-         filter: `author = "${user.id}"`,
-         sort: "-created"
-       })
-       .then((anns) => {
-         setAnnouncements(anns);
-       })
+     // Reload announcements (show all visible, not just own)
+     const sections: string[] = (user as any).sections ?? [];
+     const secFilter = sections.map((sid) => `section = "${sid}"`).join(" || ");
+     const reloadFilter = secFilter
+       ? `scope = "global" || (${secFilter})`
+       : `scope = "global"`;
+
+pb.collection("announcements")
+        .getFullList({
+          filter: reloadFilter,
+          sort: "-created",
+          expand: "author",
+        })
+        .then((anns) => {
+          setAnnouncements(anns as any);
+        })
        .catch(() => {
          setAnnouncements([]);
        });
@@ -208,7 +226,7 @@ export default function TeacherDashboard() {
            </h3>
            <button 
              onClick={() => {
-               setAnnouncementForm({title: "", body: ""});
+               setAnnouncementForm({title: "", body: "", link_url: "", selectedFile: null});
                setEditingAnnouncementId(null);
                setShowAnnouncementForm(true);
              }}
@@ -254,6 +272,21 @@ export default function TeacherDashboard() {
               />
             </div>
             
+            <Input 
+              label={locale === "ar" ? "رابط (اختياري)" : "Link URL (optional)"} 
+              value={announcementForm.link_url} 
+              onChange={(e) => setAnnouncementForm(f => ({...f, link_url: e.target.value}))} 
+              placeholder={locale === "ar" ? "https://example.com" : "https://example.com"}
+            />
+            
+            <FileUpload 
+              label={locale === "ar" ? "مرفق (اختياري)" : "Attachment (optional)"} 
+              acceptedTypes={["application/pdf", "image/jpeg", "image/png", "image/webp", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]}
+              maxSizeMB={10}
+              onFileChange={(file) => setAnnouncementForm(f => ({...f, selectedFile: file}))}
+              fileName={announcementForm.selectedFile?.name}
+            />
+            
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" onClick={() => {
                 setShowAnnouncementForm(false);
@@ -278,44 +311,64 @@ export default function TeacherDashboard() {
             <p className="text-[var(--color-ink-secondary)] text-sm">{dict.dashboard.teacher.announcements.empty}</p>
           ) : (
             <>
-              {announcements.map((ann) => (
+{announcements.map((ann) => (
 <div 
-                   key={ann.id} 
-                   className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] px-6 py-5 shadow-[var(--shadow-xs)]"
-                 >
-                   <div className="flex items-start justify-between gap-3">
-                     <div className="flex items-center gap-3">
-                       <span 
-                         className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-role-teacher-bold)]"
-                         style={{ background: "var(--color-role-teacher-bg)" }}
+                    key={ann.id} 
+                    className="rounded-[var(--radius-xl)] border border-[var(--color-border)] bg-[var(--color-surface-card)] px-6 py-5 shadow-[var(--shadow-xs)]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span 
+                          className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-role-teacher-bold)]"
+                          style={{ background: "var(--color-role-teacher-bg)" }}
+                        >
+                          <Bell className="h-5 w-5" />
+                        </span>
+                        <div>
+                          <p className="font-bold text-lg text-[var(--color-ink)] leading-snug">{ann.title}</p>
+                         <div className="flex gap-2 mt-0.5 flex-wrap text-xs text-[var(--color-ink-secondary)] font-semibold">
+                           <span>· {dict.dashboard.teacher.announcements.postedOn}: {ann.created?.slice(0, 10)}</span>
+                         </div>
+                       </div>
+                     </div>
+                     {/* Only owner or admin can edit/delete */}
+                     {user && (ann.author === user.id || (user as any).role === "admin") && (
+                     <div className="flex gap-1 shrink-0">
+                       <button 
+                         onClick={() => openAnnouncementEdit(ann)}
+                         className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                         aria-label={`${dict.common.edit}: ${ann.title}`}
                        >
-                         <Bell className="h-5 w-5" />
-                       </span>
-                       <div>
-                         <p className="font-bold text-lg text-[var(--color-ink)] leading-snug">{ann.title}</p>
-                        <div className="flex gap-2 mt-0.5 flex-wrap text-xs text-[var(--color-ink-secondary)] font-semibold">
-                          <span>· {dict.dashboard.teacher.announcements.postedOn}: {ann.created?.slice(0, 10)}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <button 
-                        onClick={() => openAnnouncementEdit(ann)}
-                        className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                        aria-label={`${dict.common.edit}: ${ann.title}`}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteAnnouncement(ann.id)}
-                        className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                        aria-label={`${dict.common.delete}: ${ann.title}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                         <Pencil className="h-3.5 w-3.5" />
+                       </button>
+                       <button 
+                         onClick={() => handleDeleteAnnouncement(ann.id)}
+                         className="p-1.5 rounded-[var(--radius-md)] text-[var(--color-ink-secondary)] hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                         aria-label={`${dict.common.delete}: ${ann.title}`}
+                       >
+                         <Trash2 className="h-3.5 w-3.5" />
+                       </button>
+                     </div>
+                     )}
+                   </div>
                   <p className="mt-2 text-sm text-[var(--color-ink-secondary)] line-clamp-3">{stripHtml(ann.body)}</p>
+                  {ann.link_url && (
+                    <a href={ann.link_url} target="_blank" rel="noopener noreferrer" className="mt-1.5 flex items-center gap-1.5 text-sm text-[var(--color-accent-text)] hover:underline truncate">
+                      <Link2 className="h-3.5 w-3.5 shrink-0" />
+                      {ann.link_url}
+                    </a>
+                  )}
+                  {ann.attachment && (
+                    <a
+                      href={`${getPocketBase().baseURL}/api/files/${ann.collectionId}/${ann.id}/${ann.attachment}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1.5 flex items-center gap-1.5 text-sm text-[var(--color-accent-text)] hover:underline truncate"
+                    >
+                      <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                      {ann.attachment}
+                    </a>
+                  )}
                 </div>
               ))}
             </>

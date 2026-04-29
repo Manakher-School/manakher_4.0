@@ -5,17 +5,18 @@ import { useAuth } from "@/context/auth-context";
 import { useLocale } from "@/context/locale-context";
 import { useDialog } from "@/context/dialog-context";
 import { getPocketBase } from "@/lib/pocketbase";
-import { Bell, Plus, Pencil, Trash2, X } from "lucide-react";
+import { Bell, Plus, Pencil, Trash2, X, Link2, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LazyRichEditor } from "@/components/ui/lazy-rich-editor";
 import { stripHtml } from "@/components/ui/rich-content";
+import FileUpload from "@/components/ui/file-upload";
 
 interface User {
   id: string;
-  email: string;
   name_ar: string;
   name_en: string;
+  role: string;
 }
 
 interface Section {
@@ -32,11 +33,16 @@ interface Announcement {
   body: string;
   scope: "global" | "section";
   section: string;
+  link_url: string;
+  attachment: string;
+  image: string;
+  author: string;
   created: string;
+  collectionId: string;
   expand?: { author?: User; section?: Section };
 }
 
-const EMPTY_FORM = { title: "", body: "", scope: "global" as Announcement["scope"], section: "" };
+const EMPTY_FORM = { title: "", body: "", scope: "global" as Announcement["scope"], section: "", link_url: "", selectedFile: null as File | null };
 
 export default function AdminAnnouncementsPage() {
   const { user } = useAuth();
@@ -86,7 +92,7 @@ export default function AdminAnnouncementsPage() {
   }
 
   function openEdit(a: Announcement) {
-    setForm({ title: a.title, body: a.body, scope: a.scope, section: a.section ?? "" });
+    setForm({ title: a.title, body: a.body, scope: a.scope, section: a.section ?? "", link_url: a.link_url || "", selectedFile: null });
     setEditingId(a.id);
     setShowForm(true);
   }
@@ -96,17 +102,21 @@ export default function AdminAnnouncementsPage() {
     setSaving(true);
     const pb = getPocketBase();
     try {
-      const payload = {
-        title: form.title,
-        body: form.body,
-        scope: form.scope,
-        section: form.scope === "section" ? form.section : "",
-        author: user.id,
-      };
+      const formDataObj = new FormData();
+      formDataObj.append("title", form.title);
+      formDataObj.append("body", form.body);
+      formDataObj.append("scope", form.scope);
+      formDataObj.append("section", form.scope === "section" ? form.section : "");
+      formDataObj.append("author", user.id);
+      formDataObj.append("link_url", form.link_url || "");
+      if (form.selectedFile) {
+        formDataObj.append("attachment", form.selectedFile);
+      }
+
       if (editingId) {
-        await pb.collection("announcements").update(editingId, payload);
+        await pb.collection("announcements").update(editingId, formDataObj);
       } else {
-        await pb.collection("announcements").create(payload);
+        await pb.collection("announcements").create(formDataObj);
       }
       setShowForm(false);
       await load();
@@ -188,15 +198,29 @@ export default function AdminAnnouncementsPage() {
             </div>
           )}
 
-          <div className="space-y-1">
-            <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.body}</label>
-            <LazyRichEditor
-              value={form.body}
-              onChange={(html) => setForm((f) => ({ ...f, body: html }))}
-              placeholder={t.phBody}
-              dir={locale === "ar" ? "rtl" : "ltr"}
-            />
-          </div>
+<div className="space-y-1">
+             <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.body}</label>
+             <LazyRichEditor
+               value={form.body}
+               onChange={(html) => setForm((f) => ({ ...f, body: html }))}
+               placeholder={t.phBody}
+               dir={locale === "ar" ? "rtl" : "ltr"}
+             />
+           </div>
+
+           <div className="sm:col-span-2">
+             <Input label={locale === "ar" ? "رابط (اختياري)" : "Link URL (optional)"} value={form.link_url} onChange={(e) => setForm((f) => ({ ...f, link_url: e.target.value }))} placeholder={locale === "ar" ? "https://example.com" : "https://example.com"} />
+           </div>
+
+           <div className="sm:col-span-2">
+             <FileUpload
+               label={locale === "ar" ? "مرفق (اختياري)" : "Attachment (optional)"}
+               acceptedTypes={["application/pdf", "image/jpeg", "image/png", "image/webp", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]}
+               maxSizeMB={10}
+               onFileChange={(file) => setForm((f) => ({ ...f, selectedFile: file }))}
+               fileName={form.selectedFile?.name}
+             />
+           </div>
 
           <div className="flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => setShowForm(false)}>{common.cancel}</Button>
@@ -246,6 +270,23 @@ export default function AdminAnnouncementsPage() {
                    </div>
                 </div>
                 <p className="mt-2 text-sm text-[var(--color-ink-secondary)] line-clamp-3">{stripHtml(a.body)}</p>
+                 {a.link_url && (
+                   <a href={a.link_url} target="_blank" rel="noopener noreferrer" className="mt-1.5 flex items-center gap-1.5 text-sm text-[var(--color-accent-text)] hover:underline truncate">
+                     <Link2 className="h-3.5 w-3.5 shrink-0" />
+                     {a.link_url}
+                   </a>
+                 )}
+                 {a.attachment && (
+                   <a
+                     href={`${getPocketBase().baseURL}/api/files/${a.collectionId}/${a.id}/${a.attachment}`}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="mt-1.5 flex items-center gap-1.5 text-sm text-[var(--color-accent-text)] hover:underline truncate"
+                   >
+                     <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                     {a.attachment}
+                   </a>
+                 )}
               </div>
             );
           })}
