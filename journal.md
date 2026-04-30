@@ -499,6 +499,74 @@ This is the standard, battle-tested pattern used by every major web application 
 
 ### Status: INPROGRESS
 
+### Iteration 1 - Form Validation System (2026-04-30)
+
+**Status:** COMPLETE
+
+**What I Did:**
+
+Implemented a comprehensive form validation system across all dashboard pages. Two parts:
+
+1. **Required/Optional Visual Indicators**
+   - Added `required` and `error` props to the `<Input>` component (`input.tsx`)
+     - `required={true}` shows a red asterisk `*` after the label
+     - `required={false}` shows "(optional)" in muted color after the label
+     - `error` prop shows a red error message below the input and adds a red border
+   - Added `required` prop to `<FileUpload>` component (same pattern)
+   - Added red asterisks to all required field labels across ALL form pages (select dropdowns, rich text editors, date/time inputs, etc.)
+   - Added "(optional)" labels to optional fields (link URL, file upload, description/body where applicable)
+
+2. **Inline Error Messages for Required Fields**
+   - Added `formErrors` state (`useState<Record<string, string>>({})`) to every form page
+   - Replaced ALL silent early returns (where forms just `return` with no feedback) with proper validation that populates `formErrors`
+   - Error messages shown in `text-[var(--color-danger)]` below each field
+   - Red border (`border-[var(--color-danger)]`) on fields with errors
+   - Errors clear when the user starts typing in that field
+   - Used `dict.common.fieldRequired` and `dict.common.selectRequired` for bilingual error messages
+
+3. **Dictionary Keys Added**
+   - `ar.json` and `en.json` under `common`:
+     - `required`: "مطلوب" / "Required"
+     - `optional`: "اختياري" / "Optional"
+     - `fieldRequired`: "هذا الحقل مطلوب" / "This field is required"
+     - `selectRequired`: "يرجى الاختيار" / "Please select"
+
+**Pages Updated:**
+
+| Priority | Page | Changes |
+|----------|------|---------|
+| HIGH | Teacher Materials | Required asterisks on title, section, subject. Inline errors on silent return. Optional on link/file. |
+| HIGH | Teacher Homework | Required asterisks on title, section, subject, due_date. Inline errors. Optional on link/file/description. |
+| HIGH | Teacher Announcements | Required asterisks on title, body. Inline errors. Optional on link/file. |
+| HIGH | Teacher Quizzes | Required asterisks on title, section, subject, time_limit. Inline errors. |
+| HIGH | Admin Announcements | Required asterisks on title, body. Inline errors. Optional on link/file. |
+| HIGH | Admin Overview | Required asterisks on title, body. Inline errors. Optional on link/file. |
+| MEDIUM | Admin Sections | Required asterisks on all 5 fields. Replaced `alert()` with inline errors. |
+| MEDIUM | Admin Subjects/Exams | Required asterisks on subject fields (name_ar, name_en, code) and exam fields (title, subject, section, date, times). Replaced `throw new Error()` with inline errors. Optional on notes. |
+| MEDIUM | Admin Users | Required asterisks on name_ar, name_en, email, password labels. Optional indicator on password when editing. |
+| LOW | Student Homework | Required asterisk on submit content label. |
+| LOW | Admin Settings | Skipped - has alert() validation that works well already. |
+
+**Files Modified:**
+- `frontend/src/components/ui/input.tsx` — Added `required` and `error` props
+- `frontend/src/components/ui/file-upload.tsx` — Added `required` prop
+- `frontend/src/dictionaries/ar.json` — Added validation keys
+- `frontend/src/dictionaries/en.json` — Added validation keys
+- All 9 dashboard form pages (see table above)
+
+**Build:** Passes with zero TypeScript errors.
+
+**Commits:**
+- `98d0ee2` - Form validation for HIGH+MEDIUM priority pages
+- `0043700` - Subjects/exams page validation
+- `9a8116a` - Admin users + student homework asterisks
+
+**What I struggled with:**
+- The `admin/page.tsx` (overview) was tricky because its announcement form uses `dict.dashboard.admin.announcements` dict keys instead of destructured `t`
+- The subjects_exams page had exam form validation using `throw new Error()` caught by `await alert()` which needed careful restructuring to convert to inline errors
+
+---
+
 **What was done:**
 
 1. **Posts shown to all users** — Teacher announcements page now shows ALL visible announcements (global + teacher's sections), not just the teacher's own posts. Teacher overview page also shows all visible announcements. Admin overview already showed all.
