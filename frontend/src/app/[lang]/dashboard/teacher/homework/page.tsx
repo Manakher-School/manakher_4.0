@@ -83,6 +83,7 @@ export default function TeacherHomeworkPage() {
   const submissionCrudState = useCrudState();
   const [gradeForms, setGradeForms] = useState<Record<string, { grade: string; feedback: string }>>({});
   const [savingGrade, setSavingGrade] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const sectionName = (s: Section) =>
     locale === "ar" ? `${s.grade_ar} — ${s.section_ar}` : `${s.grade_en} — ${s.section_en}`;
@@ -188,6 +189,7 @@ export default function TeacherHomeworkPage() {
     hwFormData.reset();
     hwListCrudState.setEditingId(null);
     hwListCrudState.setShowCreate(true);
+    setFormErrors({});
   }
 
 function openEdit(hw: Homework) {
@@ -206,7 +208,14 @@ function openEdit(hw: Homework) {
 }
 
   async function handleSave() {
-    if (!user || !hwFormData.state.data.title || !hwFormData.state.data.section || !hwFormData.state.data.subject || !hwFormData.state.data.due_date) return;
+    if (!user) return;
+    const errors: Record<string, string> = {};
+    if (!hwFormData.state.data.title.trim()) errors.title = common.fieldRequired || "This field is required";
+    if (!hwFormData.state.data.section) errors.section = common.selectRequired || "Please select";
+    if (!hwFormData.state.data.subject) errors.subject = common.selectRequired || "Please select";
+    if (!hwFormData.state.data.due_date) errors.due_date = common.fieldRequired || "This field is required";
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     hwListCrudState.setIsLoading(true);
     const pb = getPocketBase();
     try {
@@ -279,25 +288,28 @@ function openEdit(hw: Homework) {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <Input label={t.hwTitle} value={hwFormData.state.data.title} onChange={(e) => hwFormData.setFieldValue("title", e.target.value)} placeholder={t.phTitle} />
+              <Input label={t.hwTitle} required value={hwFormData.state.data.title} onChange={(e) => { hwFormData.setFieldValue("title", e.target.value); if (formErrors.title) setFormErrors((prev) => { const next = { ...prev }; delete next.title; return next; }); }} placeholder={t.phTitle} error={formErrors.title} />
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSection}</label>
-              <select value={hwFormData.state.data.section} onChange={(e) => hwFormData.setFieldValue("section", e.target.value)} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]">
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSection}<span className="text-[var(--color-danger)] ms-1">*</span></label>
+              <select value={hwFormData.state.data.section} onChange={(e) => { hwFormData.setFieldValue("section", e.target.value); if (formErrors.section) setFormErrors((prev) => { const next = { ...prev }; delete next.section; return next; }); }} className={`w-full rounded-[var(--radius-md)] border ${formErrors.section ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}>
                 <option value="">—</option>
                 {sections.map((s) => <option key={s.id} value={s.id}>{sectionName(s)}</option>)}
               </select>
+              {formErrors.section && <p className="text-sm text-[var(--color-danger)]">{common.selectRequired || "Please select"}</p>}
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSubject}</label>
-              <select value={hwFormData.state.data.subject} onChange={(e) => hwFormData.setFieldValue("subject", e.target.value)} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]">
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSubject}<span className="text-[var(--color-danger)] ms-1">*</span></label>
+              <select value={hwFormData.state.data.subject} onChange={(e) => { hwFormData.setFieldValue("subject", e.target.value); if (formErrors.subject) setFormErrors((prev) => { const next = { ...prev }; delete next.subject; return next; }); }} className={`w-full rounded-[var(--radius-md)] border ${formErrors.subject ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}>
                 <option value="">—</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{subjectName(s)}</option>)}
               </select>
+              {formErrors.subject && <p className="text-sm text-[var(--color-danger)]">{common.selectRequired || "Please select"}</p>}
             </div>
             <div className="space-y-1">
-              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.dueDate}</label>
-              <input type="date" value={hwFormData.state.data.due_date} onChange={(e) => hwFormData.setFieldValue("due_date", e.target.value)} className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]" />
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.dueDate}<span className="text-[var(--color-danger)] ms-1">*</span></label>
+              <input type="date" value={hwFormData.state.data.due_date} onChange={(e) => { hwFormData.setFieldValue("due_date", e.target.value); if (formErrors.due_date) setFormErrors((prev) => { const next = { ...prev }; delete next.due_date; return next; }); }} className={`w-full rounded-[var(--radius-md)] border ${formErrors.due_date ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`} />
+              {formErrors.due_date && <p className="text-sm text-[var(--color-danger)]">{common.fieldRequired || "This field is required"}</p>}
             </div>
             <div className="space-y-1">
               <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.submissionType}</label>
@@ -307,12 +319,13 @@ function openEdit(hw: Homework) {
               </select>
             </div>
             <div className="sm:col-span-2">
-              <Input label={locale === "ar" ? "رابط (اختياري)" : "Link URL (optional)"} value={hwFormData.state.data.link_url} onChange={(e) => hwFormData.setFieldValue("link_url", e.target.value)} placeholder={locale === "ar" ? "https://example.com" : "https://example.com"} />
+              <Input label={locale === "ar" ? "رابط (اختياري)" : "Link URL (optional)"} required={false} value={hwFormData.state.data.link_url} onChange={(e) => hwFormData.setFieldValue("link_url", e.target.value)} placeholder={locale === "ar" ? "https://example.com" : "https://example.com"} />
             </div>
             
             <div className="sm:col-span-2">
               <FileUpload
                 label={locale === "ar" ? "مرفق (اختياري)" : "Attachment (optional)"}
+                required={false}
                 acceptedTypes={["application/pdf", "image/jpeg", "image/png", "image/webp", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]}
                 maxSizeMB={10}
                 onFileChange={(file) => hwFormData.setFieldValue("selectedFile", file)}
@@ -321,7 +334,7 @@ function openEdit(hw: Homework) {
             </div>
 
             <div className="sm:col-span-2 space-y-1">
-              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.description}</label>
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.description}<span className="text-xs text-[var(--color-ink-secondary)] ms-1">(optional)</span></label>
               <LazyRichEditor
                 value={hwFormData.state.data.description}
                 onChange={(html) => hwFormData.setFieldValue("description", html)}

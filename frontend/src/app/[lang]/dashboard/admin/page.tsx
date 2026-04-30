@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
   const [savingAnnouncement, setSavingAnnouncement] = useState(false);
   const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function loadStats() {
@@ -73,7 +74,12 @@ export default function AdminDashboard() {
   }, []);
 
   const handleSaveAnnouncement = async () => {
-    if (!user || !announcementForm.title || !announcementForm.body) return;
+    if (!user) return;
+    const errors: Record<string, string> = {};
+    if (!announcementForm.title.trim()) errors.title = dict.common.fieldRequired || "This field is required";
+    if (!announcementForm.body || !announcementForm.body.trim() || announcementForm.body === '<p><br></p>') errors.body = dict.common.fieldRequired || "This field is required";
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     setSavingAnnouncement(true);
     try {
       const formDataObj = new FormData();
@@ -186,6 +192,7 @@ const allAnns = await pb.collection("announcements").getList(1, 50, {
                 setAnnouncementForm({title: "", body: "", link_url: "", selectedFile: null});
                 setEditingAnnouncementId(null);
                 setShowAnnouncementForm(true);
+                setFormErrors({});
               }}
               className="flex items-center gap-2 px-3 py-2 border-2 border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] rounded-md transition-colors"
               aria-label={dict.dashboard.admin.announcements.add}
@@ -213,24 +220,28 @@ const allAnns = await pb.collection("announcements").getList(1, 50, {
              </div>
             
             <Input 
-              label={dict.dashboard.admin.announcements.annTitle} 
+              label={dict.dashboard.admin.announcements.annTitle}
+              required
               value={announcementForm.title} 
-              onChange={(e) => setAnnouncementForm(f => ({...f, title: e.target.value}))} 
+              onChange={(e) => { setAnnouncementForm(f => ({...f, title: e.target.value})); if (formErrors.title) setFormErrors((prev) => { const next = { ...prev }; delete next.title; return next; }); }}
               placeholder={dict.dashboard.admin.announcements.phTitle}
+              error={formErrors.title}
             />
             
             <div className="space-y-1">
-              <label className="block text-sm font-semibold text-[var(--color-ink)]">{dict.dashboard.admin.announcements.body}</label>
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">{dict.dashboard.admin.announcements.body}<span className="text-[var(--color-danger)] ms-1">*</span></label>
               <LazyRichEditor
                 value={announcementForm.body}
-                onChange={(html) => setAnnouncementForm(f => ({...f, body: html}))}
+                onChange={(html) => { setAnnouncementForm(f => ({...f, body: html})); if (formErrors.body) setFormErrors((prev) => { const next = { ...prev }; delete next.body; return next; }); }}
                 placeholder={dict.dashboard.admin.announcements.phBody}
                 dir={locale === "ar" ? "rtl" : "ltr"}
               />
+              {formErrors.body && <p className="text-sm text-[var(--color-danger)]">{dict.common.fieldRequired || "This field is required"}</p>}
             </div>
             
             <Input 
               label={locale === "ar" ? "رابط (اختياري)" : "Link URL (optional)"} 
+              required={false}
               value={announcementForm.link_url} 
               onChange={(e) => setAnnouncementForm(f => ({...f, link_url: e.target.value}))} 
               placeholder={locale === "ar" ? "https://example.com" : "https://example.com"}
@@ -238,6 +249,7 @@ const allAnns = await pb.collection("announcements").getList(1, 50, {
             
             <FileUpload 
               label={locale === "ar" ? "مرفق (اختياري)" : "Attachment (optional)"} 
+              required={false} 
               acceptedTypes={["application/pdf", "image/jpeg", "image/png", "image/webp", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]}
               maxSizeMB={10}
               onFileChange={(file) => setAnnouncementForm(f => ({...f, selectedFile: file}))}

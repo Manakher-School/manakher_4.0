@@ -30,6 +30,7 @@ export default function SectionsPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   async function load() {
     setLoading(true);
@@ -65,20 +66,24 @@ export default function SectionsPage() {
     setShowForm(false);
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setFormErrors({});
   }
 
    async function handleSubmit(e: React.FormEvent) {
       e.preventDefault();
+      // Validate required fields inline
+      const errors: Record<string, string> = {};
+      if (!form.grade_ar.trim()) errors.grade_ar = c.fieldRequired || "This field is required";
+      if (!form.grade_en.trim()) errors.grade_en = c.fieldRequired || "This field is required";
+      if (form.grade_order === "" ) errors.grade_order = c.fieldRequired || "This field is required";
+      if (!form.section_ar.trim()) errors.section_ar = c.fieldRequired || "This field is required";
+      if (!form.section_en.trim()) errors.section_en = c.fieldRequired || "This field is required";
+      setFormErrors(errors);
+      if (Object.keys(errors).length > 0) return;
+
       setSaving(true);
       try {
-        // Validate required fields (grade_order of 0 is valid for kindergarten)
-        if (!form.grade_ar.trim() || !form.grade_en.trim() || form.grade_order === "" || !form.section_ar.trim() || !form.section_en.trim()) {
-          await alert(locale === "ar" ? "يرجى ملء جميع الحقول" : "Please fill in all fields");
-          setSaving(false);
-          return;
-        }
-
-         // Validate grade_order is a valid positive number
+         // grade_order of 0 is valid for kindergarten
          const gradeOrder = Number(form.grade_order);
          if (isNaN(gradeOrder) || gradeOrder < 0) {
            await alert(locale === "ar" ? "رقم الصف يجب أن يكون رقماً موجباً" : "Grade order must be a positive number");
@@ -308,27 +313,32 @@ export default function SectionsPage() {
                <X className="h-4 w-4" />
              </button>
            </div>
-          <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.gradeAr}</label>
-              <input required value={form.grade_ar} placeholder={t.phGradeAr} onChange={e => setForm(f => ({...f, grade_ar: e.target.value}))} className={inputCls} />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.gradeEn}</label>
-              <input required value={form.grade_en} placeholder={t.phGradeEn} onChange={e => setForm(f => ({...f, grade_en: e.target.value}))} className={inputCls} dir="ltr" />
-            </div>
+<form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2">
              <div>
-               <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.gradeOrder}</label>
-               <input required type="number" min={0} value={form.grade_order} placeholder={t.phGradeOrder} onChange={e => setForm(f => ({...f, grade_order: e.target.value}))} className={inputCls} dir="ltr" />
+               <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.gradeAr}<span className="text-[var(--color-danger)] ms-1">*</span></label>
+               <input required value={form.grade_ar} placeholder={t.phGradeAr} onChange={e => { setForm(f => ({...f, grade_ar: e.target.value})); if (formErrors.grade_ar) setFormErrors(prev => { const next = { ...prev }; delete next.grade_ar; return next; }); }} className={`${inputCls} ${formErrors.grade_ar ? "border-[var(--color-danger)]" : ""}`} />
+               {formErrors.grade_ar && <p className="text-sm text-[var(--color-danger)] mt-1">{c.fieldRequired || "This field is required"}</p>}
              </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.sectionAr}</label>
-              <input required value={form.section_ar} placeholder={t.phSectionAr} onChange={e => setForm(f => ({...f, section_ar: e.target.value}))} className={inputCls} />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.sectionEn}</label>
-              <input required value={form.section_en} placeholder={t.phSectionEn} onChange={e => setForm(f => ({...f, section_en: e.target.value}))} className={inputCls} dir="ltr" />
-            </div>
+             <div>
+               <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.gradeEn}<span className="text-[var(--color-danger)] ms-1">*</span></label>
+               <input required value={form.grade_en} placeholder={t.phGradeEn} onChange={e => { setForm(f => ({...f, grade_en: e.target.value})); if (formErrors.grade_en) setFormErrors(prev => { const next = { ...prev }; delete next.grade_en; return next; }); }} className={`${inputCls} ${formErrors.grade_en ? "border-[var(--color-danger)]" : ""}`} dir="ltr" />
+               {formErrors.grade_en && <p className="text-sm text-[var(--color-danger)] mt-1">{c.fieldRequired || "This field is required"}</p>}
+             </div>
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.gradeOrder}<span className="text-[var(--color-danger)] ms-1">*</span></label>
+                <input required type="number" min={0} value={form.grade_order} placeholder={t.phGradeOrder} onChange={e => { setForm(f => ({...f, grade_order: e.target.value})); if (formErrors.grade_order) setFormErrors(prev => { const next = { ...prev }; delete next.grade_order; return next; }); }} className={`${inputCls} ${formErrors.grade_order ? "border-[var(--color-danger)]" : ""}`} dir="ltr" />
+               {formErrors.grade_order && <p className="text-sm text-[var(--color-danger)] mt-1">{c.fieldRequired || "This field is required"}</p>}
+              </div>
+             <div>
+               <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.sectionAr}<span className="text-[var(--color-danger)] ms-1">*</span></label>
+               <input required value={form.section_ar} placeholder={t.phSectionAr} onChange={e => { setForm(f => ({...f, section_ar: e.target.value})); if (formErrors.section_ar) setFormErrors(prev => { const next = { ...prev }; delete next.section_ar; return next; }); }} className={`${inputCls} ${formErrors.section_ar ? "border-[var(--color-danger)]" : ""}`} />
+               {formErrors.section_ar && <p className="text-sm text-[var(--color-danger)] mt-1">{c.fieldRequired || "This field is required"}</p>}
+             </div>
+             <div>
+               <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.sectionEn}<span className="text-[var(--color-danger)] ms-1">*</span></label>
+               <input required value={form.section_en} placeholder={t.phSectionEn} onChange={e => { setForm(f => ({...f, section_en: e.target.value})); if (formErrors.section_en) setFormErrors(prev => { const next = { ...prev }; delete next.section_en; return next; }); }} className={`${inputCls} ${formErrors.section_en ? "border-[var(--color-danger)]" : ""}`} dir="ltr" />
+               {formErrors.section_en && <p className="text-sm text-[var(--color-danger)] mt-1">{c.fieldRequired || "This field is required"}</p>}
+             </div>
             <div className="sm:col-span-2 flex gap-2 justify-end pt-1">
               <button type="button" onClick={closeForm} className="rounded-[var(--radius-full)] px-4 py-2 text-sm font-semibold text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors">{c.cancel}</button>
               <button type="submit" disabled={saving} className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-5 py-2 text-sm font-bold text-white hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-60">

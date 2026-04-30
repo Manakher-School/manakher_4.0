@@ -100,6 +100,7 @@ export default function TeacherQuizzesPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [expandedPanel, setExpandedPanel] = useState<"questions" | "results" | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Quiz form CRUD state and form data
   const quizFormCrudState = useCrudState({
@@ -184,6 +185,7 @@ export default function TeacherQuizzesPage() {
     quizFormData.reset();
     quizFormCrudState.setEditingId(null);
     quizFormCrudState.setShowCreate(true);
+    setFormErrors({});
   }
 
   function openEditQuiz(q: Quiz) {
@@ -201,7 +203,14 @@ export default function TeacherQuizzesPage() {
   }
 
   async function saveQuiz() {
-    if (!user || !quizFormData.state.data.title || !quizFormData.state.data.section || !quizFormData.state.data.subject || !quizFormData.state.data.time_limit) return;
+    if (!user) return;
+    const errors: Record<string, string> = {};
+    if (!quizFormData.state.data.title.trim()) errors.title = common.fieldRequired || "This field is required";
+    if (!quizFormData.state.data.section) errors.section = common.selectRequired || "Please select";
+    if (!quizFormData.state.data.subject) errors.subject = common.selectRequired || "Please select";
+    if (!quizFormData.state.data.time_limit) errors.time_limit = common.fieldRequired || "This field is required";
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     
     // If creating a new quiz, warn that questions are required
     if (!quizFormCrudState.state.editingId) {
@@ -358,48 +367,53 @@ export default function TeacherQuizzesPage() {
             <div className="sm:col-span-2">
               <Input
                 label={t.quizTitle}
+                required
                 value={quizFormData.state.data.title}
-                onChange={(e) => quizFormData.setFieldValue("title", e.target.value)}
+                onChange={(e) => { quizFormData.setFieldValue("title", e.target.value); if (formErrors.title) setFormErrors((prev) => { const next = { ...prev }; delete next.title; return next; }); }}
                 placeholder={t.phTitle}
+                error={formErrors.title}
               />
             </div>
             {/* Section */}
             <div className="space-y-1">
-              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSection}</label>
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSection}<span className="text-[var(--color-danger)] ms-1">*</span></label>
                <select
                  value={quizFormData.state.data.section}
-                 onChange={(e) => quizFormData.setFieldValue("section", e.target.value)}
+                 onChange={(e) => { quizFormData.setFieldValue("section", e.target.value); if (formErrors.section) setFormErrors((prev) => { const next = { ...prev }; delete next.section; return next; }); }}
                  aria-label={t.selectSection}
-                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                 className={`w-full rounded-[var(--radius-md)] border ${formErrors.section ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}
                >
                 <option value="">—</option>
                 {sections.map((s) => <option key={s.id} value={s.id}>{sectionName(s)}</option>)}
               </select>
+              {formErrors.section && <p className="text-sm text-[var(--color-danger)]">{common.selectRequired || "Please select"}</p>}
             </div>
             {/* Subject */}
             <div className="space-y-1">
-              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSubject}</label>
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSubject}<span className="text-[var(--color-danger)] ms-1">*</span></label>
                <select
                  value={quizFormData.state.data.subject}
-                 onChange={(e) => quizFormData.setFieldValue("subject", e.target.value)}
+                 onChange={(e) => { quizFormData.setFieldValue("subject", e.target.value); if (formErrors.subject) setFormErrors((prev) => { const next = { ...prev }; delete next.subject; return next; }); }}
                  aria-label={t.selectSubject}
-                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                 className={`w-full rounded-[var(--radius-md)] border ${formErrors.subject ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}
                >
                 <option value="">—</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{subjectName(s)}</option>)}
               </select>
+              {formErrors.subject && <p className="text-sm text-[var(--color-danger)]">{common.selectRequired || "Please select"}</p>}
             </div>
             {/* Time limit */}
             <div className="space-y-1">
-              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.timeLimit}</label>
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.timeLimit}<span className="text-[var(--color-danger)] ms-1">*</span></label>
               <input
                 type="number"
                 min={1}
                 max={180}
                 value={quizFormData.state.data.time_limit}
-                onChange={(e) => quizFormData.setFieldValue("time_limit", Number(e.target.value))}
-                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                onChange={(e) => { quizFormData.setFieldValue("time_limit", Number(e.target.value)); if (formErrors.time_limit) setFormErrors((prev) => { const next = { ...prev }; delete next.time_limit; return next; }); }}
+                className={`w-full rounded-[var(--radius-md)] border ${formErrors.time_limit ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}
               />
+              {formErrors.time_limit && <p className="text-sm text-[var(--color-danger)]">{common.fieldRequired || "This field is required"}</p>}
             </div>
             {/* Opens at */}
             <div className="space-y-1">

@@ -15,6 +15,10 @@
     "noResults": "لا توجد نتائج",
     "actions": "إجراءات",
     "back": "رجوع",
+    "required": "مطلوب",
+    "optional": "اختياري",
+    "fieldRequired": "هذا الحقل مطلوب",
+    "selectRequired": "يرجى الاختيار",
     "comments": {
       "title": "التعليقات",
       "placeholder": "اكتبي تعليقك...",

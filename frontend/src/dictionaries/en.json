@@ -15,6 +15,10 @@
     "noResults": "No results found",
     "actions": "Actions",
     "back": "Back",
+    "required": "Required",
+    "optional": "Optional",
+    "fieldRequired": "This field is required",
+    "selectRequired": "Please select",
     "comments": {
       "title": "Comments",
       "placeholder": "Write your comment...",

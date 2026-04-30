@@ -62,6 +62,7 @@ export default function TeacherMaterialsPage() {
   const formState = useFormState({ title: "", body: "", link_url: "", section: "", subject: "", selectedFile: null as File | null });
 
   // Filters (kept separate as they're specific to this page)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [filterSection, setFilterSection] = useState("");
   const [filterSubject, setFilterSubject] = useState("");
 
@@ -117,6 +118,7 @@ export default function TeacherMaterialsPage() {
     formState.setData({ title: "", body: "", link_url: "", section: "", subject: "", selectedFile: null });
     crudState.setEditingId(null);
     crudState.setShowCreate(true);
+    setFormErrors({});
   }
 
 function openEdit(m: Material) {
@@ -133,7 +135,13 @@ function openEdit(m: Material) {
 }
 
 async function handleSave() {
-  if (!user || !formState.state.data.title || !formState.state.data.section || !formState.state.data.subject) return;
+  if (!user) return;
+  const errors: Record<string, string> = {};
+  if (!formState.state.data.title.trim()) errors.title = common.fieldRequired || "This field is required";
+  if (!formState.state.data.section) errors.section = common.selectRequired || "Please select";
+  if (!formState.state.data.subject) errors.subject = common.selectRequired || "Please select";
+  setFormErrors(errors);
+  if (Object.keys(errors).length > 0) return;
   crudState.setIsLoading(true);
   const pb = getPocketBase();
   try {
@@ -219,44 +227,47 @@ async function handleSave() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <Input label={t.materialTitle} value={formState.state.data.title} onChange={(e) => formState.setFieldValue("title", e.target.value)} placeholder={t.phTitle} />
+              <Input label={t.materialTitle} required value={formState.state.data.title} onChange={(e) => { formState.setFieldValue("title", e.target.value); if (formErrors.title) setFormErrors((prev) => { const next = { ...prev }; delete next.title; return next; }); }} placeholder={t.phTitle} error={formErrors.title} />
             </div>
 
             {/* Section select */}
             <div className="space-y-1">
-              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSection}</label>
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSection}<span className="text-[var(--color-danger)] ms-1">*</span></label>
               <select
                 value={formState.state.data.section}
-                onChange={(e) => formState.setFieldValue("section", e.target.value)}
-                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                onChange={(e) => { formState.setFieldValue("section", e.target.value); if (formErrors.section) setFormErrors((prev) => { const next = { ...prev }; delete next.section; return next; }); }}
+                className={`w-full rounded-[var(--radius-md)] border ${formErrors.section ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}
               >
                 <option value="">—</option>
                 {sections.map((s) => <option key={s.id} value={s.id}>{sectionName(s)}</option>)}
               </select>
+              {formErrors.section && <p className="text-sm text-[var(--color-danger)]">{common.selectRequired || "Please select"}</p>}
             </div>
 
             {/* Subject select */}
             <div className="space-y-1">
-              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSubject}</label>
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.selectSubject}<span className="text-[var(--color-danger)] ms-1">*</span></label>
               <select
                 value={formState.state.data.subject}
-                onChange={(e) => formState.setFieldValue("subject", e.target.value)}
-                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                onChange={(e) => { formState.setFieldValue("subject", e.target.value); if (formErrors.subject) setFormErrors((prev) => { const next = { ...prev }; delete next.subject; return next; }); }}
+                className={`w-full rounded-[var(--radius-md)] border ${formErrors.subject ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} bg-[var(--color-surface-sunken)] px-3 py-3 text-sm text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}
               >
                 <option value="">—</option>
                 {subjects.map((s) => <option key={s.id} value={s.id}>{subjectName(s)}</option>)}
               </select>
+              {formErrors.subject && <p className="text-sm text-[var(--color-danger)]">{common.selectRequired || "Please select"}</p>}
             </div>
 
             {/* Optional link URL */}
             <div className="sm:col-span-2">
-              <Input label={t.linkUrl} value={formState.state.data.link_url} onChange={(e) => formState.setFieldValue("link_url", e.target.value)} placeholder={t.phLink} />
+              <Input label={t.linkUrl} required={false} value={formState.state.data.link_url} onChange={(e) => formState.setFieldValue("link_url", e.target.value)} placeholder={t.phLink} />
             </div>
             
             {/* File upload */}
             <div className="sm:col-span-2">
               <FileUpload 
-                label={t.fileUpload} 
+                label={t.fileUpload}
+                required={false} 
                 acceptedTypes={["application/pdf", "image/jpeg", "image/png", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]}
                 maxSizeMB={10}
                 onFileChange={(file) => formState.setFieldValue("selectedFile", file)}
@@ -266,7 +277,7 @@ async function handleSave() {
 
             {/* Rich text body */}
             <div className="sm:col-span-2 space-y-1">
-              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.body}</label>
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.body}<span className="text-[var(--color-ink-secondary)] text-xs ms-1">({common.optional || "optional"})</span></label>
               <LazyRichEditor
                 value={formState.state.data.body}
                 onChange={(html) => formState.setFieldValue("body", html)}

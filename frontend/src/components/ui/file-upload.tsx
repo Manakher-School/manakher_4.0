@@ -11,6 +11,7 @@ interface FileUploadProps {
   onFileChange: (file: File | null) => void;
   fileName?: string;
   disabled?: boolean;
+  required?: boolean;
 }
 
 export default function FileUpload({
@@ -20,6 +21,7 @@ export default function FileUpload({
   onFileChange,
   fileName,
   disabled = false,
+  required,
 }: FileUploadProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -93,6 +95,8 @@ export default function FileUpload({
     <div className="space-y-2">
       <label className="block text-sm font-semibold text-[var(--color-ink)]">
         {label}
+        {required === true && <span className="text-[var(--color-danger)] ms-1">*</span>}
+        {required === false && <span className="text-xs text-[var(--color-ink-secondary)] ms-1">(optional)</span>}
       </label>
       
       <div

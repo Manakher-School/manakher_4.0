@@ -60,6 +60,7 @@ export default function TeacherAnnouncementsPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const sectionName = (s: Section) =>
     locale === "ar" ? `${s.grade_ar} — ${s.section_ar}` : `${s.grade_en} — ${s.section_en}`;
@@ -105,6 +106,7 @@ export default function TeacherAnnouncementsPage() {
     setForm({ ...EMPTY_FORM });
     setEditingId(null);
     setShowForm(true);
+    setFormErrors({});
   }
 
   function openEdit(a: Announcement) {
@@ -114,7 +116,12 @@ export default function TeacherAnnouncementsPage() {
   }
 
   async function handleSave() {
-    if (!user || !form.title || !form.body) return;
+    if (!user) return;
+    const errors: Record<string, string> = {};
+    if (!form.title.trim()) errors.title = common.fieldRequired || "This field is required";
+    if (!form.body || !form.body.trim() || form.body === '<p><br></p>') errors.body = common.fieldRequired || "This field is required";
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     setSaving(true);
     const pb = getPocketBase();
     try {
@@ -172,7 +179,7 @@ export default function TeacherAnnouncementsPage() {
              </button>
            </div>
 
-          <Input label={t.annTitle} value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder={t.phTitle} />
+          <Input label={t.annTitle} required value={form.title} onChange={(e) => { setForm((f) => ({ ...f, title: e.target.value })); if (formErrors.title) setFormErrors((prev) => { const next = { ...prev }; delete next.title; return next; }); }} placeholder={t.phTitle} error={formErrors.title} />
 
           <div className="space-y-1">
             <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.scope}</label>
@@ -211,30 +218,32 @@ export default function TeacherAnnouncementsPage() {
           )}
 
 <div className="space-y-1">
-             <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.body}</label>
-             <LazyRichEditor
-               value={form.body}
-               onChange={(html) => setForm((f) => ({ ...f, body: html }))}
-               placeholder={t.phBody}
-               dir={locale === "ar" ? "rtl" : "ltr"}
-             />
-           </div>
+              <label className="block text-sm font-semibold text-[var(--color-ink)]">{t.body}<span className="text-[var(--color-danger)] ms-1">*</span></label>
+              <LazyRichEditor
+                value={form.body}
+                onChange={(html) => { setForm((f) => ({ ...f, body: html })); if (formErrors.body) setFormErrors((prev) => { const next = { ...prev }; delete next.body; return next; }); }}
+                placeholder={t.phBody}
+                dir={locale === "ar" ? "rtl" : "ltr"}
+              />
+              {formErrors.body && <p className="text-sm text-[var(--color-danger)]">{common.fieldRequired || "This field is required"}</p>}
+            </div>
 
-           {/* Optional link URL */}
-           <div className="sm:col-span-2">
-             <Input label={locale === "ar" ? "رابط (اختياري)" : "Link URL (optional)"} value={form.link_url} onChange={(e) => setForm((f) => ({ ...f, link_url: e.target.value }))} placeholder={locale === "ar" ? "https://example.com" : "https://example.com"} />
-           </div>
+{/* Optional link URL */}
+            <div className="sm:col-span-2">
+              <Input label={locale === "ar" ? "رابط (اختياري)" : "Link URL (optional)"} required={false} value={form.link_url} onChange={(e) => setForm((f) => ({ ...f, link_url: e.target.value }))} placeholder={locale === "ar" ? "https://example.com" : "https://example.com"} />
+            </div>
 
-           {/* File upload */}
-           <div className="sm:col-span-2">
-             <FileUpload
-               label={locale === "ar" ? "مرفق (اختياري)" : "Attachment (optional)"}
-               acceptedTypes={["application/pdf", "image/jpeg", "image/png", "image/webp", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]}
-               maxSizeMB={10}
-               onFileChange={(file) => setForm((f) => ({ ...f, selectedFile: file }))}
-               fileName={form.selectedFile?.name}
-             />
-           </div>
+            {/* File upload */}
+            <div className="sm:col-span-2">
+              <FileUpload
+                label={locale === "ar" ? "مرفق (اختياري)" : "Attachment (optional)"}
+                required={false}
+                acceptedTypes={["application/pdf", "image/jpeg", "image/png", "image/webp", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]}
+                maxSizeMB={10}
+                onFileChange={(file) => setForm((f) => ({ ...f, selectedFile: file }))}
+                fileName={form.selectedFile?.name}
+              />
+            </div>
 
           <div className="flex gap-2 justify-end">
             <Button variant="ghost" onClick={() => setShowForm(false)}>{common.cancel}</Button>
