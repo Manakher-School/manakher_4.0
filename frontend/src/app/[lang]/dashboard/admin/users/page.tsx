@@ -1198,7 +1198,7 @@ export default function UsersPage() {
                 </div>
                 <form onSubmit={handleTeacherSubmit} className="space-y-4">
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_teachers.nameAr}</label>
+                    <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_teachers.nameAr}<span className="text-[var(--color-danger)] ms-1">*</span></label>
                     <input
                       type="text"
                       value={teachersForm.state.data.name_ar}
@@ -1209,7 +1209,7 @@ export default function UsersPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_teachers.nameEn}</label>
+                    <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_teachers.nameEn}<span className="text-[var(--color-danger)] ms-1">*</span></label>
                     <input
                       type="text"
                       value={teachersForm.state.data.name_en}
@@ -1220,7 +1220,7 @@ export default function UsersPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_teachers.email}</label>
+                    <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_teachers.email}<span className="text-[var(--color-danger)] ms-1">*</span></label>
                     <input
                       type="email"
                       value={teachersForm.state.data.email}
@@ -1232,7 +1232,7 @@ export default function UsersPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">
-                      {teachersCrud.state.editingId ? t_teachers.newPassword : t_teachers.password}
+                      {teachersCrud.state.editingId ? <>{t_teachers.newPassword}<span className="text-xs text-[var(--color-ink-secondary)] ms-1">(optional)</span></> : <>{t_teachers.password}<span className="text-[var(--color-danger)] ms-1">*</span></>}
                     </label>
                     <input
                       type="password"
@@ -1492,7 +1492,7 @@ export default function UsersPage() {
                 </div>
                 <form onSubmit={handleStudentSubmit} className="space-y-4">
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_students.nameAr}</label>
+                    <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_students.nameAr}<span className="text-[var(--color-danger)] ms-1">*</span></label>
                     <input
                       type="text"
                       value={studentsForm.state.data.name_ar}
@@ -1503,7 +1503,7 @@ export default function UsersPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_students.nameEn}</label>
+                    <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_students.nameEn}<span className="text-[var(--color-danger)] ms-1">*</span></label>
                     <input
                       type="text"
                       value={studentsForm.state.data.name_en}
@@ -1514,7 +1514,7 @@ export default function UsersPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_students.email}</label>
+                    <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t_students.email}<span className="text-[var(--color-danger)] ms-1">*</span></label>
                     <input
                       type="email"
                       value={studentsForm.state.data.email}
@@ -1526,7 +1526,7 @@ export default function UsersPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">
-                      {studentsCrud.state.editingId ? t_students.newPassword : t_students.password}
+                      {studentsCrud.state.editingId ? <>{t_students.newPassword}<span className="text-xs text-[var(--color-ink-secondary)] ms-1">(optional)</span></> : <>{t_students.password}<span className="text-[var(--color-danger)] ms-1">*</span></>}
                     </label>
                     <input
                       type="password"

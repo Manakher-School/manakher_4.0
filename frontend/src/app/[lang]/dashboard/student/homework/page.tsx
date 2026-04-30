@@ -308,7 +308,7 @@ export default function StudentHomeworkPage() {
                           <div className="space-y-3">
                             <div className="space-y-1">
                               <label className="block text-sm font-semibold text-[var(--color-ink)]">
-                                {t.submitContent}
+                                {t.submitContent}<span className="text-[var(--color-danger)] ms-1">*</span>
                               </label>
                               <LazyRichEditor
                                 value={content}
