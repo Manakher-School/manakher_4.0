@@ -93,6 +93,8 @@ export default function SubjectsExamsPage() {
   const subjectListCrudState = useCrudState();
   const subjectFormData = useFormState(EMPTY_SUBJECT_FORM);
   const [deletingSubjectId, setDeletingSubjectId] = useState<string | null>(null);
+  const [subjectFormErrors, setSubjectFormErrors] = useState<Record<string, string>>({});
+  const [examFormErrors, setExamFormErrors] = useState<Record<string, string>>({});
 
   // ============ EXAMS STATE ============
   const [exams, setExams] = useState<ExamSchedule[]>([]);
@@ -120,6 +122,7 @@ export default function SubjectsExamsPage() {
     subjectListCrudState.setEditingId(null);
     subjectListCrudState.setShowCreate(true);
     subjectFormData.reset();
+    setSubjectFormErrors({});
   };
 
   const openEditSubject = (s: Subject) => {
@@ -136,6 +139,12 @@ export default function SubjectsExamsPage() {
 
   const handleSubmitSubject = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors: Record<string, string> = {};
+    if (!subjectFormData.state.data.name_ar.trim()) errors.name_ar = c.fieldRequired || "This field is required";
+    if (!subjectFormData.state.data.name_en.trim()) errors.name_en = c.fieldRequired || "This field is required";
+    if (!subjectFormData.state.data.code.trim()) errors.code = c.fieldRequired || "This field is required";
+    setSubjectFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     subjectListCrudState.setIsLoading(true);
     try {
       if (subjectListCrudState.state.editingId) {
@@ -264,6 +273,7 @@ export default function SubjectsExamsPage() {
     examFormData.reset();
     examListCrudState.setShowCreate(true);
     examListCrudState.setEditingId(null);
+    setExamFormErrors({});
   };
 
   const openEditExam = (exam: ExamSchedule) => {
@@ -290,33 +300,21 @@ export default function SubjectsExamsPage() {
     e.preventDefault();
     if (!user) return;
 
+    // Validate required fields inline
+    const errors: Record<string, string> = {};
+    const formData = examFormData.state.data;
+    if (!formData.title?.trim()) errors.title = c.fieldRequired || "This field is required";
+    if (!formData.subject) errors.subject = c.selectRequired || "Please select";
+    if (!formData.section) errors.section = c.selectRequired || "Please select";
+    if (!formData.exam_date) errors.exam_date = c.fieldRequired || "This field is required";
+    if (!formData.start_time?.match(/^\d{2}:\d{2}$/)) errors.start_time = locale === "ar" ? "وقت البداية مطلوب بصيغة HH:MM" : "Start time required in HH:MM format";
+    if (!formData.end_time?.match(/^\d{2}:\d{2}$/)) errors.end_time = locale === "ar" ? "وقت النهاية مطلوب بصيغة HH:MM" : "End time required in HH:MM format";
+    setExamFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     try {
       examListCrudState.setIsLoading(true);
       
-      // Validate required fields
-      const formData = examFormData.state.data;
-      if (!formData.title?.trim()) {
-        throw new Error(locale === "ar" ? "العنوان مطلوب" : "Title is required");
-      }
-      if (!formData.subject) {
-        throw new Error(locale === "ar" ? "المادة مطلوبة" : "Subject is required");
-      }
-      if (!formData.section) {
-        throw new Error(locale === "ar" ? "الفصل مطلوب" : "Section is required");
-      }
-      if (!formData.exam_date) {
-        throw new Error(locale === "ar" ? "تاريخ الامتحان مطلوب" : "Exam date is required");
-      }
-      if (!formData.start_time?.match(/^\d{2}:\d{2}$/)) {
-        throw new Error(locale === "ar" ? "وقت البداية مطلوب بصيغة HH:MM" : "Start time required in HH:MM format");
-      }
-      if (!formData.end_time?.match(/^\d{2}:\d{2}$/)) {
-        throw new Error(locale === "ar" ? "وقت النهاية مطلوب بصيغة HH:MM" : "End time required in HH:MM format");
-      }
-      if (!formData.exam_type) {
-        throw new Error(locale === "ar" ? "نوع الامتحان مطلوب" : "Exam type is required");
-      }
-
       const data = {
         title: formData.title,
         subject: formData.subject,
@@ -504,19 +502,22 @@ export default function SubjectsExamsPage() {
                    <X className="h-4 w-4" />
                  </button>
                </div>
-              <form onSubmit={handleSubmitSubject} className="grid gap-3 sm:grid-cols-3">
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.subjects?.nameAr}</label>
-                  <input required value={subjectFormData.state.data.name_ar} placeholder={t.subjects?.phNameAr} onChange={e => subjectFormData.setFieldValue("name_ar", e.target.value)} className={inputCls} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.subjects?.nameEn}</label>
-                  <input required value={subjectFormData.state.data.name_en} placeholder={t.subjects?.phNameEn} onChange={e => subjectFormData.setFieldValue("name_en", e.target.value)} className={inputCls} dir="ltr" />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.subjects?.code}</label>
-                  <input required value={subjectFormData.state.data.code} placeholder={t.subjects?.phCode} onChange={e => subjectFormData.setFieldValue("code", e.target.value)} className={inputCls} dir="ltr" />
-                </div>
+<form onSubmit={handleSubmitSubject} className="grid gap-3 sm:grid-cols-3">
+                 <div>
+                   <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.subjects?.nameAr}<span className="text-[var(--color-danger)] ms-1">*</span></label>
+                   <input required value={subjectFormData.state.data.name_ar} placeholder={t.subjects?.phNameAr} onChange={e => { subjectFormData.setFieldValue("name_ar", e.target.value); if (subjectFormErrors.name_ar) setSubjectFormErrors(prev => { const next = { ...prev }; delete next.name_ar; return next; }); }} className={`${inputCls} ${subjectFormErrors.name_ar ? "border-[var(--color-danger)]" : ""}`} />
+                   {subjectFormErrors.name_ar && <p className="text-sm text-[var(--color-danger)] mt-1">{c.fieldRequired || "This field is required"}</p>}
+                 </div>
+                 <div>
+                   <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.subjects?.nameEn}<span className="text-[var(--color-danger)] ms-1">*</span></label>
+                   <input required value={subjectFormData.state.data.name_en} placeholder={t.subjects?.phNameEn} onChange={e => { subjectFormData.setFieldValue("name_en", e.target.value); if (subjectFormErrors.name_en) setSubjectFormErrors(prev => { const next = { ...prev }; delete next.name_en; return next; }); }} className={`${inputCls} ${subjectFormErrors.name_en ? "border-[var(--color-danger)]" : ""}`} dir="ltr" />
+                   {subjectFormErrors.name_en && <p className="text-sm text-[var(--color-danger)] mt-1">{c.fieldRequired || "This field is required"}</p>}
+                 </div>
+                 <div>
+                   <label className="mb-1 block text-xs font-semibold text-[var(--color-ink-secondary)]">{t.subjects?.code}<span className="text-[var(--color-danger)] ms-1">*</span></label>
+                   <input required value={subjectFormData.state.data.code} placeholder={t.subjects?.phCode} onChange={e => { subjectFormData.setFieldValue("code", e.target.value); if (subjectFormErrors.code) setSubjectFormErrors(prev => { const next = { ...prev }; delete next.code; return next; }); }} className={`${inputCls} ${subjectFormErrors.code ? "border-[var(--color-danger)]" : ""}`} dir="ltr" />
+                   {subjectFormErrors.code && <p className="text-sm text-[var(--color-danger)] mt-1">{c.fieldRequired || "This field is required"}</p>}
+                 </div>
                 <div className="sm:col-span-3 flex gap-2 justify-end pt-1">
                   <button type="button" onClick={closeSubjectForm} className="rounded-[var(--radius-full)] px-4 py-2 text-sm font-semibold text-[var(--color-ink-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors">{c.cancel}</button>
                   <button type="submit" disabled={subjectListCrudState.state.isLoading} className="flex items-center gap-2 rounded-[var(--radius-full)] bg-[var(--color-role-admin-bold)] px-5 py-2 text-sm font-bold text-white hover:bg-[var(--color-accent-hover)] transition-colors disabled:opacity-60">
@@ -589,28 +590,29 @@ export default function SubjectsExamsPage() {
               <form onSubmit={handleSubmitExam} className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
-                    {t.exams?.examTitle || (locale === "ar" ? "عنوان الامتحان" : "Exam Title")}
+                    {t.exams?.examTitle || (locale === "ar" ? "عنوان الامتحان" : "Exam Title")}<span className="text-[var(--color-danger)] ms-1">*</span>
                   </label>
                   <input
                     type="text"
                     value={examFormData.state.data.title}
-                    onChange={(e) => examFormData.setFieldValue("title", e.target.value)}
+                    onChange={(e) => { examFormData.setFieldValue("title", e.target.value); if (examFormErrors.title) setExamFormErrors(prev => { const next = { ...prev }; delete next.title; return next; }); }}
                     required
                     placeholder={locale === "ar" ? "مثال: امتحان الرياضيات النهائي" : "e.g., Final Math Exam"}
-                    className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] placeholder:text-[var(--color-ink-placeholder)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                    className={`w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border ${examFormErrors.title ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} text-[var(--color-ink)] placeholder:text-[var(--color-ink-placeholder)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}
                   />
+                  {examFormErrors.title && <p className="text-sm text-[var(--color-danger)] mt-1">{c.fieldRequired || "This field is required"}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
-                      {t.exams?.subject}
+                      {t.exams?.subject}<span className="text-[var(--color-danger)] ms-1">*</span>
                     </label>
                     <select
                       value={examFormData.state.data.subject}
-                      onChange={(e) => examFormData.setFieldValue("subject", e.target.value)}
+                      onChange={(e) => { examFormData.setFieldValue("subject", e.target.value); if (examFormErrors.subject) setExamFormErrors(prev => { const next = { ...prev }; delete next.subject; return next; }); }}
                       required
-                      className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                      className={`w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border ${examFormErrors.subject ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}
                     >
                       <option value="">{t.exams?.subject}</option>
                       {examSubjects.map((s) => (
@@ -619,17 +621,18 @@ export default function SubjectsExamsPage() {
                         </option>
                       ))}
                     </select>
+                    {examFormErrors.subject && <p className="text-sm text-[var(--color-danger)] mt-1">{c.selectRequired || "Please select"}</p>}
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
-                      {t.exams?.section}
+                      {t.exams?.section}<span className="text-[var(--color-danger)] ms-1">*</span>
                     </label>
                     <select
                       value={examFormData.state.data.section}
-                      onChange={(e) => examFormData.setFieldValue("section", e.target.value)}
+                      onChange={(e) => { examFormData.setFieldValue("section", e.target.value); if (examFormErrors.section) setExamFormErrors(prev => { const next = { ...prev }; delete next.section; return next; }); }}
                       required
-                      className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                      className={`w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border ${examFormErrors.section ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}
                     >
                       <option value="">{t.exams?.section}</option>
                       {examSections.map((s) => (
@@ -638,70 +641,74 @@ export default function SubjectsExamsPage() {
                         </option>
                       ))}
                     </select>
+                    {examFormErrors.section && <p className="text-sm text-[var(--color-danger)] mt-1">{c.selectRequired || "Please select"}</p>}
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
-                      {t.exams?.examDate}
+                      {t.exams?.examDate}<span className="text-[var(--color-danger)] ms-1">*</span>
                     </label>
                     <input
                       type="date"
                       value={examFormData.state.data.exam_date}
-                      onChange={(e) => examFormData.setFieldValue("exam_date", e.target.value)}
+                      onChange={(e) => { examFormData.setFieldValue("exam_date", e.target.value); if (examFormErrors.exam_date) setExamFormErrors(prev => { const next = { ...prev }; delete next.exam_date; return next; }); }}
                       required
-                      className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                    />
-                  </div>
+className={`w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border ${examFormErrors.exam_date ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}
+                     />
+                    {examFormErrors.exam_date && <p className="text-sm text-[var(--color-danger)] mt-1">{c.fieldRequired || "This field is required"}</p>}
+                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
-                      {t.exams?.examType}
-                    </label>
-                    <select
-                      value={examFormData.state.data.exam_type}
-                      onChange={(e) =>
-                        examFormData.setFieldValue("exam_type", e.target.value as any)
-                      }
-                      required
-                      className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                    >
-                      <option value="month1">{getExamTypeLabel("month1")}</option>
-                      <option value="month2">{getExamTypeLabel("month2")}</option>
-                      <option value="month3">{getExamTypeLabel("month3")}</option>
-                      <option value="final">{getExamTypeLabel("final")}</option>
-                    </select>
-                  </div>
+                   <div>
+                     <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
+                       {t.exams?.examType}
+                     </label>
+                     <select
+                       value={examFormData.state.data.exam_type}
+                       onChange={(e) =>
+                         examFormData.setFieldValue("exam_type", e.target.value as any)
+                       }
+                       required
+                       className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                     >
+                       <option value="month1">{getExamTypeLabel("month1")}</option>
+                       <option value="month2">{getExamTypeLabel("month2")}</option>
+                       <option value="month3">{getExamTypeLabel("month3")}</option>
+                       <option value="final">{getExamTypeLabel("final")}</option>
+                     </select>
+                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
-                      {t.exams?.startTime}
-                    </label>
-                    <input
-                      type="time"
-                      value={examFormData.state.data.start_time}
-                      onChange={(e) => examFormData.setFieldValue("start_time", e.target.value)}
-                      required
-                      className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                    />
-                  </div>
+                   <div>
+                     <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
+                       {t.exams?.startTime}<span className="text-[var(--color-danger)] ms-1">*</span>
+                     </label>
+                     <input
+                       type="time"
+                       value={examFormData.state.data.start_time}
+                       onChange={(e) => { examFormData.setFieldValue("start_time", e.target.value); if (examFormErrors.start_time) setExamFormErrors(prev => { const next = { ...prev }; delete next.start_time; return next; }); }}
+                       required
+                       className={`w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border ${examFormErrors.start_time ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}
+                     />
+                    {examFormErrors.start_time && <p className="text-sm text-[var(--color-danger)] mt-1">{examFormErrors.start_time}</p>}
+                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
-                      {t.exams?.endTime}
-                    </label>
-                    <input
-                      type="time"
-                      value={examFormData.state.data.end_time}
-                      onChange={(e) => examFormData.setFieldValue("end_time", e.target.value)}
-                      required
-                      className="w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border border-[var(--color-border)] text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                    />
-                  </div>
+                   <div>
+                     <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
+                       {t.exams?.endTime}<span className="text-[var(--color-danger)] ms-1">*</span>
+                     </label>
+                     <input
+                       type="time"
+                       value={examFormData.state.data.end_time}
+                       onChange={(e) => { examFormData.setFieldValue("end_time", e.target.value); if (examFormErrors.end_time) setExamFormErrors(prev => { const next = { ...prev }; delete next.end_time; return next; }); }}
+                       required
+                       className={`w-full px-4 py-3 rounded-lg bg-[var(--color-surface-sunken)] border ${examFormErrors.end_time ? "border-[var(--color-danger)]" : "border-[var(--color-border)]"} text-[var(--color-ink)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]`}
+                     />
+                    {examFormErrors.end_time && <p className="text-sm text-[var(--color-danger)] mt-1">{examFormErrors.end_time}</p>}
+                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-[var(--color-ink)] mb-1">
-                    {t.exams?.notes}
+                    {t.exams?.notes}<span className="text-xs text-[var(--color-ink-secondary)] ms-1">(optional)</span>
                   </label>
                   <textarea
                     value={examFormData.state.data.notes}
